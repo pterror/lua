@@ -1,0 +1,173 @@
+#!/usr/bin/env luajit
+if pcall(debug.getlocal, 4, 1) then arg = { ... } end
+
+-- FIXME: doesn't handle \r properly (on any file other than stdin)
+
+local show_nonprinting = false
+local show_ends = false
+local show_tabs = false
+local number = false
+local number_nonblank = false
+local squeeze_blank = false
+
+local escape = {
+	["\x00"] = "^@", ["\x01"] = "^A", ["\x02"] = "^B", ["\x03"] = "^C", ["\x04"] = "^D", ["\x05"] = "^E", ["\x06"] = "^F", ["\x07"] = "^G",
+	["\x08"] = "^H", ["\x09"] = "^I", ["\x0a"] = "$\n",["\x0b"] = "^K", ["\x0c"] = "^L", ["\x0d"] = "^M", ["\x0e"] = "^N", ["\x0f"] = "^O",
+	["\x10"] = "^P", ["\x11"] = "^Q", ["\x12"] = "^R", ["\x13"] = "^S", ["\x14"] = "^T", ["\x15"] = "^U", ["\x16"] = "^V", ["\x17"] = "^W",
+	["\x18"] = "^X", ["\x19"] = "^Y", ["\x1a"] = "^Z", ["\x1b"] = "^[", ["\x1c"] = "^\\",["\x1d"] = "^]", ["\x1e"] = "^^", ["\x1f"] = "^_",
+	["\x7f"] = "^?",
+	["\x80"] = "M-^@", ["\x81"] = "M-^A", ["\x82"] = "M-^B", ["\x83"] = "M-^C", ["\x84"] = "M-^D", ["\x85"] = "M-^E", ["\x86"] = "M-^F", ["\x87"] = "M-^G",
+	["\x88"] = "M-^H", ["\x89"] = "M-^I", ["\x8a"] = "M-^J", ["\x8b"] = "M-^K", ["\x8c"] = "M-^L", ["\x8d"] = "M-^M", ["\x8e"] = "M-^N", ["\x8f"] = "M-^O",
+	["\x90"] = "M-^P", ["\x91"] = "M-^Q", ["\x92"] = "M-^R", ["\x93"] = "M-^S", ["\x94"] = "M-^T", ["\x95"] = "M-^U", ["\x96"] = "M-^V", ["\x97"] = "M-^W",
+	["\x98"] = "M-^X", ["\x99"] = "M-^Y", ["\x9a"] = "M-^Z", ["\x9b"] = "M-^[", ["\x9c"] = "M-^\\",["\x9d"] = "M-^]", ["\x9e"] = "M-^^", ["\x9f"] = "M-^_",
+	["\xa0"] = "M- ", ["\xa1"] = "M-!", ["\xa2"] = "M-\"",["\xa3"] = "M-#", ["\xa4"] = "M-$", ["\xa5"] = "M-%", ["\xa6"] = "M-&", ["\xa7"] = "M-'",
+	["\xa8"] = "M-(", ["\xa9"] = "M-)", ["\xaa"] = "M-*", ["\xab"] = "M-+", ["\xac"] = "M-,", ["\xad"] = "M--", ["\xae"] = "M-.", ["\xaf"] = "M-/",
+	["\xb0"] = "M-0", ["\xb1"] = "M-1", ["\xb2"] = "M-2", ["\xb3"] = "M-3", ["\xb4"] = "M-4", ["\xb5"] = "M-5", ["\xb6"] = "M-6", ["\xb7"] = "M-7",
+	["\xb8"] = "M-8", ["\xb9"] = "M-9", ["\xba"] = "M-:", ["\xbb"] = "M-;", ["\xbc"] = "M-<", ["\xbd"] = "M-=", ["\xbe"] = "M->", ["\xbf"] = "M-?",
+	["\xc0"] = "M-@", ["\xc1"] = "M-A", ["\xc2"] = "M-B", ["\xc3"] = "M-C", ["\xc4"] = "M-D", ["\xc5"] = "M-E", ["\xc6"] = "M-F", ["\xc7"] = "M-G",
+	["\xc8"] = "M-H", ["\xc9"] = "M-I", ["\xca"] = "M-J", ["\xcb"] = "M-K", ["\xcc"] = "M-L", ["\xcd"] = "M-M", ["\xce"] = "M-N", ["\xcf"] = "M-O",
+	["\xd0"] = "M-P", ["\xd1"] = "M-Q", ["\xd2"] = "M-R", ["\xd3"] = "M-S", ["\xd4"] = "M-T", ["\xd5"] = "M-U", ["\xd6"] = "M-V", ["\xd7"] = "M-W",
+	["\xd8"] = "M-X", ["\xd9"] = "M-Y", ["\xda"] = "M-Z", ["\xdb"] = "M-[", ["\xdc"] = "M-\\",["\xdd"] = "M-]", ["\xde"] = "M-^", ["\xdf"] = "M-_",
+	["\xe0"] = "M-`", ["\xe1"] = "M-a", ["\xe2"] = "M-b", ["\xe3"] = "M-c", ["\xe4"] = "M-d", ["\xe5"] = "M-e", ["\xe6"] = "M-f", ["\xe7"] = "M-g",
+	["\xe8"] = "M-h", ["\xe9"] = "M-i", ["\xea"] = "M-j", ["\xeb"] = "M-k", ["\xec"] = "M-l", ["\xed"] = "M-m", ["\xee"] = "M-n", ["\xef"] = "M-o",
+	["\xf0"] = "M-p", ["\xf1"] = "M-q", ["\xf2"] = "M-r", ["\xf3"] = "M-s", ["\xf4"] = "M-t", ["\xf5"] = "M-u", ["\xf6"] = "M-v", ["\xf7"] = "M-w",
+	["\xf8"] = "M-x", ["\xf9"] = "M-y", ["\xfa"] = "M-z", ["\xfb"] = "M-{", ["\xfc"] = "M-|", ["\xfd"] = "M-}", ["\xfe"] = "M-~", ["\xff"] = "M-^?",
+}
+
+local long_options = {
+	["show-all"] = function () show_nonprinting, show_ends, show_tabs = true, true, true end,
+	["number-nonblank"] = function () number_nonblank = true end,
+	["show-ends"] = function () show_ends = true end,
+	["number"] = function () number = true end,
+	["squeeze-blank"] = function () squeeze_blank = true end,
+	["t"] = function () show_nonprinting, show_tabs = true, true end,
+	["show-tabs"] = function () show_tabs = true end,
+	["show-nonprinting"] = function () show_nonprinting = true end,
+	["help"] = function ()
+		print(
+			"Usage: cat [OPTION]... [FILE]...\n" .. -- arg[0]
+			"Concatenate FILE(s) to standard output.\n" ..
+			"\n" ..
+			"With no FILE, or when FILE is -, read standard input.\n" ..
+			"\n" ..
+			"  -A, --show-all           equivalent to -vET\n" ..
+			"  -b, --number-nonblank    number nonempty output lines, overrides -n\n" ..
+			"  -e                       equivalent to -vE\n" ..
+			"  -E, --show-ends          display $ at end of each line\n" ..
+			"  -n, --number             number all output lines\n" ..
+			"  -s, --squeeze-blank      suppress repeated empty output lines\n" ..
+			"  -t                       equivalent to -vT\n" ..
+			"  -T, --show-tabs          display TAB characters as ^I\n" ..
+			"  -u                       (ignored)\n" ..
+			"  -v, --show-nonprinting   use ^ and M- notation, except for LFD and TAB\n" ..
+			"      --help        display this help and exit\n" ..
+			"      --version     output version information and exit\n" ..
+			"\n" ..
+			"Examples:\n" ..
+			"  cat f - g  Output f's contents, then standard input, then g's contents.\n" .. -- arg[0]
+			"  cat        Copy standard input to standard output." -- arg[0]
+		)
+		os.exit(0)
+	end,
+	["version"] = function ()
+		print(
+			"cat (GNU coreutils) 9.1\n" ..
+			"(pterror edition)"
+		)
+		os.exit(0)
+	end,
+}
+
+local options = {
+	A = long_options["show-all"],
+	b = long_options["number-nonblank"],
+	e = function () show_nonprinting, show_ends = true, true end,
+	E = long_options["show-ends"],
+	n = long_options["number"],
+	s = long_options["squeeze-blank"],
+	t = function () show_nonprinting, show_tabs = true, true end,
+	T = long_options["show-tabs"],
+	u = function () end, --[[ignored]]
+	v = long_options["show-nonprinting"],
+}
+
+local files = {}
+local stop_processing = false
+for _, arg_ in ipairs(arg) do
+	if stop_processing then files[#files+1] = arg_
+	elseif arg_ == "-" then files[#files+1] = arg_
+	elseif arg_ == "--" then stop_processing = true
+	elseif arg_:sub(1, 2) == "--" then
+		(long_options[arg_:sub(3)] or function ()
+			io.stderr:write(
+				"cat: unrecognized option -- '", arg_, "'\n", -- arg[0]
+				"Try 'cat --help' for more information.\n" -- arg[0]
+			)
+			os.exit(1)
+		end)()
+	elseif arg_:sub(1, 1) == "-" then
+		for i = 2, #arg_ do
+			(options[arg_:sub(i, i)] or function ()
+				io.stderr:write(
+					"cat: invalid option -- '", arg_:sub(i, i), "'\n", -- arg[0]
+					"Try 'cat --help' for more information.\n" -- arg[0]
+				)
+				os.exit(1)
+			end)()
+		end
+	else files[#files+1] = arg_ end
+end
+if #files == 0 then files[#files+1] = "-" end
+
+-- TODO:
+-- don't copy file to itself (compare inodes)
+-- https://github.com/coreutils/coreutils/blob/b319685c6e12e66bf357c2384fe69f1c63f66aed/src/cat.c#L707-L718
+
+local failed = false
+local pattern = nil
+if show_ends and show_tabs and show_nonprinting then pattern = "[%z-\x1f\x7f-\xff]"
+elseif show_nonprinting then
+	if show_ends then pattern = "[%z-\x08\x0a-\x1f\x7f-\xff]"
+	elseif show_tabs then pattern = "[%z-\x09\x0b-\x1f\x7f-\xff]"
+	else pattern = "[%z-\x08\x0b-\x1f\x7f-\xff]" end
+elseif show_tabs or show_ends then
+	pattern = "[" .. (show_tabs and "\t" or "") .. (show_ends and "\n" or "") .. "]"
+end
+local line_by_line = number or number_nonblank or squeeze_blank
+local lineno = 1
+local was_nonblank = true
+for _, path in ipairs(files) do
+	local file = path == "-" and io.stdin or io.open(path, "rb")
+	local err
+	if file then _, err = file:read(0) end
+	if not file then
+		print(arg[0] .. ": " .. path .. ": No such file or directory")
+		failed = true
+	elseif err then -- TODO: test both empty files, and dir on windows
+		print(arg[0] .. ": " .. path .. ": Is a directory")
+		failed = true
+	elseif line_by_line then
+		local s = file:read("*Line")
+		while s do
+			local is_nonblank = s ~= "\n"
+			if not squeeze_blank or was_nonblank then
+				if pattern then s = s:gsub(pattern, escape) end
+				if number or (number_nonblank and is_nonblank) then
+					io.stdout:write(("%6s"):format(lineno), "\t", s)
+					lineno = lineno + 1
+				else
+					io.stdout:write(s)
+				end
+			end
+			was_nonblank = is_nonblank
+			s = file:read("*Line")
+		end
+		if file ~= io.stdin then file:close() end
+	else
+		local s = file:read("*all")
+		if pattern then s = s:gsub(pattern, escape) end
+		io.stdout:write(s)
+		if file ~= io.stdin then file:close() end
+	end
+end
+if failed then os.exit(1) end

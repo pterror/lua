@@ -1,0 +1,170 @@
+#!/usr/bin/env luajit
+if pcall(debug.getlocal, 4, 1) then arg = { ... }
+else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
+
+local proc = require("lib.linux.proc")
+
+local usage =
+	"Usage:\n" ..
+	" uptime [options]\n" ..
+	"\n" ..
+	 "Options:\n" ..
+	" -p, --pretty   show uptime in pretty format\n" ..
+	" -h, --help     display this help and exit\n" ..
+	" -s, --since    system up since\n" ..
+	" -V, --version  output version information and exit\n" ..
+	"\n" ..
+	"For more details see uptime(1)."
+
+--[[@param comma boolean]] --[[@param name string]] --[[@param n integer]]
+local function s(comma, name, n) return (comma and ", " or "") .. n .. name .. (n ~= 1 and "s" or "") end
+
+local long_options = {
+	pretty = function ()
+		local u = assert(proc.uptime()).uptime
+		local very_new = u < 60
+		local decades = math.floor(u / 315360000)
+		u = u - decades * 315360000
+		local years = math.floor(u / 31536000)
+		u = u - years * 31536000
+		local weeks = math.floor(u / 604800)
+		u = u - weeks * 604800
+		local days = math.floor(u / 86400)
+		u = u - days * 86400
+		local hours = math.floor(u / 3600)
+		u = u - hours * 3600
+		local minutes = math.floor(u / 60)
+		local parts = {}
+		parts[#parts+1] = "up "
+		local comma = false
+		if decades > 0 then
+			parts[#parts+1] = s(comma, " decade", decades)
+			comma = true
+		end
+		if years > 0 then
+			parts[#parts+1] = s(comma, " year", years)
+			comma = true
+		end
+		if weeks > 0 then
+			parts[#parts+1] = s(comma, " week", weeks)
+			comma = true
+		end
+		if days > 0 then
+			parts[#parts+1] = s(comma, " day", days)
+			comma = true
+		end
+		if hours > 0 then
+			parts[#parts+1] = s(comma, " hour", hours)
+			comma = true
+		end
+		if minutes > 0 or very_new then
+			parts[#parts+1] = s(comma, " minute", minutes)
+			comma = true
+		end
+		print(table.concat(parts))
+	end,
+	help = function ()
+		print(usage)
+		os.exit(0)
+	end,
+	since = function ()
+		local u = assert(proc.uptime())
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
+		print(os.date("%Y-%m-%d %H:%M:%S", os.time() - u.uptime))
+		os.exit(0)
+	end,
+	version = function ()
+		print("uptime from procps-ng 3.3.17 (pterror edition)")
+		os.exit(0)
+	end,
+}
+
+local options = {
+	p = long_options.pretty,
+	h = long_options.help,
+	s = long_options.since,
+	V = long_options.version,
+}
+
+for _, arg_ in ipairs(arg) do
+	if arg_:sub(1, 2) == "--" then
+		(long_options[arg_:sub(3)] or function ()
+			io.stderr:write(
+				"uptime: unrecognized option -- '", arg_, "'\n\n",
+				usage, "\n"
+			)
+			os.exit(1)
+		end)()
+	elseif arg_:sub(1, 1) == "-" then
+		for i = 2, #arg_ do
+			(options[arg_:sub(i, i)] or function ()
+				io.stderr:write(
+					"uptime: invalid option -- '", arg_:sub(i, i), "'\n",
+					usage, "\n"
+				)
+				os.exit(1)
+			end)()
+		end
+	else
+		io.stderr:write(usage, "\n")
+		os.exit(1)
+	end
+end
+
+local ffi = require("ffi")
+
+ffi.cdef [[
+	typedef int pid_t;
+
+	struct exit_status {
+		short int e_termination;
+		short int e_exit;
+	};
+
+	struct utmp {
+		short int ut_type;
+		pid_t ut_pid;
+    char ut_line[32 /*UT_LINESIZE*/];
+		char ut_id[4];
+    union {
+			char ut_name[32 /*UT_NAMESIZE*/];
+			char ut_user[32 /*UT_NAMESIZE*/];
+		};
+    char ut_host[256 /*UT_HOSTSIZE*/];
+		struct exit_status ut_exit;
+		int32_t ut_session;
+		struct { int32_t tv_sec; int32_t tv_usec; } ut_tv;
+		int32_t ut_addr_v6[4];
+		char __glibc_reserved[20];
+  };
+
+	struct utmp *getutent(void);
+	void setutent(void);
+	void endutent(void);
+]]
+
+ffi.C.setutent()
+local users = 0
+while true do
+	local ut = ffi.C.getutent()
+	if ut == nil then break end
+	if ut.ut_type == 7 --[[USER_PROCESS]] and ut.ut_name[0] ~= 0 then
+		users = users + 1
+	end
+end
+ffi.C.endutent()
+
+local u = assert(proc.uptime()).uptime
+local load = assert(proc.loadavg())
+local days = math.floor(u / 86400)
+u = u - days * 86400
+local hours = math.floor(u / 3600)
+u = u - hours * 3600
+local minutes = math.floor(u / 60)
+io.write(
+	os.date(" %H:%M:%S up ", os.time()),
+	(days > 0 and (s(false, " day", days) .. ", ") or ""),
+	(hours > 0 and ("%2d:%02d, "):format(hours, minutes) or (minutes .. " min, ")),
+	("%2d user%s,  load average: %.2f, %.2f, %.2f"):format(1, users > 1 and "s" or "", load.loadavg_1min, load.loadavg_5min, load.loadavg_10min),
+	"\n"
+)

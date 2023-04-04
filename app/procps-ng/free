@@ -1,0 +1,195 @@
+#!/usr/bin/env luajit
+if pcall(debug.getlocal, 4, 1) then arg = { ... }
+else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
+
+local meminfo = require("lib.linux.proc").meminfo
+
+local usage =
+	"\n" ..
+	"Usage:\n" ..
+	" free [options]\n" ..
+	"\n" ..
+	"Options:\n" ..
+	" -b, --bytes         show output in bytes\n" ..
+	"     --kilo          show output in kilobytes\n" ..
+	"     --mega          show output in megabytes\n" ..
+	"     --giga          show output in gigabytes\n" ..
+	"     --tera          show output in terabytes\n" ..
+	"     --peta          show output in petabytes\n" ..
+	" -k, --kibi          show output in kibibytes\n" ..
+	" -m, --mebi          show output in mebibytes\n" ..
+	" -g, --gibi          show output in gibibytes\n" ..
+	"     --tebi          show output in tebibytes\n" ..
+	"     --pebi          show output in pebibytes\n" ..
+	" -h, --human         show human-readable output\n" ..
+	"     --si            use powers of 1000 not 1024\n" ..
+	" -l, --lohi          show detailed low and high memory statistics\n" ..
+	" -t, --total         show total for RAM + swap\n" ..
+	" -v, --committed     show committed memory and commit limit\n" ..
+	" -s N, --seconds N   repeat printing every N seconds\n" ..
+	" -c N, --count N     repeat printing N times, then exit\n" ..
+	" -w, --wide          wide output\n" ..
+	"\n" ..
+	"     --help     display this help and exit\n" ..
+	" -V, --version  output version information and exit\n" ..
+	"\n" ..
+	"For more details see free(1)."
+
+local human, exponent, binary, lohi, total, committed, seconds, count, wide, eat = false, nil, true, nil, nil, nil, 1, nil, false, nil
+
+local eat_seconds = function (n_)
+	local n = tonumber(n_)
+	if not n then
+		io.stderr:write("free: seconds argument failed: '", n_, "': Invalid argument\n")
+		os.exit(1)
+	end
+	--[[@diagnostic disable-next-line: cast-local-type]]
+	seconds = n
+end
+
+--[[@param n_ string]]
+local eat_count = function (n_)
+	local n = n_:match("^%d+$") and tonumber(n_)
+	if not n then
+		io.stderr:write("free: failed to parse count argument: '", n_, "'\n")
+		os.exit(1)
+	end
+	count = n
+end
+
+local set_mag_bin = function (n, b)
+	if exponent then
+		io.stderr:write("free: Multiple unit options doesn't make sense.\n")
+		os.exit(1)
+	end
+	exponent = n
+	if binary == nil then binary = b end
+end
+
+local long_options = {
+	bytes = function () set_mag_bin(0) end,
+	kilo = function () set_mag_bin(1, false) end,
+	mega = function () set_mag_bin(2, false) end,
+	giga = function () set_mag_bin(3, false) end,
+	tera = function () set_mag_bin(4, false) end,
+	peta = function () set_mag_bin(5, false) end,
+	kibi = function () set_mag_bin(1, true) end,
+	mebi = function () set_mag_bin(2, true) end,
+	gibi = function () set_mag_bin(3, true) end,
+	tebi = function () set_mag_bin(4, true) end,
+	pebi = function () set_mag_bin(5, true) end,
+	human = function () human = true end,
+	si = function () binary = false end,
+	lohi = function () lohi = true end,
+	total = function () total = true end,
+	committed = function () committed = true end,
+	seconds = function () eat = eat_seconds end,
+	count = function () eat = eat_count end,
+	wide = function () wide = true end,
+	version = function ()
+		print("free from procps-ng 3.3.17 (pterror edition)")
+		os.exit(0)
+	end,
+}
+
+local options = {
+	b = long_options.bytes,
+	k = long_options.kibi,
+	m = long_options.mebi,
+	g = long_options.gibi,
+	h = long_options.human,
+	l = long_options.lohi,
+	t = long_options.total,
+	v = long_options.committed,
+	s = long_options.seconds,
+	c = long_options.count,
+	w = long_options.wide,
+	V = long_options.version,
+}
+
+for _, arg_ in ipairs(arg) do
+	if eat then
+		eat(arg_)
+	elseif arg_:sub(1, 2) == "--" then
+		(long_options[arg_:sub(3)] or function ()
+			io.stderr:write(
+				"free: unrecognized option -- '", arg_, "'\n",
+				usage, "\n"
+			)
+			os.exit(1)
+		end)()
+	elseif arg_:sub(1, 1) == "-" then
+		for i = 2, #arg_ do
+			if eat then eat(arg_:sub(i)); break
+			else
+				(options[arg_:sub(i, i)] or function ()
+					io.stderr:write(
+						"free: invalid option -- '", arg_:sub(i, i), "'\n",
+						usage
+					)
+					os.exit(1)
+				end)()
+			end
+		end
+	else
+		io.stderr:write(usage, "\n")
+		os.exit(1)
+	end
+end
+
+exponent = exponent or 1
+local div_by = (binary and 1024 or 1000) ^ (exponent - 1) / (binary and 1 or 1.024)
+local header = "               total        used        free      shared " .. (wide and "    buffers       cache" or " buff/cache") .. "   available\n"
+local make_fmt = function (n) return (" %11s"):rep(n):sub(2) .. "\n" end
+local mem_fmt = make_fmt(wide and 7 or 6)
+local _3_fmt = "%11s %11s %11s\n"
+
+local suffix = { [0] = "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q" }
+local tf = human and (binary and function (n)
+	if n == 0 then return "0B" end
+	local exp = 0
+	while n > 1024 do exp = exp + 1; n = n / 1024 end
+	return (n >= 10 and "%d%si" or "%.1f%si"):format(n, suffix[exp])
+end or function (n)
+	if n == 0 then return "0B" end
+	n = n * 1.024
+	local exp = 0
+	while n > 1000 do exp = exp + 1; n = n / 1000 end
+	return (n >= 10 and "%d%s" or "%.1f%s"):format(n, suffix[exp])
+end) or function (n) return math.floor(n / div_by) end
+
+local fmt_mem = wide and function (m, mem_used) --[[@param m linux_proc_meminfo]] --[[@param mem_used integer]]
+	return mem_fmt:format(tf(m.mem_total), tf(mem_used), tf(m.mem_free), tf(m.shmem), tf(m.buffers), tf(m.cached + m.s_reclaimable), tf(m.mem_available))
+end or function (m, mem_used) --[[@param m linux_proc_meminfo]] --[[@param mem_used integer]]
+	return mem_fmt:format(tf(m.mem_total), tf(mem_used), tf(m.mem_free), tf(m.shmem), tf(m.buffers + m.cached + m.s_reclaimable), tf(m.mem_available))
+end
+
+local do_it = function ()
+	local m = assert(meminfo())
+	local mem_used = m.mem_total - m.mem_available
+	if mem_used < 0 then mem_used = m.mem_total - m.mem_free end
+	local swap_used = math.max(0, m.swap_total - m.swap_free)
+	io.stdout:write( -- not localized
+		header,
+		"Mem:     ", fmt_mem(m, mem_used),
+		lohi and ("Low:     " .. _3_fmt:format(tf(m.low_total or m.mem_total), tf(m.low_total and math.max(0, m.low_total - m.low_free) or mem_used), tf(m.low_free or m.mem_free))) or "",
+		lohi and ("High:    " .. _3_fmt:format(tf(m.high_total or 0), tf(math.max(0, (m.high_total or 0) - (m.high_free or 0))), tf(m.high_free or 0))) or "",
+		"Swap:    ", _3_fmt:format(tf(m.swap_total), tf(swap_used), tf(m.swap_free)),
+		total and ("Total:   " .. _3_fmt:format(m.mem_total + m.swap_total, mem_used + swap_used, m.mem_free + m.swap_free)) or "",
+		committed and ("Comm:    " .. _3_fmt:format(m.commit_limit, m.committed_as, m.commit_limit - m.committed_as)) or ""
+	)
+end
+
+if count == nil then
+	do_it()
+else
+	local epoll = require("dep.epoll").new()
+	local clear_interval
+	clear_interval = require("dep.timerfd").set_interval(epoll, seconds * 1000, function ()
+		do_it()
+		count = count - 1
+		if count == 0 then clear_interval()
+		else print() end
+	end)
+	epoll:loop()
+end

@@ -1,0 +1,6 @@
+taken from https://email-verify.my-addr.com/list-of-most-popular-email-domains.php
+with the script:
+
+    d=[...document.querySelectorAll('td:nth-child(3)')].map(el=>el.innerText);
+    f=[...document.querySelectorAll('td:nth-child(4)')].map(el=>Math.round(el.innerText.slice(0, -1)*100));
+    console.log(d.map((t,i)=>t+'\t'+f[i]).join('\n'))

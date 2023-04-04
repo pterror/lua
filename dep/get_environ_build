@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+as -Os env.s -o env.o
+ld env.o -lc -shared -dynamic-linker /lib/ld-linux.so.2 -o env.so
+strip env.so
+rm env.o

@@ -1,0 +1,60 @@
+#!/usr/bin/env luajit
+if pcall(debug.getlocal, 4, 1) then arg = { ... } end
+
+local ffi = require("ffi")
+
+local options = {}
+
+local long_options = {
+	help = function ()
+		print(
+			"Usage: yes [STRING]...\n" .. -- arg[0]
+			"  or:  yes OPTION\n" .. -- arg[0]
+			"Repeatedly output a line with all specified STRING(s), or 'y'.\n" ..
+			"\n" ..
+			"      --help        display this help and exit\n" ..
+			"      --version     output version information and exit"
+		)
+		os.exit(0)
+	end,
+	version = function ()
+		print(
+			"yes (GNU coreutils) 9.1\n" ..
+			"(pterror edition)"
+		)
+		os.exit(0)
+	end,
+}
+
+local parts = {}
+for _, arg_ in ipairs(arg) do
+	if arg_:sub(1, 2) == "--" then
+		(long_options[arg_:sub(3)] or function ()
+			io.stderr:write(
+				"yes: unrecognized option -- '", arg_, "'\n",  -- arg[0]
+				"Try 'yes --help' for more information.\n"  -- arg[0]
+			)
+			os.exit(1)
+		end)()
+	elseif arg_:sub(1, 1) == "-" then
+		for i = 2, #arg_ do
+			(options[arg_:sub(i, i)] or function ()
+				io.stderr:write(
+					"yes: invalid option -- '", arg_:sub(i, i), "'\n" ..  -- arg[0]
+					"Try 'yes --help' for more information.\n"  -- arg[0]
+				)
+				os.exit(1)
+			end)()
+		end
+	else parts[#parts+1] = arg_ end
+end
+local s = table.concat(parts, " ") .. "\n"
+s = s:rep(math.floor(8192 / #s))
+local len = #s
+ffi.cdef [[ssize_t write(int fd, const void *buf, size_t count);]]
+local write = ffi.C.write
+for k in pairs(_G) do if k ~= "_G" then _G[k] = nil end end
+--[[@diagnostic disable-next-line: assign-type-mismatch]]
+_G = nil
+--[[@diagnostic disable-next-line: param-type-mismatch]]
+while true do write(1, s, len) end

@@ -1,0 +1,115 @@
+#!/usr/bin/env luajit
+if pcall(debug.getlocal, 4, 1) then arg = { ... }
+else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
+
+local utmp_file
+for _, arg_ in ipairs(arg) do
+	if arg_ == "--help" then
+		print(
+			"Usage: uptime [OPTION]... [FILE]\n" .. -- arg[0]
+			"Print the current time, the length of time the system has been up,\n" ..
+			"the number of users on the system, and the average number of jobs\n" ..
+			"in the run queue over the last 1, 5 and 15 minutes.  Processes in\n" ..
+			"an uninterruptible sleep state also contribute to the load average.\n" ..
+			"If FILE is not specified, use /var/run/utmp.  /var/log/wtmp as FILE is common.\n" ..
+			"\n" ..
+			"      --help        display this help and exit\n" ..
+			"      --version     output version information and exit\n" ..
+			"\n" ..
+			"GNU coreutils online help: <https://www.gnu.org/software/coreutils/>\n" ..
+			"Full documentation <https://www.gnu.org/software/coreutils/uptime>\n" ..
+			"or available locally via: info '(coreutils) uptime invocation'"
+		)
+		return
+	elseif arg_ == "--version" then
+		print(
+			"uptime (GNU coreutils) 9.1\n" ..
+			"(pterror edition)"
+		)
+		return
+	elseif arg_:sub(1, 2) == "--" then
+		print(
+			"uptime: unrecognized option -- '" .. arg_ .. "'\n\n" .. -- arg[0]
+			"Try 'uptime --help' for more information." -- arg[0]
+		)
+		os.exit(1)
+	elseif arg_:sub(1, 1) == "-" then
+		print(
+			"uptime: invalid option -- '" .. arg_:sub(2, 2) .. "'\n\n" .. -- arg[0]
+			"Try 'uptime --help' for more information." -- arg[0]
+		)
+		os.exit(1)
+	elseif not utmp_file then utmp_file = arg_
+	else
+		print(
+			"uptime: extra operand ‘" .. arg_ .. "’\n" .. -- arg[0]
+			"Try 'uptime --help' for more information." -- arg[0]
+		)
+		os.exit(1)
+	end
+end
+
+local ffi = require("ffi")
+
+ffi.cdef [[
+	typedef int pid_t;
+
+	struct exit_status {
+		short int e_termination;
+		short int e_exit;
+	};
+
+	struct utmp {
+		short int ut_type;
+		pid_t ut_pid;
+    char ut_line[32 /*UT_LINESIZE*/];
+		char ut_id[4];
+    union {
+			char ut_name[32 /*UT_NAMESIZE*/];
+			char ut_user[32 /*UT_NAMESIZE*/];
+		};
+    char ut_host[256 /*UT_HOSTSIZE*/];
+		struct exit_status ut_exit;
+		int32_t ut_session;
+		struct { int32_t tv_sec; int32_t tv_usec; } ut_tv;
+		int32_t ut_addr_v6[4];
+		char __glibc_reserved[20];
+  };
+
+	int utmpname(const char *file);
+	struct utmp *getutent(void);
+	void setutent(void);
+	void endutent(void);
+]]
+
+if utmp_file then ffi.C.utmpname(utmp_file) end
+ffi.C.setutent()
+local users = 0
+while true do
+	local ut = ffi.C.getutent()
+	if ut == nil then break end
+	if ut.ut_type == 7 --[[USER_PROCESS]] and ut.ut_name[0] ~= 0 then
+		users = users + 1
+	end
+end
+ffi.C.endutent()
+
+local u = assert(require("lib.linux.proc").uptime()).uptime
+local days = math.floor(u / 86400)
+u = u - days * 86400
+local hours = math.floor(u / 3600)
+u = u - hours * 3600
+local minutes = math.floor(u / 60)
+u = u - minutes * 60
+
+ffi.cdef [[int getloadavg(double loadavg[], int nelem);]]
+local load = ffi.new("double[3]")
+ffi.C.getloadavg(load, 3)
+
+io.write(
+	os.date(" %H:%M:%S  up ", os.time()),
+	(days > 0 and (days .. " day" .. (days > 1 and "days")) or ""),
+	(" %2d:%02d,  "):format(hours, minutes),
+	("%s user%s,  load average: %.2f, %.2f, %.2f"):format(users, users ~= 1 and "s" or "", load[0], load[1], load[2]),
+	"\n"
+)

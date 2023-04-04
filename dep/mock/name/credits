@@ -1,0 +1,89 @@
+=== name ===
+
+This project contains lists of first and last names for different cultural groups and countries,
+compiled from data freely available on the internet. There are individual lists for
+each country/culture, listed by the ISO language code for the associated language.
+
+Two sets of lists are maintained, if appropriate. The primary list is a normalized
+one, where all non-ASCII vowels have been replaced by their ASCII equivalents. This
+is because of the frequency with which vowels lose their accents when surnames are
+moved across cultural or national frontiers. I have maintained non-ASCII consonants,
+simply because these characters are more commonly retained. However, it would be a
+simple matter to replace these characters with their ASCII equivalents, should this
+be desired. I have also maintained non-normalized versions of these lists, if the
+original database/list maintained non-ASCII vowels.
+
+These lists have been retrieved from the internet, and thus are no more complete
+than the databases that are publicly available. In all cases, credit for the different
+lists is provided in the credits.txt file associated with this project. I have
+chosen publicly available lists where there is little likelihood of copyright
+violation.
+
+Erik Norvelle
+erik dot norvelle at neomailbox dot net
+
+The names included in this database were collected from a variety of web sites. 
+Below are the credits for the lists that have attributions. So far as I know
+none of these databases or lists are copyrighted.
+
+For last names:
+* Basque: Bildu Bizkaia (http://euskalikurra.blogspot.com/) and ListGene
+    (http://listgene.com/antzinako/)
+* Chinese: Ron Young, Alphabetical Index of Chinese Surnames 
+    (http://freepages.family.rootsweb.ancestry.com/~chinesesurname/atoz.html)
+* Czech: Mike Campbell, Behind the Name: Czech Surnames
+    (http://surnames.behindthename.com/names/usage/czech)
+* German: The Namenforschung project (http://www.namenforschung.net/dfa/downloads.html)
+* Spanish: The National Institute of Statistics (INE)
+    (http://www.ine.es/daco/daco42/nombyapel/nombyapel.htm)
+* French: The nom-famille website (http://www.nom-famille.com)
+* Greek: Dimitri's Surname Database (http://www.dimitri.8m.com/surnames.html)
+* Indian: Kate Monk, Kate Monk's Onomastikon
+    (http://www.gaminggeeks.org/Resources/KateMonk/)
+* Irish: Mike Campbell, Behind the Name: Irish Surnames
+    (http://surnames.behindthename.com/names/usage/irish)
+* Italian: alfemminile.com, I cognomi più diffusi italiani
+    (http://cognome.alfemminile.com/w/cognomi/cognome-lista.html)
+* Korean: Meet My Last Name (http://meetmylastname.com/prd/articles/36/)
+* Dutch: Mike Campbell, Behind the Names: Dutch surnames
+    (http://surnames.behindthename.com/names/usage/dutch)
+* Polish: Polish Texans (http://www.polish-texans.com/genealogy/surnames-all.php?tree=PT)
+* Portuguese: Fernando Candado, Lista de sobrenomes portugueses
+    (http://www.fernandocandido.com/portgen/portuguese-names/names.html)
+* Russian: Michael Birukoff, All Russia Family Tree. Surnames list.
+    (http://www.vgd.ru/ENGLISH/a.htm)
+* UK: sofeminine.co.uk, List of the most common surnames
+    (http://surname.sofeminine.co.uk/w/surnames/most-common-surnames-in-great-britain.html)
+* US: Princeton University, Intro CS class dataset 
+	(http://www.cs.princeton.edu/introcs/data/surnames.csv)
+
+For first names:
+* US: US Census Bureau (http://www.census.gov/genealogy/www/data/1990surnames/dist.male.first) and
+	Quiet Affiliate (http://www.quietaffiliate.com/free-first-name-and-last-name-databases-csv-and-sql)
+* Spain: INE (National Statistics Institute): http://www.ine.es/tnombres/formGeneralresult.do
+
+todo:
+rumanian
+hungarian
+norwegian
+swedish
+finnish
+danish
+lithuanian
+estonian
+latvian
+serbian
+croatian
+slovenian
+slovak
+persian
+turkish
+
+=== color ===
+
+Extracted from here with a script:
+https://simple.wikipedia.org/wiki/List_of_colors
+
+    console.log([...$0.querySelectorAll("td:first-child")].map(e=>e.innerText).join("\n"))
+
+"blush" has been removed for being confusing - other colors are in a grey area
