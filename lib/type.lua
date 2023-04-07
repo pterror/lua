@@ -1,5 +1,6 @@
 local mod = {}
 
+--[[@alias type_ {type:"integer"|"number"|"string"|"boolean"|"nil"}]]
 --[[@alias type_type "integer"|"number"|"string"|"boolean"|"tuple"|"struct"|"struct_exact"|"array"|"dictionary"|"optional"]]
 
 --[[@type integer]]
@@ -14,6 +15,9 @@ mod.string = { type = "string" }
 --[[@type boolean]]
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
 mod.boolean = { type = "boolean" }
+--[[@type nil]]
+--[[@diagnostic disable-next-line: assign-type-mismatch]]
+mod["nil"] = { type = "nil" }
 --[[@generic t: unknown[] ]]
 --[[@return t]]
 --[[@param shape t]]

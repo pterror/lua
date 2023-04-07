@@ -52,10 +52,12 @@ local handlers = {
 	["/"] = function (req, res) res.body = MAIN_PAGE end,
 	["/save"] = function (req, res)
 		local body = req.body
+		--[[IMPL]]
 	end,
 }
 handlers["/index.html"] = handlers["/"]
 
+--[[FIXME: arg[1] is directory]]
 require("lib.http.server").server(function (req, res)
 	local handler = handlers[req.path]
 	if handler then handler(req, res) else res.status = 404 end

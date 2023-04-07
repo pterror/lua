@@ -19,6 +19,8 @@ mod.checkers.string = function (_, x) return type(x) == "string" end
 --[[@return boolean]]
 mod.checkers.boolean = function (_, x) return type(x) == "boolean" end
 --[[@return boolean]]
+mod.checkers["nil"] = function (_, x) return type(x) == "nil" end
+--[[@return boolean]]
 mod.checkers.tuple = function (s, x)
 	--[[checking if `x` is shorter is unsafe, since schemas may be optional]]
 	if type(x) ~= "table" then return false end

@@ -99,7 +99,7 @@ mod.script = function (fn) --[[@param fn fun(x: js_window)]]
 	local code = require("dep.lua2js").lua2js(ast_builder:chunk(func_node.body), filename)
 	--[[IMPL: magic (get function ast from file)]]
 	--[[FIXME: prevent injection]]
-	return "<script>\nconst x = window;\n" .. code .. "</script>"
+	return "<script>\nconst x = window;\n" .. code .. "\n</script>"
 end
 
 mod.meta = mod.element("meta")

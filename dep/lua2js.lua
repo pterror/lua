@@ -17,10 +17,10 @@
 -- - tables with any keys at all are turned into objects; else they are turned into arrays
 -- - `async()`, `await()` -> `async`, `await`
 -- - `error(msg)` -> `throw new Error(msg)`
+-- - rewrite `#foo` to `foo.length`
 -- todo:
 -- - transpile `bit.band` to `&` etc. alternatively (easier) declare js-exclusive functions
 -- - actually implementing the destructuring
--- - rewrite `#foo` to `foo.length`
 -- - polyfills for e.g. `assert`
 local mod = {}
 
@@ -280,9 +280,9 @@ StatementRule.ForStatement = function (self, node)
 	local iend = self:expr_emit(node.last)
 	local header
 	if node.step and not is_const(node.step, 1) then
-		header = string.format("for (let %s = %s; %s < %s; %s += %s) {", init.id.name, istart, init.id.name, iend, init.id.name, self:expr_emit(node.step))
+		header = string.format("for (let %s = %s; %s <= %s; %s += %s) {", init.id.name, istart, init.id.name, iend, init.id.name, self:expr_emit(node.step))
 	else
-		header = string.format("for (let %s = %s; %s < %s; ++%s) {", init.id.name, istart, init.id.name, iend, init.id.name)
+		header = string.format("for (let %s = %s; %s <= %s; ++%s) {", init.id.name, istart, init.id.name, iend, init.id.name)
 	end
 	self:add_section(header, node.body)
 end
