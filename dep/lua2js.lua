@@ -290,7 +290,7 @@ end
 StatementRule.ForInStatement = function (self, node)
 	local vars = comma_sep_list(node.namelist.names, as_parameter, true)
 	local explist = self:expr_list(node.explist)
-	local header = string.format("for (const %s of %s) {", vars, explist)
+	local header = string.format("for (let %s of %s) {", vars, explist)
 	self:add_section(header, node.body)
 end
 

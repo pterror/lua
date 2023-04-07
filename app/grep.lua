@@ -8,7 +8,5 @@ local pattern = arg[1] or error("grep: no pattern")
 while true do
 	local line = io.stdin:read("*Line")
 	if not line then break end
-	if line:match(pattern) then
-		io.stdout:write(line)
-	end
+	if line:match(pattern) then io.stdout:write(line) end
 end

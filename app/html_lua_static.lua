@@ -5,19 +5,16 @@ else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.pat
 
 local ext_mimetype = require("lib.mimetype.by_name").mimetype
 local path = require("lib.path")
-local path_unsafe = require("lib.path_unsafe")
 
 local base_path = arg[1] or "."
 local static, err = require("lib.http.router.static").static_router(base_path)
 assert(static, err)
 
-local new_path = path_unsafe.resolve(base_path, "./?.html.lua")
-package.path = #package.path > 0 and new_path .. ";" .. package.path or new_path
-
 require("lib.http.server").server(function (req, res)
-	static(req, res)
+	if req.path:match(".lua$") then res.status = 404
+	else static(req, res) end
 	if res.status == 404 then
-		local _, str = pcall(dofile, path.resolve(base_path, req.path .. ".html.lua"), "t")
+		local _, str = pcall(dofile, path.resolve(base_path, req.path .. ".lua"), "t")
 		if str then
 			res.status = 200
 			res.headers["Content-Type"] = "text/html"
