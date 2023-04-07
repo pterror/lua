@@ -11,7 +11,7 @@ local script_path = debug.getinfo(1).source:match("@?(.*/)")
 
 local given_name_cache = {} --[[@type table<string, string[]>]]
 
---[[@param country_code? "*"|mock_given_name_country_code]]
+--[[@param country_code? "_"|mock_given_name_country_code]]
 mod.given_name = function (country_code)
 	country_code = country_code or "_"
 	local names = given_name_cache[country_code]
@@ -29,7 +29,7 @@ end
 
 local surname_cache = {} --[[@type table<string, string[]>]]
 
---[[@param country_code? "*"|mock_surname_country_code]]
+--[[@param country_code? "_"|mock_surname_country_code]]
 mod.surname = function (country_code)
 	country_code = country_code or "_"
 	local names = surname_cache[country_code]
