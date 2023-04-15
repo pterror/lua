@@ -109,7 +109,7 @@ end
 
 ExpressionRule.Literal = function (self, node)
 	local val = node.value
-	local str = type(val) == "string" and string.format("\"%s\"", escape(val)) or tostring(val)
+	local str = type(val) == "string" and string.format("\"%s\"", escape(val)) or val == nil and "undefined" or tostring(val)
 	return str, operator.ident_priority
 end
 
@@ -218,13 +218,22 @@ ExpressionRule.Table = function (self, node)
 	return (is_array and "[" .. content .. "]" or "{" .. content .. "}"), operator.ident_priority
 end
 
+local is_js_keyword = { async = true, await = true, typeof = true }
+mod.is_js_keyword = is_js_keyword
+
 ExpressionRule.CallExpression = function (self, node)
 	local callee, prio = self:expr_emit(node.callee)
 	if prio < operator.ident_priority then
 		callee = "(" .. callee .. ")"
 	end
-	if callee == "async" or callee == "await" then
+	if mod.is_js_keyword[callee] then
 		local exp = string.format("%s %s", callee, self:expr_list(node.arguments))
+		return exp, operator.ident_priority --[[FIXME: correct priority]]
+	elseif callee == "unpack" then
+		local exp = string.format("...%s", node.arguments[1])
+		return exp, operator.ident_priority
+	elseif callee == "instanceof" then
+		local exp = string.format("%s instanceof %s", node.arguments[1], node.arguments[2])
 		return exp, operator.ident_priority
 	end
 	if callee == "error" then callee = "throw new Error" end

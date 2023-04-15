@@ -784,7 +784,7 @@ if false then
 			offsetWidth = 0, --[[@type js_number]]
 			--[[setting `outerText` replaces the node with a single `Text` node]]
 			outerText = 0, --[[@type js_string]]
-			style = 0, --[[@type js_string]]
+			style = 0, --[[@type js_string]] --[[FIXME]]
 			tabIndex = 0, --[[@type js_number]]
 			title = 0, --[[@type js_string]]
 			attachInternals = 0, --[[@type fun(self: js_dom_html_element): js_dom_element_internals]]

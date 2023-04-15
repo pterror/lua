@@ -86,137 +86,125 @@ mod.error = { --[[TODO: convert to string]]
 	continuation_frame_has_incorrect_opcode = 7,
 }
 
---[[@type websocket_error]]
+local bytes_to_string --[[@type fun(bytes: integer[]): string]]
+if jit then
+	local ffi = require("ffi")
+	bytes_to_string = function (bytes) return ffi.string(ffi.new("const char[?]", #bytes, bytes), #bytes) end
+else
+	bytes_to_string = function (bytes)
+		local chars = {}
+		for i = 1, #bytes do chars[i] = string.char(bytes[i]) end
+		return table.concat(chars)
+	end
+end
 
--- Returns a partial websocket message if this is not the last frame in the message,
--- or a websocket message if this is the last frame in the message,
--- or an error code.
---[[@return websocket_message?, websocket_message?, websocket_error?]] --[[@param packet string]] --[[@param acc websocket_message]]
-local decode = function (packet, acc)
-	local h0 = packet:byte(1)
-	local fin = bit.band(h0, 0x80) ~= 0
-	if bit.band(h0, 0x70) ~= 0 then
-		-- TODO: fail the connection
-		return nil, nil, mod.error.invalid_format
-	end
-	local opcode = bit.band(h0, 0x0F)
-	if not is_valid_opcode[opcode + 1] then
-		-- TODO: fail the connection
-		return nil, nil, mod.error.invalid_opcode
-	end
-	local h1 = packet:byte(2)
-	local payload_len = bit.band(h1, 0x7F)
-	local mask
-	local i = 3
-	if bit.band(h1, 0x80) ~= 0 then -- has mask
-		--[[@type integer, integer, integer, integer]]
-		local a, b, c, d = packet:byte(i, i + 3)
-		mask = { a, b, c, d }
-		i = i + 4
-	else
-		return nil, nil, mod.error.frame_is_not_masked
-	end
-	if payload_len == 126 then
-		local a, b = packet:byte(i, i + 1)
-		-- FIXME: compare performance of bitwise vs normal operators
-		payload_len = bit.bor(bit.lshift(a, 8), b)
-		i = i + 2
-	elseif payload_len == 127 then
-		--[[@type integer, integer, integer, integer, integer, integer, integer, integer]]
-		local a, b, c, d, e, f, g, h = packet:byte(i, i + 7)
-		local hi = bit.bor(bit.lshift(a, 24), bit.lshift(b, 16), bit.lshift(c, 8), d)
-		local lo = bit.bor(bit.lshift(e, 24), bit.lshift(f, 16), bit.lshift(g, 8), h)
-		-- this is a double, not an integer, but realistically you don't need websocket frames that long
-		payload_len = hi * 0x100000000 + lo
-		i = i + 8
-	end
-	local payload
+--[[@class websocket_mask: {[1]:integer;[2]:integer;[3]:integer;[4]:integer;}]]
+
+local mi_next = { 2, 3, 4, 1 }
+--[[@return string payload, integer? mi]] --[[@param packet string]] --[[@param i integer]] --[[@param payload_len integer]] --[[@param mask websocket_mask?]] --[[@param mi integer]]
+local unmask = function (packet, i, payload_len, mask, mi)
 	if mask then
 		local bytes = {}
-		local mi = 1
-		local MI_NEXT = { 2, 3, 4, 1 }
-		for j = 1, payload_len do
+		for j = 1, math.min(payload_len, #packet - i + 1) do
 			bytes[j] = bit.bxor(packet:byte(i + j - 1), mask[mi])
-			mi = MI_NEXT[mi]
+			mi = mi_next[mi]
 		end
-		payload = string.char(unpack(bytes))
-	else
-		payload = packet:sub(i, i + payload_len - 1)
+		return bytes_to_string(bytes), mi
+	else return packet:sub(i, i + payload_len - 1) end
+end
+
+--[[@type websocket_error]]
+
+--[[FIXME: return strings? also return error as second arg, not third]]
+
+--[[Returns a partial websocket message if this is not the last frame in the message,]]
+--[[or a websocket message if this is the last frame in the message,]]
+--[[or an error code.]]
+--[[@return websocket_message? msg, boolean|websocket_error ready_or_error, websocket_mask? mask, integer? mi, integer? remaining_len]] --[[@param packet string]] --[[@param acc? websocket_message]]
+local decode = function (packet, acc)
+	local h0 = packet:byte(1)
+	local fin = bit.band(h0, 0x80) ~= 0 --[[is final packet?]]
+	if bit.band(h0, 0x70) ~= 0 then return nil, mod.error.invalid_format end --[[TODO: fail the connection]]
+	local opcode = bit.band(h0, 0x0f)
+	if not is_valid_opcode[opcode + 1] then return nil, mod.error.invalid_opcode end --[[TODO: fail the connection]]
+	local h1 = packet:byte(2)
+	local payload_len = bit.band(h1, 0x7f)
+	local mask
+	local i = 3
+	if payload_len == 126 then
+		local b1, b2 = packet:byte(3, 4)
+		--[[FIXME: compare performance of bitwise vs normal operators]]
+		payload_len = bit.bor(bit.lshift(b1, 8), b2)
+		i = 5
+	elseif payload_len == 127 then
+		--[[@type integer, integer, integer, integer, integer, integer, integer, integer]]
+		local b1, b2, b3, b4, b5, b6, b7, b8 = packet:byte(3, 10)
+		local hi = bit.bor(bit.lshift(b1, 24), bit.lshift(b2, 16), bit.lshift(b3, 8), b4)
+		local lo = bit.bor(bit.lshift(b5, 24), bit.lshift(b6, 16), bit.lshift(b7, 8), b8)
+		--[[this is a double, not an integer, but realistically you don't need websocket frames that long]]
+		payload_len = hi * 0x100000000 + lo
+		i = 11
 	end
-	if fin then -- final packet
-		-- TODO: if this was multi-packet we don't have opcode
-		if opcode == 0x1 then
-			-- NOTE: almost certainly a perf issue
-			if not utf8.is_valid(payload) then return nil, nil, mod.error.text_frame_not_valid_utf8 end
-			--[[@type websocket_message_text]]
-			local result = { type = "text", payload = payload }
-			return nil, result
-		elseif opcode == 0x2 then
-			--[[@type websocket_message_binary]]
-			local result = { type = "binary", payload = payload }
-			return nil, result
-		elseif opcode == 0x0 then -- continuation
-			-- TODO: how to pass to next call?
-			acc.payload  = acc.payload .. payload
-			return nil, acc
-		elseif opcode == 0x9 then
-			-- TODO: reply with pong
-			--[[@type websocket_message_ping]]
-			local result = { type = "ping", payload = payload }
-			return nil, result
-		elseif opcode == 0xA then
-			--[[@type websocket_message_pong]]
-			local result = { type = "pong", payload = payload }
-			return nil, result
-		elseif opcode == 0x8 then
-			local status = 0
-			if #payload > 0 then
-				--[[@type integer, integer]]
-				local a, b = payload:byte(1, 2)
-				status = bit.bor(bit.lshift(a, 8), b)
-			end
-			--[[@type websocket_message_close]]
-			local result = { type = "close", status = status, payload = payload:sub(3) }
-			return nil, result
+	if bit.band(h1, 0x80) ~= 0 then --[[has mask]]
+		mask = { packet:byte(i, i + 3) } --[[@type websocket_mask]]
+		i = i + 4
+	else return nil, mod.error.frame_is_not_masked end
+	local payload, mi = unmask(packet, i, payload_len, mask, 1)
+	if not fin and opcode >= 0x8 then return nil, mod.error.control_frame_is_fragmented end
+	if opcode == 0x1 then
+		if not fin and acc then return nil, mod.error.continuation_frame_has_incorrect_opcode end
+		--[[NOTE: almost certainly a perf issue]]
+		if not utf8.is_valid(payload) then return nil, mod.error.text_frame_not_valid_utf8 end
+		--[[@type websocket_message_text]]
+		acc = { type = "text", payload = payload }
+	elseif opcode == 0x2 then
+		if not fin and acc then return nil, mod.error.continuation_frame_has_incorrect_opcode end
+		--[[@type websocket_message_binary]]
+		acc = { type = "binary", payload = payload }
+	elseif opcode == 0x0 then --[[continuation]]
+		if not acc then return nil, mod.error.continuation_frame_as_first_frame end
+		acc.payload  = acc.payload .. payload
+	elseif opcode == 0x9 then
+		--[[TODO: reply with pong?]]
+		--[[@type websocket_message_ping]]
+		acc = { type = "ping", payload = payload }
+	elseif opcode == 0xA then
+		--[[@type websocket_message_pong]]
+		acc = { type = "pong", payload = payload }
+	elseif opcode == 0x8 then
+		local status = 0
+		if #payload > 0 then
+			--[[@type integer, integer]]
+			local a, b = payload:byte(1, 2)
+			status = bit.bor(bit.lshift(a, 8), b)
 		end
-	else
-		if opcode >= 0x8 then return nil, nil, mod.error.control_frame_is_fragmented end
-		if opcode == 0x1 then
-			if acc then return nil, nil, mod.error.continuation_frame_has_incorrect_opcode end
-			-- NOTE: almost certainly a perf issue
-			if not utf8.is_valid(payload) then
-				return nil, nil, mod.error.text_frame_not_valid_utf8
-			end
-			--[[@type websocket_message_text]]
-			local result = { type = "text", payload = payload }
-			return nil, result
-		elseif opcode == 0x2 then
-			if acc then return nil, nil, mod.error.continuation_frame_has_incorrect_opcode end
-			--[[@type websocket_message_binary]]
-			local result = { type = "binary", payload = payload }
-			return nil, result
-		elseif opcode == 0x0 then -- continuation
-			if not acc then return nil, nil, mod.error.continuation_frame_as_first_frame end
-			acc.payload  = acc.payload .. payload
-			return acc
-		end
+		--[[@type websocket_message_close]]
+		acc = { type = "close", status = status, payload = payload:sub(3) }
 	end
+	return acc, fin, mask, mi, (payload_len + i - 1)
 	--[[should split payload into extension + application data]]
 	--[[(requires implementing extensions)]]
 end
 
 --[[@return string? buf]] --[[@param msg websocket_message]]
-local function encode(msg)
+local encode = function (msg)
 	local opcode = mod.opcode[msg.type]
 	if not opcode then return end
 	local s = string.char(bit.bor(0x80, opcode))
 	local len = #msg.payload
 	if len <= 125 then
 		s = s .. string.char(len)
-	elseif len <= 0xFFFF then
-		s = s .. string.char(126, bit.rshift(len, 8), bit.band(len, 0x7F))
+	elseif len <= 0xffff then
+		s = s .. string.char(126, bit.rshift(len, 8), bit.band(len, 0xff))
 	else
-		s = s .. string.char(127, bit.rshift(len, 24), bit.band(bit.rshift(len, 16), 0x7F), bit.band(bit.rshift(len, 8), 0x7F), bit.band(len, 0x7F))
+		local len_hi = math.floor(len / 0x100000000)
+		s = s .. string.char(
+			127,
+			bit.rshift(len_hi, 24), bit.band(bit.rshift(len_hi, 16), 0xff),
+			bit.band(bit.rshift(len_hi, 8), 0xff), bit.band(len_hi, 0xff),
+			bit.rshift(len, 24), bit.band(bit.rshift(len, 16), 0xff),
+			bit.band(bit.rshift(len, 8), 0xff), bit.band(len, 0xff)
+		)
 	end
 	return s .. msg.payload
 end
@@ -241,12 +229,28 @@ function mod.websocket(sock, req, read, close, epoll)
 	if #key ~= 24 then return err(sock, "Invalid header length - should be 24: Sec-WebSocket-Key") end
 	if not key:find("^[A-Za-z0-9+/]+==$") then return err(sock, "Invalid header - not base64: Sec-WebSocket-Key") end
 	--[[TODO: check Sec-WebSocket-Protocol... and just reject them all?]]
-	local acc, msg
+	local msg, ready, mask, mi
+	local remaining_len = 0
 	local write, remove = epoll:modify(sock.fd, function ()
+		--[[FIXME: set size = 131072 for chrome, but only *after* handling has been fixed]]
 		local packet = sock:receive()
+		--[[TODO: consider adding `i` parameter to `packet` to avoid `:sub`]]
 		if not packet then return end
-		acc, msg = decode(packet, acc)
-		if msg then read(sock, msg); msg = nil end
+		while #packet > 0 do
+			if remaining_len > 0 then
+				local part
+				part, mi = unmask(packet, 1, remaining_len, mask, mi)
+				msg.payload = msg.payload .. part
+			else
+				--[[@diagnostic disable-next-line: cast-local-type]]
+				msg, ready, mask, mi, remaining_len = decode(packet, msg)
+				if not msg then ready = nil; remaining_len = 0; return end --[[errored]]
+			end
+			local old_packet_len = #packet
+			packet = packet:sub(remaining_len + 1)
+			remaining_len = remaining_len - old_packet_len
+			if ready and remaining_len == 0 then read(sock, msg); msg = nil end
+		end
 	end, function () if close then close(sock) end end)
 	assert(write)
 	write((([[
