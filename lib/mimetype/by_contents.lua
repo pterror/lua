@@ -575,6 +575,7 @@ function mod.mimetype(buffer, pos)
 		if check_mask("\x04", 1, "\x06") then return "mp2", "audio/mpeg" end
 		if check_mask("\x06", 1, "\x06") then return "mp1", "audio/mpeg" end
 	end
+	if check("M.K.", 0x438) then return "mod", "audio/mod" end
 	if check("CD001", 0x8001) or check("CD001", 0x8801) or check("CD001", 0x9001) then return "iso", "application/x-iso9660-image" end
 	if buffer:find("^SVF v%d+%.?%d*\0", pos) then return "svf", "image/vnd.svf" end
 	if check("AutoCAD Binary DXF") then return "dxf", "model/vnd.autodesk.dxf" end

@@ -80,6 +80,27 @@ mod.b = mod.string_element("b")
 mod.em = mod.string_element("em")
 mod.strong = mod.string_element("strong")
 
+mod.ol = mod.element("ol")
+mod.ul = mod.element("ul")
+mod.li = mod.element("li")
+
+mod.form = mod.element("form")
+mod.input = mod.element("input")
+mod.label = mod.element("label")
+mod.fieldset = mod.element("fieldset")
+mod.select = mod.element("select")
+mod.option = mod.element("option")
+mod.button = mod.element("button")
+
+mod.img = mod.element("img")
+mod.iframe = mod.element("iframe")
+mod.video = mod.element("video")
+mod.audio = mod.element("audio")
+mod.source = mod.element("source")
+
+mod.canvas = mod.element("canvas")
+mod.svg = mod.element("svg")
+
 -- local dl_div = mod.element("div")
 
 return mod

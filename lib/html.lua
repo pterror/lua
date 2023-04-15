@@ -92,6 +92,7 @@ mod.label = mod.element("label")
 mod.fieldset = mod.element("fieldset")
 mod.select = mod.element("select")
 mod.option = mod.element("option")
+mod.button = mod.element("button")
 
 mod.img = mod.element("img")
 mod.iframe = mod.element("iframe")

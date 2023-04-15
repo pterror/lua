@@ -26,6 +26,8 @@ database.new = function (self, path)
 	if not success then return success, error end
 	return ret
 end
+--[[@param path string]]
+mod.new = function (path) return database:new(path) end
 
 --[[@class sqlitex_model<t>: { schema: t; }]]
 --[[@field name string]]

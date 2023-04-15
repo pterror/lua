@@ -49,7 +49,7 @@ textbar.new = function (self, display, x, y, width, height, background, font, do
 		display:set_class_hint(window, class_hints)
 		xlib.free(class_hints)
 		local hints = xlib.alloc_size_hints()
-		hints[0].flags = bit.bor(xlib.size_flags.p_position, xlib.size_flags.p_size, xlib.size_flags.p_min_size, xlib.size_flags.p_max_size)
+		hints[0].flags = bit.bor(xlib.size_flag.p_position, xlib.size_flag.p_size, xlib.size_flag.p_min_size, xlib.size_flag.p_max_size)
 		hints[0].x = x
 		hints[0].y = y
 		hints[0].base_width = width

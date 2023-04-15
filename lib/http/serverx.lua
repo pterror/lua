@@ -10,9 +10,11 @@ local epoll_ = require("dep.epoll")
 
 local mod = {}
 
---[[TODO: sse and ws]]
---[[@alias sse_callback fun(): (send: fun(evt: sse_event))]]
---[[@alias ws_callback fun(req: http_request)]]
+--[[TODO: sse]]
+--[[@alias sse_callback fun(): (send: (fun(evt: sse_event)))]]
+--[[@alias ws_callback fun(sock: luajitsocket, msg: websocket_message)]]
+--[[@alias ws_open_callback fun(sock: luajitsocket, send: websocket_send, close: websocket_close)]]
+--[[@alias ws_close_callback fun(sock: luajitsocket)]]
 
 --[[@class sse_event]]
 
@@ -20,8 +22,10 @@ local mod = {}
 --[[@field http http_callback?]]
 --[[@field sse sse_callback?]]
 --[[@field ws ws_callback?]]
+--[[@field ws_open ws_open_callback?]]
+--[[@field ws_close ws_close_callback?]]
 
---[[TODO: figure out whether this can be removed after restructuring https server?]]
+--[[TODO: figure out whether `make_connection_handler` can be removed after restructuring https server?]]
 
 --[[@param handler http_like_callbacks]] --[[@param epoll epoll]]
 mod.make_connection_handler = function (handler, epoll)
@@ -34,13 +38,15 @@ mod.make_connection_handler = function (handler, epoll)
 		local req, i = http.string_to_http_request(s)
 		if not req or not i then return end
 		-- TODO: send response
-		--- @type http_response
-		local res = { headers = {} }
+		local res = { headers = {} } --[[@type http_response]]
 		-- TODO: sse - since the request is the same as normal http
 		-- it's a lot harder to just use if-else
-		if req.headers["Upgrade"] == "websocket" then
-			-- FIXME: api
-			ws.websocket(epoll, client, req, handler.ws) -- TODO: should be in serverx, not server
+		if (req.headers["upgrade"] or {})[1] == "websocket" then
+			--[[FIXME: api. the handler needs a persistent handle to the connection]]
+			local send, close = ws.websocket(client, req, handler.ws, handler.ws_close, epoll)
+			if send and close and handler.ws_open then
+				handler.ws_open(client, send, close)
+			end
 		else
 			handler.http(req, res)
 			client:send(http.http_response_to_string(res))
@@ -51,9 +57,11 @@ end
 
 --[[@param handler http_callback|http_like_callbacks]] --[[@param port? integer]] --[[@param epoll? epoll]]
 mod.server = function (handler, port, epoll)
+	local is_running = not epoll
 	epoll = epoll or epoll_:new()
 	if type(handler) == "function" then handler = { http = handler } end
-	return socket.server(mod.make_connection_handler(handler, epoll), port or 80, epoll)
+	socket.server(mod.make_connection_handler(handler, epoll), port or 80, epoll)
+	if is_running then epoll:loop() end
 end
 
 return mod

@@ -18,20 +18,18 @@ mod.server = function (callback, port, epoll)
 	epoll:add(server.fd, function ()
 		local client = server:accept()
 		if not client then return end --[[silently fail]]
-		local state
-		local remove
+		local state, remove
+		local client_close = client.close
 		_, remove = epoll:add(
 			client.fd,
-			function ()  state = callback(client, state) end,
+			function () state = callback(client, state) end,
 			--[[@diagnostic disable-next-line: need-check-nil]]
-			function () client:close(); remove() end
+			function () client_close(client); remove() end
 		)
-		local client_close = client.close
 		--[[@diagnostic disable-next-line: duplicate-set-field, need-check-nil]]
 		client.close = function (self) client_close(self); remove() end
 	end, is_running and function () is_running = false end or nil)
 
-	-- FIXME: a stop() callback for user
 	while is_running do epoll:wait() end
 end
 

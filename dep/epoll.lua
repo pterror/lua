@@ -7,7 +7,7 @@ local ffi = require("ffi")
 
 local mod = {}
 
-local epoll_c, EPOLLONESHOT, read_c, write_c
+local epoll_c, read_c, write_c
 
 if ffi.os == "Windows" then
 	epoll_c = assert(ffi.load("wepoll.dll"))
@@ -37,13 +37,11 @@ if ffi.os == "Windows" then
 		int epoll_ctl(HANDLE ephnd, int op, SOCKET sock, struct epoll_event* event);
 		int epoll_wait(HANDLE ephnd, struct epoll_event* events, int maxevents, int timeout);
 	]]
-	EPOLLONESHOT = 0x80000000
-	local len_ptr = ffi.new("int[1]")
 	read_c = function (s, buf, len) return ws2_32.recv(s, buf, len, 0) end
 	write_c = function (s, buf, len) return ws2_32.send(s, buf, len, 0) end
 else
 	epoll_c = ffi.C
-	-- https://github.com/torvalds/linux/blob/5bfc75d92efd494db37f5c4c173d3639d4772966/include/uapi/linux/eventpoll.h
+	--[[https://github.com/torvalds/linux/blob/5bfc75d92efd494db37f5c4c173d3639d4772966/include/uapi/linux/eventpoll.h]]
 	ffi.cdef [[
 		struct epoll_event {
 			uint32_t events; /* Epoll events */
@@ -56,7 +54,6 @@ else
 		int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
 		int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
 	]]
-	EPOLLONESHOT = 0x80000000
 	read_c = epoll_c.read
 	write_c = epoll_c.write
 end
@@ -81,13 +78,13 @@ local buf = ffi.new("char[65536]") --[[@type string_c]]
 
 --[[@class epoll]]
 local epoll = {}
+epoll.__index = epoll
+mod.epoll = epoll
 
 epoll.new = function (self)
-	self.__index = self
 	return setmetatable({ --[[@class epoll]]
 		fd = epoll_c.epoll_create(1),
-		read_cbs = {}, --[[@type (fun(data: string)?)[] ]]
-		read0_cbs = {}, --[[@type (fun()?)[] ]]
+		read_cbs = {}, --[[@type (fun()?)[] ]]
 		write_cbs = {}, --[[@type (fun()?)[] ]]
 		close_cbs = {}, --[[@type (fun()?)[] ]]
 		rets = {}, --[[@type { [1]: epoll_write; [2]: epoll_remove; }? }[] ]]
@@ -96,36 +93,51 @@ epoll.new = function (self)
 end
 function mod.new() return epoll:new() end
 
+--[[@param fd fd_c]] --[[@param read epoll_read]]
+local read_cb = function (fd, read)
+	return function ()
+		--[[FIXME: ioctl to get full message in one call]]
+		local len = read_c(fd, buf, 65536)
+		if len ~= -1 then read(ffi.string(buf, len)) end
+	end
+end
+
+--[[@param self epoll]] --[[@param fd fd_c]]
+local remove_fd = function (self, fd)
+	if self.rets[fd] then
+		self.read_cbs[fd] = nil
+		self.write_cbs[fd] = nil
+		self.close_cbs[fd] = nil
+		self.rets[fd] = nil
+		self.count = self.count - 1
+		--[[do i need to close?]]
+	end
+end
+
 --[[@return epoll_write? write, epoll_remove? remove, string? err]]
 --[[@param fd fd_c]] --[[@param read epoll_read]] --[[@param close epoll_close?]] --[[@param weak boolean? if false, self.count is not incremented]]
 epoll.add = function (self, fd, read, close, weak)
 	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	fd = tonumber(fd) --[[@type fd_c]]
-	if self.read_cbs[fd] or self.read0_cbs[fd] then return nil, nil, "epoll: already polling fd: " .. fd end
+	if self.read_cbs[fd] then return nil, nil, "epoll: already polling fd: " .. fd end
 	local events = epoll_event({ { events = 1, fd = fd } }) --- @type {[0]:epoll_event}
 	local fninfo = debug.getinfo(read)
-	if fninfo.nparams > 0 or fninfo.isvararg then self.read_cbs[fd] = read
-	else self.read0_cbs[fd] = read end
+	self.read_cbs[fd] = (fninfo.nparams > 0 or fninfo.isvararg) and read_cb(fd, read) or read
 	local write_buf = ""
 	self.write_cbs[fd] = function ()
 		write_c(fd, write_buf, #write_buf)
 		write_buf = ""
-		events[0].events = 1 -- EPOLLIN
+		events[0].events = 1 --[[EPOLLIN]]
 		epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_MOD]] 3, fd, events)
 	end
 	self.close_cbs[fd] = close
 	local write = function (data) --[[@param data string]]
 		write_buf = write_buf .. data
-		events[0].events = 5 -- EPOLLIN | EPOLLOUT
+		events[0].events = 5 --[[EPOLLIN | EPOLLOUT]]
 		epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_MOD]] 3, fd, events)
 	end
 	local remove = function ()
-		self.read_cbs[fd] = nil
-		self.read0_cbs[fd] = nil
-		self.write_cbs[fd] = nil
-		self.close_cbs[fd] = nil
-		self.rets[fd] = nil
-		self.count = self.count - 1
+		remove_fd(self, fd)
 		epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_DEL]] 2, fd, events)
 	end
 	epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_ADD]] 1, fd, events)
@@ -138,14 +150,9 @@ mod.add = epoll.add
 --[[@return epoll_write? write, epoll_remove? remove, string? error]]
 --[[@param fd fd_c]] --[[@param read epoll_read]] --[[@param close epoll_close?]]
 epoll.modify = function (self, fd, read, close)
-	if not self.read_cbs[fd] and not self.read0_cbs[fd] then return nil, nil, "epoll: error: not polling fd: " .. fd end
-	if debug.getinfo(read).nparams > 0 then
-		self.read_cbs[fd] = read
-		self.read0_cbs[fd] = nil
-	else
-		self.read0_cbs[fd] = read
-		self.read_cbs[fd] = nil
-	end
+	if not self.read_cbs[fd] then return nil, nil, "epoll: error: not polling fd: " .. fd end
+	local fninfo = debug.getinfo(read)
+	self.read_cbs[fd] = (fninfo.nparams > 0 or fninfo.isvararg) and read_cb(fd, read) or read
 	self.close_cbs[fd] = close
 	local rets = self.rets[fd]
 	--[[@diagnostic disable-next-line: need-check-nil]]
@@ -158,37 +165,30 @@ epoll.wait = function (self)
 	local event = events[0] --[[@type epoll_event]]
 	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	local fd = tonumber(event.fd) --[[@type fd_c]]
-	if bit.band(event.events, --[[EPOLLIN]] 1) ~= 0 then
-		local cb0 = self.read0_cbs[fd]
-		if cb0 then cb0()
-		else
-			-- FIXME: ioctl to get full message in one call
-			local len = read_c(fd, buf, 65536)
-			if len ~= -1 then
-				local cb = self.read_cbs[fd]
-				if cb then cb(ffi.string(buf, len or nil)) end
-			end
-		end
+	if bit.band(event.events, --[[EPOLLIN]] 0x1) ~= 0 then
+		local cb = self.read_cbs[fd]
+		if cb then cb()
+		else read_c(fd, buf, 65536) end --[[discard]]
 	end
-	if bit.band(event.events, --[[EPOLLOUT]] 4) ~= 0 then
+	if bit.band(event.events, --[[EPOLLOUT]] 0x4) ~= 0 then
 		local cb = self.write_cbs[fd]
 		if cb then cb() end
 	end
-	if bit.band(event.events, --[[EPOLLHUP]] 16) ~= 0 then
+	if bit.band(event.events, --[[EPOLLHUP]] 0x10) ~= 0 then
 		local cb = self.close_cbs[fd]
 		if cb then cb() end
-		self.read_cbs[fd] = nil
-		self.read0_cbs[fd] = nil
-		self.write_cbs[fd] = nil
-		self.close_cbs[fd] = nil
-		self.rets[fd] = nil
-		self.count = self.count - 1
-		-- do i need to close?
+		remove_fd(self, fd)
+	end
+	if bit.band(event.events, --[[EPOLLRDHUP]] 0x2000) ~= 0 then
+		print("rdhup")
+		local cb = self.close_cbs[fd]
+		if cb then cb() end
+		remove_fd(self, fd)
 	end
 end
 mod.wait = epoll.wait
 
--- loops forever
+--[[loops forever]]
 epoll.loop = function (self) while self.count > 0 do self:wait() end end
 mod.loop = epoll.loop
 

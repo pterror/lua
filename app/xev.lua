@@ -35,7 +35,7 @@ writers[et.button_release] = writers[et.button_press]
 writers[et.key_press] = function (e_, is_release)
 	local e = e_.xkey
 	local keysym = d:keycode_to_keysym(e.keycode, 0)
-	local ls = xlib.lookup_string(e)
+	local ls = xlib.lookup_string(e) --[[FIXME: why does it give 0 bytes]]
 	--[[FIXME]]
 	-- local mbls = (not is_release) and xlib.mb_lookup_string(e)
 	io.stdout:write(
@@ -65,9 +65,9 @@ local f = function ()
 end
 local root = d.c[0].screens[d.c[0].default_screen].root
 local w = assert(d:create_simple_window(root, 0, 0, 1000, 1000, 0, 0, 0))
-f()
 
 epoll:add(d.c[0].fd, f)
+
 d:map_window(w)
 f()
 d:grab_button(xlib.button.any, xlib.key_button_mask.any_modifier, w, false, 0, xlib.grab_mode.async, xlib.grab_mode.async, xlib.none_window, xlib.none_cursor)
@@ -75,5 +75,4 @@ f()
 d:grab_key(xlib.any_key, xlib.key_button_mask.any_modifier, w, false, xlib.grab_mode.async, xlib.grab_mode.async)
 f()
 d:grab_pointer(w, true, 0, xlib.grab_mode.async, xlib.grab_mode.async, xlib.none_window, xlib.none_cursor, xlib.current_time)
-f()
 epoll:loop()

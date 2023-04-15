@@ -28,7 +28,7 @@ random = math.random
 if arg[1] == "help" then
 	print("functions:")
 	for k, v in pairs(_G) do
-		if type(v) == "function" and not tostring(v):match("^function: builtin") then
+		if type(v) == "function" and (not tostring(v):match("^function: builtin") or k == "random") and k ~= "require" then
 			print("\t" .. k)
 		end
 	end

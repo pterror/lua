@@ -120,8 +120,10 @@ local handle_file = function (path) --[[@param path string]]
 	local ext = (path:match("%.([^./]+)$") or ""):lower() --[[@type string]]
 	if not is_text[ext] then
 		ext = (path:match("%/([^./]+)$") or ""):lower()
-		if not filename_is_text[ext] then return end
+		if not filename_is_text[ext] then ext = "" end
 	end
+	local line = f:read("*Line") --[[@type string]]
+  if not line or (#line >= 3 and not line:find("^[%z\x01-\x7f][%z\x01-\x7f][%z\x01-\x7f]")) then return end
 	local info = infos[ext]
 	if not info then
 		info = { ext = ext, files = 0, blank = 0, comment = 0, code = 0 }
@@ -132,20 +134,21 @@ local handle_file = function (path) --[[@param path string]]
 	local csp_ = csp[ext]
 	local cep_ = cep[ext]
 	local cp_ = cp[ext]
-	local line = f:read("*Line") --[[@type string]]
 	while line do
-		if line:match("^%s+$") then info.blank = info.blank + 1
-		elseif csp_ and line:match(csp_) then
+		if line:find("^%s+$") then info.blank = info.blank + 1
+		elseif csp_ and line:find(csp_) then
 			info.comment = info.comment + 1
-			while line and not line:match(cep_) do
+			while line and not line:find(cep_) do
 				info.comment = info.comment + 1
 				line = f:read("*Line")
 			end
-		elseif cp_ and line:match(cp_) then info.comment = info.comment + 1
+		elseif cp_ and line:find(cp_) then info.comment = info.comment + 1
 		else info.code = info.code + 1 end
 		line = f:read("*Line")
 	end
 end
+
+local ignore_dir = { [".git"] = true, node_modules = true }
 
 local handle_dir
 handle_dir = function (path, top) --[[@param path string]] --[[@param top? boolean]]
@@ -158,7 +161,7 @@ handle_dir = function (path, top) --[[@param path string]] --[[@param top? boole
 	for f in iter, state do
 		f = f --[[@type file_info]]
 		if f.is_dir then
-			handle_dir(path .. "/" .. f.name)
+			if not ignore_dir[f.name] then handle_dir(path .. "/" .. f.name) end
 		else
 			handle_file(path .. "/" .. f.name)
 		end

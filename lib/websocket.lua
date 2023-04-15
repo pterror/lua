@@ -46,7 +46,7 @@ local is_valid_opcode = {
 	true, true, true, false, false, false, false, false,
 }
 
---[[@alias websocket_send fun(msg: string)]]
+--[[@alias websocket_send fun(msg: websocket_message)]]
 --[[@alias websocket_close fun()]]
 
 --[[@class websocket_message_base]]
@@ -135,11 +135,11 @@ local decode = function (packet, acc)
 		local bytes = {}
 		local mi = 1
 		local MI_NEXT = { 2, 3, 4, 1 }
-		for j = i, i + payload_len - 1 do
-			bytes[j + 1 - payload_len] = bit.bxor(packet:byte(j), mask[mi])
+		for j = 1, payload_len do
+			bytes[j] = bit.bxor(packet:byte(i + j - 1), mask[mi])
 			mi = MI_NEXT[mi]
 		end
-		payload = table.concat(bytes)
+		payload = string.char(unpack(bytes))
 	else
 		payload = packet:sub(i, i + payload_len - 1)
 	end
@@ -169,9 +169,12 @@ local decode = function (packet, acc)
 			local result = { type = "pong", payload = payload }
 			return nil, result
 		elseif opcode == 0x8 then
-			--[[@type integer, integer]]
-			local a, b = payload:byte(1, 2)
-			local status = bit.bor(bit.lshift(a, 8), b)
+			local status = 0
+			if #payload > 0 then
+				--[[@type integer, integer]]
+				local a, b = payload:byte(1, 2)
+				status = bit.bor(bit.lshift(a, 8), b)
+			end
 			--[[@type websocket_message_close]]
 			local result = { type = "close", status = status, payload = payload:sub(3) }
 			return nil, result
@@ -198,16 +201,16 @@ local decode = function (packet, acc)
 			return acc
 		end
 	end
-	-- should split payload into extension + application data
-	-- (requires implementing extensions)
+	--[[should split payload into extension + application data]]
+	--[[(requires implementing extensions)]]
 end
 
 --[[@return string? buf]] --[[@param msg websocket_message]]
 local function encode(msg)
 	local opcode = mod.opcode[msg.type]
 	if not opcode then return end
-	local s = string.char(bit.bor(0x80, opcode)) --- one huge message since i'm lazy
-	local len = #msg
+	local s = string.char(bit.bor(0x80, opcode))
+	local len = #msg.payload
 	if len <= 125 then
 		s = s .. string.char(len)
 	elseif len <= 0xFFFF then
@@ -215,29 +218,38 @@ local function encode(msg)
 	else
 		s = s .. string.char(127, bit.rshift(len, 24), bit.band(bit.rshift(len, 16), 0x7F), bit.band(bit.rshift(len, 8), 0x7F), bit.band(len, 0x7F))
 	end
-	return s .. msg
+	return s .. msg.payload
 end
 
 -- TODO: consider limiting packet size
 
 -- TODO: nested function. outer takes the handler, returns function(sock, req)
 --[[@return websocket_send? send, websocket_close? close]]
---[[@param epoll epoll]]
 --[[@param sock luajitsocket]]
 --[[@param req http_request]]
---[[@param handler fun(msg: websocket_message)]]
-function mod.websocket(epoll, sock, req, handler)
-	if req.headers["Upgrade"] ~= "websocket" or req.headers["Connection"] ~= "Upgrade" then return nil end
-	-- FIXME: return numeric error, let caller decide how to respond
-	if req.headers["Seq-WebSocket-Version"] ~= "13" then return err(sock, "Unsupported WebSocket version - only v13 supported") end
-	-- neither of the two currently registered extensions seem to be very relevant
-	if req.headers["Sec-WebSocket-Extensions"] then return err(sock, "WebSocket extensions are not supported") end
-	local key = req.headers["Sec-WebSocket-Key"][1]
+--[[@param read fun(sock: luajitsocket, msg: websocket_message)]]
+--[[@param close fun(sock: luajitsocket)|nil]]
+--[[@param epoll epoll]]
+function mod.websocket(sock, req, read, close, epoll)
+	if (req.headers["upgrade"] or {})[1] ~= "websocket" or (req.headers["connection"] or {})[1] ~= "Upgrade" then return nil end
+	--[[FIXME: return numeric error, let caller decide how to respond]]
+	if (req.headers["sec-websocket-version"] or {})[1] ~= "13" then return err(sock, "Unsupported WebSocket version - only v13 supported") end
+	--[[chrome supports permessage-deflate and client_max_window_bits]]
+	--[[if req.headers["sec-websocket-extensions"] then return err(sock, "WebSocket extensions are not supported") end]]
+	local key = (req.headers["sec-websocket-key"] or {})[1]
 	if key == nil then return err(sock, "Missing header: Sec-WebSocket-Key") end
 	if #key ~= 24 then return err(sock, "Invalid header length - should be 24: Sec-WebSocket-Key") end
 	if not key:find("^[A-Za-z0-9+/]+==$") then return err(sock, "Invalid header - not base64: Sec-WebSocket-Key") end
-	-- TODO: check Sec-WebSocket-Protocol... and just reject them all?
-	sock:send((([[
+	--[[TODO: check Sec-WebSocket-Protocol... and just reject them all?]]
+	local acc, msg
+	local write, remove = epoll:modify(sock.fd, function ()
+		local packet = sock:receive()
+		if not packet then return end
+		acc, msg = decode(packet, acc)
+		if msg then read(sock, msg); msg = nil end
+	end, function () if close then close(sock) end end)
+	assert(write)
+	write((([[
 HTTP/1.1 101 Switching Protocols
 Upgrade: websocket
 Connection: Upgrade
@@ -245,15 +257,6 @@ Sec-WebSocket-Accept: ]]..to_base64(sha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC
 
 
 ]]):gsub("\n", "\r\n")))
-	-- TODO: handle the socket stuff
-	local acc, msg, err2
-	local write, remove = epoll:modify(sock.fd, function ()
-		-- look into coroutines or something
-		local packet, err3 = sock:receive()
-		if type(packet) ~= "string" then return end
-		acc, msg, err2 = decode(packet, acc)
-		if msg then handler(msg); msg = nil end
-	end, function () sock:close() end)
 	--[[@param msg2 websocket_message]]
 	local send = function (msg2)
 		local buf = encode(msg2)

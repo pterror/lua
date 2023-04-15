@@ -71,17 +71,18 @@ local SQLITE_NULL = 5
 --[[@field sqlite3_close_v2 fun(db: sqlite_c): sqlite_error_c]]
 --[[@field sqlite3_errmsg fun(db: sqlite_c): string_c]]
 
+--[[FIXME: make the `ffi.load`s work]]
 --[[@type sqlite_ffi]]
 local sqlite_ffi
 if ffi.os == "Windows" then
 	if ffi.arch == "x64" then
-		sqlite_ffi = ffi.load("dep/sqlite3-x64.dll") --[[@type sqlite_ffi]]
+		sqlite_ffi = ffi.load("dep/sqlite.dll")
 	else --[[assume x86]]
-		sqlite_ffi = ffi.load("dep/sqlite3-x86.dll") --[[@type sqlite_ffi]]
+		sqlite_ffi = ffi.load("dep/sqlite-x86.dll")
 	end
 elseif ffi.os == "Linux" then
-	--[[TODO: bundle instead of relyign on system installation]]
-	sqlite_ffi = ffi.load("libsqlite3.so") --- @type sqlite_ffi
+	--[[TODO: bundle instead of relying on system installation]]
+	sqlite_ffi = ffi.load("sqlite3") --- @type sqlite_ffi
 else
 	--[[TODO: i think macos has it built in]]
 	error("os " .. ffi.os .. "not supported")

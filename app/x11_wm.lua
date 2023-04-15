@@ -105,7 +105,7 @@ end
 WM.fn.pop_in_window = function (d, w, p, i)
 	local hints = d:get_wm_normal_hints(w)
 	--[[if the window cannot be moved or resized then we don't tile it]]
-	if hints and bit.band(hints.flags, bit.bor(xlib.size_flags.p_position, xlib.size_flags.p_size, xlib.size_flags.p_min_size, xlib.size_flags.p_max_size)) ~= 0 then return end
+	if hints and bit.band(hints.flags, bit.bor(xlib.size_flag.p_position, xlib.size_flag.p_size, xlib.size_flag.p_min_size, xlib.size_flag.p_max_size)) ~= 0 then return end
 end
 
 --[[@param d xlib_display]] --[[@param w xlib_window_c]]

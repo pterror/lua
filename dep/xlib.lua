@@ -7,6 +7,9 @@ local mod = {}
 --[[@type xlib_ffi]]
 local xlib_ffi = ffi.load("X11")
 
+--[[@type xlib_tst_ffi]]
+local xlib_tst_ffi = ffi.load("Xtst")
+
 --[[macro definitions: https://github.com/mirror/libX11/blob/bccd787a565d3a88673bfc06574c1939f98d8d72/include/X11/Xlib.h]]
 
 --[[consider renaming to X11_name]]
@@ -44,6 +47,11 @@ ffi.cdef [[
 	typedef XrmHashBucket *XrmHashTable;
 	typedef XrmHashTable XrmSearchList[];
 	typedef struct _XrmHashBucketRec *XrmDatabase;
+
+	typedef unsigned long XRecordClientSpec;
+	typedef unsigned long XRecordContext;
+	typedef struct _XRecordInterceptData XRecordInterceptData;
+	typedef void (*XRecordInterceptProc)(XPointer closure, XRecordInterceptData *recorded_data);
 
 	typedef struct _XExtData {
 		int number;
@@ -757,6 +765,56 @@ ffi.cdef [[
 		int chars_matched;
 	} XComposeStatus;
 
+	typedef struct {
+		unsigned char first;
+		unsigned char last;
+	} XRecordRange8;
+	
+	typedef struct {
+		unsigned short first;
+		unsigned short last;
+	} XRecordRange16;
+	
+	typedef struct {
+		XRecordRange8 ext_major;
+		XRecordRange16 ext_minor;
+	} XRecordExtRange;
+	
+	typedef struct {
+		XRecordRange8 core_requests;
+		XRecordRange8 core_replies;
+		XRecordExtRange ext_requests;
+		XRecordExtRange ext_replies;
+		XRecordRange8 delivered_events;
+		XRecordRange8 device_events;
+		XRecordRange8 errors;
+		Bool client_started;
+		Bool client_died;
+	} XRecordRange;
+
+	typedef struct {
+		XRecordClientSpec client;
+		unsigned long nranges;
+		XRecordRange **ranges;
+	} XRecordClientInfo;
+
+	typedef struct {
+		Bool enabled;
+		int datum_flags;
+		unsigned long nclients;
+		XRecordClientInfo **client_info;
+	} XRecordState;
+
+	struct _XRecordInterceptData {
+		XID id_base;
+		Time server_time;
+		unsigned long client_seq;
+		int category;
+		Bool client_swapped;
+		unsigned char *data;
+		unsigned long data_len;
+	};
+
 	int XFree(void *data);
 	void (*XSetErrorHandler(void (*handler)(Display *, XErrorEvent *)))();
 	Display *XOpenDisplay(const char* display_name);
@@ -932,6 +990,21 @@ ffi.cdef [[
 	char *XmbResetIC(XIC ic);
 	wchar_t *XwcResetIC(XIC ic);
 	char *Xutf8ResetIC(XIC ic);
+
+	Status XRecordQueryVersion(Display *display, int cmajor_return, int cminor_return);
+	XRecordContext XRecordCreateContext(Display *display, int datum_flags, XRecordClientSpec *clients, int nclients, XRecordRange **ranges, int nranges);
+	XRecordRange *XRecordAllocRange(void);
+	Status XRecordRegisterClients(Display *display, XRecordContext context, int datum_flags, XRecordClientSpec *clients, int nclients, XRecordRange *ranges, int nranges);
+	Status XRecordUnRegisterClients(Display *display, XRecordContext context, XRecordClientSpec *clients, int nclients);
+	Status XRecordGetContext(Display *display, XRecordContext context, XRecordState **state_return);
+	void XRecordFreeState(XRecordState *state);
+	Status XRecordEnableContext(Display *display, XRecordContext context, XRecordInterceptProc callback, XPointer closure);
+	Status XRecordEnableContextAsync(Display *display, XRecordContext context, XRecordInterceptProc callback, XPointer closure);
+	void XRecordProcessReplies(Display *display);
+	void XRecordFreeData(XRecordInterceptData *data);
+	Status XRecordDisableContext(Display *display, XRecordContext context);
+	XID XRecordIdBaseMask(Display *display);
+	Status XRecordFreeContext(Display *display, XRecordContext context);
 ]]
 
 --[[private fields omitted]]
@@ -1508,7 +1581,7 @@ ffi.cdef [[
 --[[@field screen ptr_c<xlib_screen_c>]]
 
 --[[@class xlib_size_hints_c]]
---[[@field flags xlib_size_flags marks which fields in this structure are defined]]
+--[[@field flags xlib_size_flag marks which fields in this structure are defined]]
 --[[@field x integer]]
 --[[@field y integer]]
 --[[@field width integer should set so old wms don't mess up]]
@@ -1540,6 +1613,54 @@ ffi.cdef [[
 --[[@class xlib_compose_status_c]]
 --[[@field compose_ptr xlib_pointer_c state table pointer]]
 --[[@field matched integer match state]]
+
+--[[@class xlib_record_client_spec_c: integer]]
+--[[@class xlib_record_context_c: integer]]
+
+--[[@alias xlib_record_intercept_proc_c fun(closure: ffi.cdata*, recorded_data: ptr_c<xlib_record_intercept_data_c>)]]
+
+--[[@class xlib_record_range_8_c]]
+--[[@field first integer]]
+--[[@field last integer]]
+
+--[[@class xlib_record_range_16_c]]
+--[[@field first integer]]
+--[[@field last integer]]
+
+--[[@class xlib_record_ext_range_c]]
+--[[@field ext_major xlib_record_range_8_c]]
+--[[@field ext_minor xlib_record_range_16_c]]
+
+--[[@class xlib_record_range_c]]
+--[[@field core_requests xlib_record_range_8_c core X requests]]
+--[[@field core_replies xlib_record_range_8_c core X replies]]
+--[[@field ext_requests xlib_record_ext_range_c extension requests]]
+--[[@field ext_replies xlib_record_ext_range_c extension replies]]
+--[[@field delivered_events xlib_record_range_8_c delivered core and ext events]]
+--[[@field device_events xlib_record_range_8_c all core and ext device events]]
+--[[@field errors xlib_record_range_8_c  core X and ext errors]]
+--[[@field client_started boolean connection setup reply]]
+--[[@field client_died boolean notice of client disconnect]]
+
+--[[@class xlib_record_client_info_c]]
+--[[@field client xlib_record_client_spec_c]]
+--[[@field nranges integer]]
+--[[@field ranges ptr_c<xlib_record_range_c[]> ]]
+
+--[[@class xlib_record_state_c]]
+--[[@field enabled boolean]]
+--[[@field datum_flags xlib_record_datum_flag]]
+--[[@field nclients integer]]
+--[[@field client_info ptr_c<xlib_record_client_info_c[]> ]]
+
+--[[@class xlib_record_intercept_data_c]]
+--[[@field id_base xlib_id_c]]
+--[[@field server_time xlib_time_c]]
+--[[@field client_seq integer]]
+--[[@field category integer]]
+--[[@field client_swapped boolean]]
+--[[@field data string]]
+--[[@field data_len integer in 4-byte units]]
 
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
 mod.none_window = 0 --[[@type xlib_window_c]]
@@ -2011,12 +2132,25 @@ mod.request_code = {
 mod.bitmap_status = { success = 0, open_failed = 1, file_invalid = 2, no_memory = 3 }
 
 --[[u = user specified, p = program specified]]
---[[@enum xlib_size_flags]]
-mod.size_flags = {
+--[[@enum xlib_size_flag]]
+mod.size_flag = {
 	us_position = 0x1, us_size = 0x2,
 	p_position = 0x4, p_size = 0x8, p_min_size = 0x10, p_max_size = 0x20, p_resize_inc = 0x40, p_aspect = 0x80,
 	p_base_size = 0x100, p_win_gravity = 0x200,
 }
+
+
+--[[@enum xlib_record_client_filter]]
+mod.record_client_filter = { current = 1, future = 2, all = 3 }
+--[[@enum xlib_record_datum_flag]]
+mod.record_datum_flag = { none = 0, from_server_time = 0x1, from_client_time = 0x2, from_client_sequence = 0x4 }
+--[[@enum xlib_record_category]]
+mod.record_category = {
+	from_server = 0, from_client = 1, client_started = 2, client_died = 3, start_of_data = 4, end_of_data = 5
+}
+mod.record_bad_context = 0 --[[@type xlib_record_context_c]]
+mod.record_num_errors = 0
+mod.record_num_events = 0
 
 --[[@class xlib_ffi]]
 --[[@field XFree fun(data: ptr_c<unknown>)]]
@@ -2181,8 +2315,8 @@ mod.size_flags = {
 --[[@field XGetIMValues fun(im: xlib_im_c, ...): ptr_c<ffi.cdata*>]]
 --[[@field XDisplayOfIM fun(im: xlib_im_c): ptr_c<xlib_display_c>]]
 --[[@field XLocaleOfIM fun(im: xlib_im_c): ptr_c<ffi.cdata*>]]
---[[@field XRegisterIMInstantiateCallback fun(display: ptr_c<xlib_display_c>, db: xlib_rm_database_c, res_name: ptr_c<ffi.cdata*>, res_class: ptr_c<ffi.cdata*>, callback: xlib_id_proc_c, client_data: xlib_pointer_c): boolean]]
---[[@field XUnregisterIMInstantiateCallback fun(display: ptr_c<xlib_display_c>, db: xlib_rm_database_c, res_name: ptr_c<ffi.cdata*>, res_class: ptr_c<ffi.cdata*>, callback: xlib_id_proc_c, client_data: xlib_pointer_c): boolean]]
+--[[@field XRegisterIMInstantiateCallback fun(display: ptr_c<xlib_display_c>, db: xlib_rm_database_c, res_name: ptr_c<ffi.cdata*>, res_class: ptr_c<ffi.cdata*>, callback: xlib_id_proc_c, client_data: xlib_pointer_c?): boolean]]
+--[[@field XUnregisterIMInstantiateCallback fun(display: ptr_c<xlib_display_c>, db: xlib_rm_database_c, res_name: ptr_c<ffi.cdata*>, res_class: ptr_c<ffi.cdata*>, callback: xlib_id_proc_c, client_data: xlib_pointer_c?): boolean]]
 --[[@field XCreateIC fun(im: xlib_im_c, ...): xlib_ic_c]]
 --[[@field XDestroyIC fun(ic: xlib_ic_c)]]
 --[[@field XIMOfIC fun(ic: xlib_ic_c): xlib_im_c]]
@@ -2193,6 +2327,22 @@ mod.size_flags = {
 --[[@field XmbResetIC fun(ic: xlib_ic_c): ptr_c<ffi.cdata*>]]
 --[[@field XwcResetIC fun(ic: xlib_ic_c): ptr_c<ffi.cdata*>]]
 --[[@field Xutf8ResetIC fun(ic: xlib_ic_c): ptr_c<ffi.cdata*>]]
+
+--[[@class xlib_tst_ffi]]
+--[[@field XRecordQueryVersion fun(display: ptr_c<xlib_display_c>, cmajor_return: ptr_c<integer>, cminor_return: ptr_c<integer>): xlib_status_c]]
+--[[@field XRecordCreateContext fun(display: ptr_c<xlib_display_c>, datum_flags: xlib_record_datum_flag, clients: ptr_c<xlib_record_client_spec_c>, nclients: integer, ranges: ptr_c<xlib_record_range_c>, nranges: integer): xlib_record_context_c]]
+--[[@field XRecordAllocRange fun(): ptr_c<xlib_record_range_c>]]
+--[[@field XRecordRegisterClients fun(display: ptr_c<xlib_display_c>, context: xlib_record_context_c, datum_flags: xlib_record_datum_flag, clients: ptr_c<xlib_record_client_spec_c>, nclients: integer, ranges: ptr_c<xlib_record_range_c>, nranges: integer): xlib_status_c]]
+--[[@field XRecordUnRegisterClients fun(display: ptr_c<xlib_display_c>, context: xlib_record_context_c, clients: ptr_c<xlib_record_client_spec_c>, nclients: integer): xlib_status_c]]
+--[[@field XRecordGetContext fun(display: ptr_c<xlib_display_c>, context: xlib_record_context_c, state_return: ptr_c<ptr_c<xlib_record_state_c>>): xlib_status_c]]
+--[[@field XRecordFreeState fun(state: ptr_c<xlib_record_state_c>)]]
+--[[@field XRecordEnableContext fun(display: ptr_c<xlib_display_c>, context: xlib_record_context_c, callback: xlib_record_intercept_proc_c, closure: xlib_pointer_c): xlib_status_c]]
+--[[@field XRecordEnableContextAsync fun(display: ptr_c<xlib_display_c>, context: xlib_record_context_c, callback: xlib_record_intercept_proc_c, closure: xlib_pointer_c): xlib_status_c]]
+--[[@field XRecordProcessReplies fun(display: ptr_c<xlib_display_c>)]]
+--[[@field XRecordFreeData fun(data: ptr_c<xlib_record_intercept_data_c>)]]
+--[[@field XRecordDisableContext fun(display: ptr_c<xlib_display_c>, context: xlib_record_context_c): xlib_status_c]]
+--[[@field XRecordIdBaseMask fun(display: ptr_c<xlib_display_c>): xlib_id_c]]
+--[[@field XRecordFreeContext fun(display: ptr_c<xlib_display_c>, context: xlib_record_context_c): xlib_status_c]]
 
 --[=[
 .replace(/^\t(.+?) *\b(\w+)\((.+)\);$/gm, (_, r, n, a) => {
@@ -3039,7 +3189,7 @@ mod.get_wm_normal_hints = function (display_, w)
 	if xlib_ffi.XGetWMNormalHints(display_, w, hints, supplied) == 0 then return nil end
 	return {
 		hints = hints[0],
-		flags = supplied[0] --[[@type xlib_size_flags]]
+		flags = supplied[0] --[[@type xlib_size_flag]]
 	}
 end
 --[[@param w xlib_window_c]]
@@ -3420,26 +3570,26 @@ mod.display_of_im = function (im) return xlib_ffi.XDisplayOfIM(im)[0] end
 --[[@param im xlib_im_c]]
 mod.locale_of_im = function (im) return ffi.string(xlib_ffi.XLocaleOfIM(im)) end
 
---[[@return boolean]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c]]
+--[[@return boolean]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
 mod.register_im_instantiate_callback = function (display_, db, res_name, res_class, callback, client_data)
 	return xlib_ffi.XRegisterIMInstantiateCallback(display_, db, res_name, res_class, callback, client_data)
 end
---[[@return boolean]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c]]
+--[[@return boolean]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
 display.register_im_instantiate_callback = function (self, db, res_name, res_class, callback, client_data)
 	return mod.register_im_instantiate_callback(self.c, db, res_name, res_class, callback, client_data)
 end
 
---[[@return boolean]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c]]
+--[[@return boolean]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
 mod.unregister_im_instantiate_callback = function (display_, db, res_name, res_class, callback, client_data)
 	return xlib_ffi.XUnregisterIMInstantiateCallback(display_, db, res_name, res_class, callback, client_data)
 end
---[[@return boolean]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c]]
+--[[@return boolean]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
 display.unregister_im_instantiate_callback = function (self, db, res_name, res_class, callback, client_data)
 	return mod.unregister_im_instantiate_callback(self.c, db, res_name, res_class, callback, client_data)
 end
 
 --[[@return xlib_ic_c]] --[[@param im xlib_im_c]] --[[@param ... unknown]]
-mod.create_i_c = function (im, ...) return xlib_ffi.XCreateIC(im, ...) end
+mod.create_ic = function (im, ...) return xlib_ffi.XCreateIC(im, ...) end
 --[[@param ic xlib_ic_c]]
 mod.destroy_ic = function (ic) return xlib_ffi.XDestroyIC(ic) end
 --[[@param ic xlib_ic_c]]
@@ -3462,7 +3612,7 @@ mod.get_ic_values = function (ic, ...)
 end
 
 --[[@param ic xlib_ic_c]]
-mod.b_reset_i_c = function (ic)
+mod.b_reset_ic = function (ic)
 	local ret = xlib_ffi.XmbResetIC(ic)
 	local s = ffi.string(ret)
 	mod.free(ret)
@@ -3470,7 +3620,7 @@ mod.b_reset_i_c = function (ic)
 end
 
 --[[@param ic xlib_ic_c]]
-mod.wc_reset_i_c = function (ic)
+mod.wc_reset_ic = function (ic)
 	local ret = xlib_ffi.XwcResetIC(ic)
 	local s = ffi.string(ret)
 	mod.free(ret)
@@ -3478,11 +3628,132 @@ mod.wc_reset_i_c = function (ic)
 end
 
 --[[@param ic xlib_ic_c]]
-mod.utf8_reset_i_c = function (ic)
+mod.utf8_reset_ic = function (ic)
 	local ret = xlib_ffi.Xutf8ResetIC(ic)
 	local s = ffi.string(ret)
 	mod.free(ret)
 	return s
+end
+
+local cmajor = ffi.new("int[1]") --[[@type ptr_c<integer>]]
+local cminor = ffi.new("int[1]") --[[@type ptr_c<integer>]]
+
+--[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]]
+mod.record_query_version = function (display_)
+	--[[returns nonzero (success) only if the returned version numbers are common to both the library and the server]]
+	xlib_tst_ffi.XRecordQueryVersion(display_, cmajor, cminor)
+	return { cmajor = cmajor[0], cminor = cminor[0] }
+end
+--[[@return xlib_status_c]]
+display.record_query_version = function (self)
+	return mod.record_query_version(self.c)
+end
+
+--[[@return xlib_record_context_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
+mod.record_create_context = function (display_, datum_flags, clients, nclients, ranges, nranges)
+	return xlib_tst_ffi.XRecordCreateContext(display_, datum_flags, clients, nclients, ranges, nranges)
+end
+--[[@return xlib_record_context_c]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
+display.record_create_context = function (self, datum_flags, clients, nclients, ranges, nranges)
+	return mod.record_create_context(self.c, datum_flags, clients, nclients, ranges, nranges)
+end
+
+--[[@return xlib_record_range_c]]
+mod.record_alloc_range = function () return xlib_tst_ffi.XRecordAllocRange()[0] end
+
+--[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
+mod.record_register_clients = function (display_, context, datum_flags, clients, nclients, ranges, nranges)
+	return xlib_tst_ffi.XRecordRegisterClients(display_, context, datum_flags, clients, nclients, ranges, nranges)
+end
+--[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
+display.record_register_clients = function (self, context, datum_flags, clients, nclients, ranges, nranges)
+	return mod.record_register_clients(self.c, context, datum_flags, clients, nclients, ranges, nranges)
+end
+
+--[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]]
+mod.record_un_register_clients = function (display_, context, clients, nclients)
+	return xlib_tst_ffi.XRecordUnRegisterClients(display_, context, clients, nclients)
+end
+--[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]]
+display.record_un_register_clients = function (self, context, clients, nclients)
+	return mod.record_un_register_clients(self.c, context, clients, nclients)
+end
+
+--[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]]
+mod.record_get_context = function (display_, context)
+	local state = ffi.new("XRecordState *[1]") --[[@type ptr_c<xlib_record_state_c[]>]]
+	xlib_tst_ffi.XRecordGetContext(display_, context, state)
+	return state[0]
+end
+--[[@param context xlib_record_context_c]]
+display.record_get_context = function (self, context)
+	return mod.record_get_context(self.c, context)
+end
+
+--[[@param state xlib_record_state_c]]
+mod.record_free_state = function (state) return xlib_tst_ffi.XRecordFreeState(state) end
+
+--[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
+mod.record_enable_context = function (display_, context, callback, closure)
+	return xlib_tst_ffi.XRecordEnableContext(display_, context, callback, closure)
+end
+--[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
+display.record_enable_context = function (self, context, callback, closure)
+	return mod.record_enable_context(self.c, context, callback, closure)
+end
+
+--[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
+mod.record_enable_context_async = function (display_, context, callback, closure)
+	return xlib_tst_ffi.XRecordEnableContextAsync(display_, context, callback, closure)
+end
+--[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
+display.record_enable_context_async = function (self, context, callback, closure)
+	return mod.record_enable_context_async(self.c, context, callback, closure)
+end
+
+--[[@param display_ ptr_c<xlib_display_c>]]
+mod.record_process_replies = function (display_)
+	return xlib_tst_ffi.XRecordProcessReplies(display_)
+end
+
+display.record_process_replies = function (self)
+	return mod.record_process_replies(self.c)
+end
+
+--[[@param data ptr_c<xlib_record_intercept_data_c>]]
+mod.record_free_data = function (data)
+	return xlib_tst_ffi.XRecordFreeData(data)
+end
+--[[@param data ptr_c<xlib_record_intercept_data_c>]]
+display.record_free_data = function (data)
+	return mod.record_free_data(data)
+end
+
+--[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]]
+mod.record_disable_context = function (display_, context)
+	return xlib_tst_ffi.XRecordDisableContext(display_, context)
+end
+--[[@return xlib_status_c]] --[[@param context xlib_record_context_c]]
+display.record_disable_context = function (self, context)
+	return mod.record_disable_context(self.c, context)
+end
+
+--[[@return xlib_id_c]] --[[@param display_ ptr_c<xlib_display_c>]]
+mod.record_id_base_mask = function (display_)
+	return xlib_tst_ffi.XRecordIdBaseMask(display_)
+end
+--[[@return xlib_id_c]] 
+display.record_id_base_mask = function (self)
+	return mod.record_id_base_mask(self.c)
+end
+
+--[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]]
+mod.record_free_context = function (display_, context)
+	return xlib_tst_ffi.XRecordFreeContext(display_, context)
+end
+--[[@return xlib_status_c]] --[[@param context xlib_record_context_c]]
+display.record_free_context = function (self, context)
+	return mod.record_free_context(self.c, context)
 end
 
 --[=[
