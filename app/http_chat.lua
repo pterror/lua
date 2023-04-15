@@ -4,6 +4,7 @@ if pcall(debug.getlocal, 4, 1) then arg = { ... }
 else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
 
 local h = require("lib.htmlxx")
+local set_interval = require("dep.timerfd").set_interval
 
 local main_page = h.html {
 	h.head {
@@ -45,6 +46,7 @@ local main_page = h.html {
 				el.innerText = event.data
 				chatEl:appendChild(el)
 			end)
+			--[[FIXME]]
 			x.window:addEventListener("beforeunload", function ()
 				ws:close()
 			end)
@@ -55,7 +57,7 @@ local main_page = h.html {
 
 --[[@type table<string, http_callback>]]
 local handlers = {
-	["/"] = function (req, res) res.body = main_page end,
+	["/"] = function (_, res) res.body = main_page end,
 }
 handlers["/index.html"] = handlers["/"]
 
@@ -82,4 +84,10 @@ require("lib.http.serverx").server({
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
 }, tonumber(arg[1] or os.getenv("port") or os.getenv("PORT")), epoll)
 --[[FIXME: something is not adding to count...]]
+set_interval(epoll, 60000, function ()
+	for _, fns in pairs(ws_clients) do
+		fns.send({ type = "ping", payload = "" })
+	end
+end)
+
 epoll:loop()
