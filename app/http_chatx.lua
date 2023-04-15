@@ -34,6 +34,7 @@ local main_page = h.html {
 			["a"] = { ["color"] = "#63d3d9" },
 			["img, video"] = { ["max-width"] = "100%" },
 			["a:visited"] = { ["color"] = "#b599f7" },
+			[".system"] = { ["color"] = "#bbbbbb" },
 			["#chat"] = { ["flex"] = "1 0 auto" },
 			["#chat > *"] = { ["display"] = "block" },
 			["#chat_input_bar"] = { ["display"] = "flex", ["flex-flow"] = "row nowrap" },
@@ -63,11 +64,25 @@ local main_page = h.html {
 			local submitEl = assert(x.document:getElementById("chat_input_submit"))
 			local dropEl = assert(x.document:getElementById("file_drop_area"))
 
-			local ws = x.WebSocket.new(x.location.href:replace(x.RegExp("^http"), "ws"))
+			local ws
 			local send = function () ws:send(inputEl.value) inputEl.value = "" end
 			inputEl:addEventListener("change", send)
 			submitEl:addEventListener("click", send)
-			ws:addEventListener("message", async(function (event)
+			local system = function (message)
+				local el = chatEl:appendChild(x.document:createElement("span"))
+				el.classList:add("system")
+				el.innerText = "system: " .. message
+			end
+			local onOpen = function () system("connected") end
+			local onClose, onMessage, setupWs
+			onClose = function ()
+				system("closed, reconnecting...")
+				setupWs()
+			end
+			x.setInterval(function ()
+				if ws.readyState >= 2 then system("error, reconnecting..."); setupWs() end
+			end, 60000)
+			onMessage = async(function (event)
 				local atBottom = x.Math.abs(x.document.body.scrollHeight - x.visualViewport.height - x.visualViewport.pageTop) < 1
 				if typeof(event.data) == "string" then
 					local el = chatEl:appendChild(x.document:createElement("div"))
@@ -98,7 +113,14 @@ local main_page = h.html {
 				if atBottom then
 					x.setTimeout(function () x.window:scrollTo(0, x.document.body.scrollHeight) end, 1)
 				end
-			end))
+			end)
+			setupWs = function ()
+				ws = x.WebSocket.new(x.location.href:replace(x.RegExp("^http"), "ws"))
+				ws:addEventListener("open", onOpen)
+				ws:addEventListener("close", onClose)
+				ws:addEventListener("message", onMessage)
+			end
+			setupWs()
 			x.document.body:addEventListener("dragenter", function (event)
 				if not event.dataTransfer.types:includes("Files") then return end
 				dropEl.style.display = "grid"
@@ -115,9 +137,7 @@ local main_page = h.html {
 				for file in event.dataTransfer.files do ws:send(file) end
 			end)
 			--[[FIXME]]
-			x.window:addEventListener("beforeunload", function ()
-				ws:close()
-			end)
+			x.window:addEventListener("beforeunload", function () ws:close() end)
 			inputEl:focus()
 		end),
 	},
