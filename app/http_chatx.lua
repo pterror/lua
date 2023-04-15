@@ -3,6 +3,15 @@ local arg = arg --[[@type unknown[] ]]
 if pcall(debug.getlocal, 4, 1) then arg = { ... }
 else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
 
+--[[
+wishlist:
+- consider not sending blobs back to client
+  - server still has to send the content type
+- usernames, channels, count of online users
+- lightbox + zoom
+- other types of content (website embeds, games)
+]]
+
 local h = require("lib.htmlxx")
 local set_interval = require("dep.timerfd").set_interval
 local mimetype_by_contents = require("lib.mimetype.by_contents").mimetype
@@ -59,6 +68,7 @@ local main_page = h.html {
 			inputEl:addEventListener("change", send)
 			submitEl:addEventListener("click", send)
 			ws:addEventListener("message", async(function (event)
+				local atBottom = x.Math.abs(x.document.body.scrollHeight - x.visualViewport.height - x.visualViewport.pageTop) < 1
 				if typeof(event.data) == "string" then
 					local el = chatEl:appendChild(x.document:createElement("div"))
 					el.innerText = event.data
@@ -66,16 +76,17 @@ local main_page = h.html {
 					local blob = event.data --[[@type js_blob]]
 					local type = await(blob:slice(0, 3):text())
 					local buf = blob:slice(3)
-					x.console:log(buf.size)
 					local url = x.URL.createObjectURL(buf)
 					if type == "img" then
 						local el = chatEl:appendChild(x.document:createElement("img"))
 						el.src = url
 					elseif type == "vid" then
 						local el = chatEl:appendChild(x.document:createElement("video"))
+						el.controls = true
 						el.src = url
 					elseif type == "snd" then
 						local el = chatEl:appendChild(x.document:createElement("audio"))
+						el.controls = true
 						el.src = url
 					else --[[type should be "bin"]]
 						local el = chatEl:appendChild(x.document:createElement("a"))
@@ -83,6 +94,9 @@ local main_page = h.html {
 						el.href = url
 						el.download = ""
 					end
+				end
+				if atBottom then
+					x.setTimeout(function () x.window:scrollTo(0, x.document.body.scrollHeight) end, 1)
 				end
 			end))
 			x.document.body:addEventListener("dragenter", function (event)
@@ -98,7 +112,7 @@ local main_page = h.html {
 			dropEl:addEventListener("drop", function (event) --[[@param event js_dom_drag_event]]
 				dropEl.style.display = "none"
 				event:preventDefault()
-				for file in event.dataTransfer.files do x.console.log(file.size); ws:send(file) end
+				for file in event.dataTransfer.files do ws:send(file) end
 			end)
 			--[[FIXME]]
 			x.window:addEventListener("beforeunload", function ()
