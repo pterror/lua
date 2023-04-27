@@ -2,6 +2,8 @@
 if pcall(debug.getlocal, 4, 1) then arg = { ... }
 else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
 
+--[[`/proc/meminfo` shows 388kb but real system `free` says 0]]
+
 local meminfo = require("lib.linux.proc").meminfo
 
 local usage =
@@ -144,7 +146,7 @@ local make_fmt = function (n) return (" %11s"):rep(n):sub(2) .. "\n" end
 local mem_fmt = make_fmt(wide and 7 or 6)
 local _3_fmt = "%11s %11s %11s\n"
 
-local suffix = { [0] = "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q" }
+local suffix = { [0] = "K", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q" }
 local tf = human and (binary and function (n)
 	if n == 0 then return "0B" end
 	local exp = 0

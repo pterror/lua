@@ -73,16 +73,16 @@ local main_page = h.html {
 				el.classList:add("system")
 				el.innerText = "system: " .. message
 			end
-			local onOpen = function () system("connected") end
-			local onClose, onMessage, setupWs
-			onClose = function ()
-				system("closed, reconnecting...")
-				setupWs()
-			end
+			local setupWs
 			x.setInterval(function ()
 				if ws.readyState >= 2 then system("error, reconnecting..."); setupWs() end
 			end, 60000)
-			onMessage = async(function (event)
+			local onOpen = function () system("connected") end
+			local onClose = function ()
+				system("closed, reconnecting...")
+				setupWs()
+			end
+			local onMessage = async(function (event)
 				local atBottom = x.Math.abs(x.document.body.scrollHeight - x.visualViewport.height - x.visualViewport.pageTop) < 1
 				if typeof(event.data) == "string" then
 					local el = chatEl:appendChild(x.document:createElement("div"))

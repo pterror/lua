@@ -28,6 +28,7 @@ local json_parse
 --- @param buffer string
 --- @param pos integer?
 function mod.mimetype(buffer, pos)
+	if #buffer == 0 then return end
 	pos = pos or 1
 	--- @param pos_ integer
 	local function get_u16(pos_)
