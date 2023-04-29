@@ -1,8 +1,8 @@
 --[[https://github.com/CapsAdmin/luajitsocket]]
 
--- FIXME: extract a.b to locals
--- FIXME: switch from ffi.C
--- FIXME: don't augment ljsocket_ffi
+--[[FIXME: extract a.b to locals]]
+--[[FIXME: switch from ffi.C]]
+--[[FIXME: don't augment ljsocket_ffi]]
 
 local ffi = require("ffi")
 local socket = {}
@@ -206,10 +206,10 @@ do
 				va_list *Arguments
 			);
 		]]
-		--- @class ljsocket_ffi
-		--- @field WSAPoll fun(fds: ffi.cdata*, nfds: integer, timeout: integer): integer
-		--- @field GetLastError fun(): integer
-		--- @field FormatMessageA fun(dwFlags: integer, lpSource: ffi.cdata*?, dwMessageId: integer, dwLanguageId: integer, lpBuffer: ffi.cdata*?, nSize: integer, ...: unknown): integer
+		--[[@class ljsocket_ffi]]
+		--[[@field WSAPoll fun(fds: ffi.cdata*, nfds: integer, timeout: integer): integer]]
+		--[[@field GetLastError fun(): integer]]
+		--[[@field FormatMessageA fun(dwFlags: integer, lpSource: ffi.cdata*?, dwMessageId: integer, dwLanguageId: integer, lpBuffer: ffi.cdata*?, nSize: integer, ...: unknown): integer]]
 
 		local WORD = function (low, high)
 			return bit.bor(low, bit.lshift(high, 8))

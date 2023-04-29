@@ -1,8 +1,9 @@
 local ffi = require("ffi")
-local path = require("lib.path")
+
 local mod = {}
 
 --[[@class file_info]]
+--[[@field path string]]
 --[[@field name string]]
 --[[@field is_dir boolean]]
 --[[@field size? integer]]
@@ -79,7 +80,7 @@ if ffi.os == "Linux" then
 		--[[@field d_off integer]]
 		--[[@field d_reclen integer]]
 		--[[@field d_type integer]]
-		--[[@field d_name string]]
+		--[[@field d_name string_c]]
 
 		--[[@class stat_c]]
 		--[[@field st_dev integer]]
@@ -114,37 +115,140 @@ if ffi.os == "Linux" then
 			local entry = dir_list_ffi.readdir(self.dir)
 			if entry == nil then
 				local err = dir_list_ffi.closedir(self.dir)
-				if err ~= 0 then return nil, "could not close directory" end
+				if err ~= 0 then return nil, "dir_list: could not close directory" end
 				return
 			end
 			local file_name = ffi.string(entry.d_name)
-			local file_path = path.resolve(self.path, file_name)
+			local file_path = self.path .. "/" .. file_name
 			local err = dir_list_ffi.stat(file_path, stat)
-			-- https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/stat.h#L23
-			local is_dir = bit.band(stat[0].st_mode, 0xf000) == 0x4000
-			local size = nil
-			local created = tonumber(stat[0].st_ctime)
-			local modified = tonumber(stat[0].st_mtime)
-			if err == 0 then
-				size = tonumber(stat[0].st_size)
-			end
-			return { name = file_name, is_dir = is_dir, size = size, created = created, modified = modified }
+			return {
+				name = file_name, path = file_path,
+				--[[https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/stat.h#L23]]
+				is_dir = bit.band(stat[0].st_mode, 0xf000) == 0x4000,
+				size = err == 0 and tonumber(stat[0].st_size) or nil,
+				created = tonumber(stat[0].st_ctime),
+				modified = tonumber(stat[0].st_mtime)
+			}
 		end
 
 		--[[@return (fun(self: { dir: dir_c, path: string }): file_info)? iterator, dir_c|string state_or_error]]
-		--[[@param path_ string]]
-		mod.dir_list = function (path_)
-			if type(path_) ~= "string" then return nil, "dir_list: path must be a string" end
-			local dir = dir_list_ffi.opendir(path_)
+		--[[@param path string]]
+		mod.dir_list = function (path)
+			if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
+			local dir = dir_list_ffi.opendir(path)
 			if dir == nil then return nil, "dir_list: could not open directory" end
 			dir_list_ffi.readdir(dir)
-			dir_list_ffi.readdir(dir) -- assume first two entries are . and ..
-			return dir_list_iter, { dir = dir, path = path_ }
+			dir_list_ffi.readdir(dir) --[[assume first two entries are . and ..]]
+			return dir_list_iter, { dir = dir, path = path }
 		end
+	end
+elseif ffi.os == "Windows" then
+	ffi.cdef [[
+		typedef unsigned short WORD;
+		typedef unsigned long DWORD;
+		typedef void *HANDLE;
+		typedef const void *LPCVOID;
+		typedef char CHAR;
+		typedef const char *LPCSTR;
+
+		typedef struct _FILETIME {
+			DWORD dwLowDateTime;
+			DWORD dwHighDateTime;
+		} FILETIME, *PFILETIME, *LPFILETIME;
+
+		typedef struct _WIN32_FIND_DATA {
+			DWORD dwFileAttributes;
+			FILETIME ftCreationTime;
+			FILETIME ftLastAccessTime;
+			FILETIME ftLastWriteTime;
+			DWORD nFileSizeHigh;
+			DWORD nFileSizeLow;
+			DWORD dwReserved0;
+			DWORD dwReserved1;
+			CHAR cFileName[260 /*MAX_PATH*/];
+			CHAR cAlternateFileName[14];
+			DWORD dwFileType; // obsolete
+			DWORD dwCreatorType; // obsolete
+			WORD wFinderFlags; // obsolete
+		} WIN32_FIND_DATA, *PWIN32_FIND_DATA, *LPWIN32_FIND_DATA;
+
+		HANDLE FindFirstFileA(LPCSTR lpFileName, LPWIN32_FIND_DATA lpFindFileData);
+		bool FindNextFileA(HANDLE hFindFile, LPWIN32_FIND_DATA lpFindFileData);
+		bool FindClose(HANDLE hFindFile);
+		DWORD GetLastError();
+		DWORD FormatMessageA(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, DWORD dwLanguageId, LPCSTR lpBuffer, DWORD nSize, va_list *Arguments);
+	]]
+
+	--[[@class win32_find_file_handle_c]]
+
+	--[[@class win32_filetime_c]]
+	--[[@field dwLowDateTime integer]]
+	--[[@field dwHighDateTime integer]]
+
+	--[[@class win32_find_data_c]]
+	--[[@field dwFileAttributes integer]]
+	--[[@field ftCreationTime win32_filetime_c]]
+	--[[@field ftLastAccessTime win32_filetime_c]]
+	--[[@field ftLastWriteTime win32_filetime_c]]
+	--[[@field nFileSizeHigh integer]]
+	--[[@field nFileSizeLow integer]]
+	--[[@field dwReserved0 integer]]
+	--[[@field dwReserved1 integer]]
+	--[[@field cFileName string_c]]
+	--[[@field cAlternateFileName string_c]]
+	--[[@field dwFileType integer obsolete]]
+	--[[@field dwCreatorType integer obsolete]]
+	--[[@field wFinderFlags integer obsolete]]
+
+	--[[@class dir_list_windows_ffi]]
+	--[[@field FindFirstFileA fun(lpFileName: string, lpFindFileData: ptr_c<win32_find_data_c>): win32_find_file_handle_c]]
+	--[[@field FindNextFileA fun(hFindFile: win32_find_file_handle_c, lpFindFileData: ptr_c<win32_find_data_c>): boolean]]
+	--[[@field FindClose fun(hFindFile: ptr_c<win32_find_file_handle_c>): boolean]]
+	--[[@field GetLastError fun(): integer]]
+	--[[@field FormatMessageA fun(dwFlags: integer, lpSource: ffi.cdata*?, dwMessageId: integer, dwLanguageId: integer, lpBuffer: string, nSize: integer, ...)]]
+
+	local dir_list_ffi = ffi.C --[[@type dir_list_windows_ffi]]
+
+	local err_buf = ffi.new("char[512]")
+	local entry = ffi.new("WIN32_FIND_DATA[1]") --[[@type ptr_c<win32_find_data_c>]]
+
+	--[[@return file_info? entry, string? error]] --[[@param self { dir: win32_find_file_handle_c, path: string }]]
+	local dir_list_iter = function (self)
+		local success = dir_list_ffi.FindNextFileA(self.dir, entry)
+		if not success then
+			local err = dir_list_ffi.GetLastError()
+			if err ~= 18 --[[ERROR_NO_MORE_FILES]] then
+				--[[FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000, FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200]]
+				local len = dir_list_ffi.FormatMessageA(0x00001200, nil, dir_list_ffi.GetLastError(), 0, err_buf, 512, nil)
+				return nil, "dir_list: " .. ffi.string(err_buf, len - 2)
+			end
+			success = dir_list_ffi.FindClose(self.dir)
+			if not success then return nil, "dir_list: could not close directory" end
+			return
+		end
+		local file_name = ffi.string(entry[0].cFileName)
+		return {
+			name = file_name,
+			path = self.path .. "\\" .. file_name,
+			is_dir = bit.band(entry[0].dwFileAttributes, 0x10 --[[FILE_ATTRIBUTE_DIRECTORY]]) ~= 0,
+			size = tonumber(entry[0].nFileSizeHigh * 0x100000000 + entry[0].nFileSizeLow),
+			created = tonumber((entry[0].ftCreationTime.dwHighDateTime * 0x100000000ULL + entry[0].ftCreationTime.dwLowDateTime) / 10000000ULL - 11644473600ULL),
+			modified = tonumber((entry[0].ftLastAccessTime.dwHighDateTime * 0x100000000ULL + entry[0].ftLastAccessTime.dwLowDateTime) / 10000000ULL - 11644473600ULL),
+		}
+	end
+
+	--[[@return (fun(self: { dir: dir_c, path: string }): file_info)? iterator, dir_c|string state_or_error]]
+	--[[@param path string]]
+	mod.dir_list = function (path)
+		if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
+		local dir = dir_list_ffi.FindFirstFileA(path .. "\\*", entry)
+		dir_list_ffi.FindNextFileA(dir, entry) --[[assume first two entries are . and ..]]
+		if dir == nil then return nil, "dir_list: could not open directory" end
+		return dir_list_iter, { dir = dir, path = path }
 	end
 end
 
---[[@return file_info[]? entries, string? error]] --[[@param path_ string]]
-mod.dir_list = mod.dir_list or function (path_) return nil, "list_dir: os/processor not supported" end
+--[[@return file_info[]? entries, string? error]] --[[@param path string]]
+mod.dir_list = mod.dir_list or function (path) return nil, "dir_list: os/processor not supported" end
 
 return mod

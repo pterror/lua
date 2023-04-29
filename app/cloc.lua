@@ -9,8 +9,8 @@ for i = 1, #arg do
 end
 if #dirs == 0 then dirs[#dirs+1] = "." end
 
--- TODO: https://www.gavilan.edu/csis/languages/comments.html
--- TODO: https://en.wikipedia.org/wiki/List_of_programming_languages
+--[[TODO: https://www.gavilan.edu/csis/languages/comments.html]]
+--[[TODO: https://en.wikipedia.org/wiki/List_of_programming_languages]]
 
 local dir_list = require("lib.fs.dir_list").dir_list
 
@@ -159,12 +159,9 @@ handle_dir = function (path, top) --[[@param path string]] --[[@param top? boole
 		return
 	end
 	for f in iter, state do
-		f = f --[[@type file_info]]
 		if f.is_dir then
 			if not ignore_dir[f.name] then handle_dir(path .. "/" .. f.name) end
-		else
-			handle_file(path .. "/" .. f.name)
-		end
+		else handle_file(path .. "/" .. f.name) end
 	end
 end
 for i = 1, #dirs do
