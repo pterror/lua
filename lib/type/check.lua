@@ -21,6 +21,15 @@ mod.checkers.boolean = function (_, x) return type(x) == "boolean" end
 --[[@return boolean]]
 mod.checkers["nil"] = function (_, x) return type(x) == "nil" end
 --[[@return boolean]]
+mod.checkers.literal = function (s, x)
+	if type(s) ~= "table" or type(x) ~= "table" then return s == x end
+	if s == x then return true end
+	if #s ~= #x then return false end
+	for k, v in pairs(s) do if not mod.checkers.literal(v, x[k]) then return false end end
+	for k in pairs(x) do if s[k] == nil then return false end end
+	return true
+end
+--[[@return boolean]]
 mod.checkers.tuple = function (s, x)
 	--[[checking if `x` is shorter is unsafe, since schemas may be optional]]
 	if type(x) ~= "table" then return false end
@@ -65,5 +74,15 @@ mod.checkers.dictionary = function (s, x)
 end
 --[[@return boolean]]
 mod.checkers.optional = function (s, x) return x == nil or mod.check(s.inner, x) end
+--[[@return boolean]]
+mod.checkers.any_of = function (s, x)
+	for i = 1, #s.types do if mod.check(s[i], x) == true then return true end end
+	return false
+end
+--[[@return boolean]]
+mod.checkers.all_of = function (s, x)
+	for i = 1, #s.types do if mod.check(s[i], x) == false then return false end end
+	return true
+end
 
 return mod

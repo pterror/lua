@@ -1062,7 +1062,7 @@ if false then
 		--[[https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON  ]]
 		JSON = { --[[@class js_json]]
 			parse = 0, --[[@type fun(text: js_string_like, reviver?: (fun(key: js_string_like, value: unknown): unknown))]]
-			stringify = 0, --[[@type fun(value: unknown, replacer?: (fun(key: js_string_like, value: unknown): unknown)|(js_string_like|js_number_like)[]|table<string,unknown>, space?: js_string_like|js_integer_like)]]
+			stringify = 0, --[[@type fun(value: unknown, replacer?: (fun(key: js_string_like, value: unknown): unknown)|(js_string_like|js_number_like)[]|table<string,unknown>, space?: js_string_like|js_integer_like): string]]
 		},
 		--[[https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math  ]]
 		Math = { --[[@class js_math]]

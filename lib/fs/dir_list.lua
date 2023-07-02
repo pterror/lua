@@ -41,7 +41,7 @@ if ffi.os == "Linux" then
 				char d_name[256];
 			};
 			// https://codebrowser.dev/glibc/glibc/sysdeps/unix/sysv/linux/x86/bits/struct_stat.h.html#stat
-			struct stat {
+			/* struct stat {
 				dev_t st_dev;
 				ino_t st_ino;
 				nlink_t st_nlink; // nlink and mode are reversed on 64-bit
@@ -65,12 +65,48 @@ if ffi.os == "Linux" then
 				time_t st_ctime;
 				long st_ctime_ns;
 				long __glibc_reserved[3];
+			}; */
+
+			// https://codebrowser.dev/glibc/glibc/io/bits/types/struct_statx.h.html
+			struct statx {
+				uint32_t stx_mask;
+				uint32_t stx_blksize;
+				uint64_t stx_attributes;
+				uint32_t stx_nlink;
+				uint32_t stx_uid;
+				uint32_t stx_gid;
+				uint16_t stx_mode;
+				uint16_t __statx_pad1[1];
+				uint64_t stx_ino;
+				uint64_t stx_size;
+				uint64_t stx_blocks;
+				uint64_t stx_attributes_mask;
+				// `struct statx_timestamp` inlined:
+				// https://codebrowser.dev/glibc/glibc/io/bits/types/struct_statx_timestamp.h.html
+				int64_t stx_atime_sec;
+				uint32_t stx_atime_nsec;
+				int32_t __stx_atime_pad1[1];
+				int64_t stx_btime_sec;
+				uint32_t stx_btime_nsec;
+				int32_t __stx_btime_pad1[1];
+				int64_t stx_ctime_sec;
+				uint32_t stx_ctime_nsec;
+				int32_t __stx_ctime_pad1[1];
+				int64_t stx_mtime_sec;
+				uint32_t stx_mtime_nsec;
+				int32_t __stx_mtime_pad1[1];
+				uint32_t stx_rdev_major;
+				uint32_t stx_rdev_minor;
+				uint32_t stx_dev_major;
+				uint32_t stx_dev_minor;
+				uint64_t __statx_pad2[14];
 			};
 			
 			DIR *opendir(const char *name);
 			struct dirent *readdir(DIR *dirp);
 			int closedir(DIR *dirp);
-			int stat(const char *restrict pathname, struct stat *restrict statbuf);
+			// int stat(const char *restrict pathname, struct stat *restrict statbuf);
+			int statx(int dirfd, const char *restrict pathname, int flags, unsigned int mask, struct statx *restrict statxbuf);
 		]]
 
 		--[[@class dir_c]]
@@ -100,15 +136,41 @@ if ffi.os == "Linux" then
 		--[[@field st_ctime integer]]
 		--[[@field st_ctime_ns integer]]
 
+		--[[@class statx_c]]
+		--[[@field stx_mask integer]]
+		--[[@field stx_blksize integer]]
+		--[[@field stx_attributes integer]]
+		--[[@field stx_nlink integer]]
+		--[[@field stx_uid integer]]
+		--[[@field stx_gid integer]]
+		--[[@field stx_mode integer]]
+		--[[@field stx_ino integer]]
+		--[[@field stx_size integer]]
+		--[[@field stx_blocks integer]]
+		--[[@field stx_attributes_mask integer]]
+		--[[@field stx_atime_sec integer]]
+		--[[@field stx_atime_nsec integer]]
+		--[[@field stx_btime_sec integer]]
+		--[[@field stx_btime_nsec integer]]
+		--[[@field stx_ctime_sec integer]]
+		--[[@field stx_ctime_nsec integer]]
+		--[[@field stx_mtime_sec integer]]
+		--[[@field stx_mtime_nsec integer]]
+		--[[@field stx_rdev_major integer]]
+		--[[@field stx_rdev_minor integer]]
+		--[[@field stx_dev_major integer]]
+		--[[@field stx_dev_minor integer]]
+
 		--[[@class dir_list_linux_ffi]]
 		--[[@field opendir fun(name: string): dir_c]]
 		--[[@field readdir fun(dirp: dir_c): dirent_c]]
 		--[[@field closedir fun(dirp: dir_c)]]
-		--[[@field stat fun(pathname: string, statbuf: { [0]: stat_c }): error_c]]
+		--[[@field statx fun(dirfd: integer, pathname: string, flags: integer, mask: integer, statbuf: ptr_c<statx_c>): error_c]]
+		--[[@f ield stat fun(pathname: string, statbuf: ptr_c<stat_c>): error_c]]
 
 		local dir_list_ffi = ffi.C --[[@type dir_list_linux_ffi]]
 
-		local stat = ffi.new("struct stat[1]") --[[@type { [0]: stat_c }]]
+		local stat = ffi.new("struct statx[1]") --[[@type { [0]: statx_c }]]
 
 		--[[@return file_info? entry, string? error]] --[[@param self { dir: dir_c, path: string }]]
 		local dir_list_iter = function (self)
@@ -120,26 +182,42 @@ if ffi.os == "Linux" then
 			end
 			local file_name = ffi.string(entry.d_name)
 			local file_path = self.path .. "/" .. file_name
-			local err = dir_list_ffi.stat(file_path, stat)
+			--[[https://codebrowser.dev/glibc/glibc/io/fcntl.h.html#_M/AT_FDCWD]]
+			--[[https://codebrowser.dev/glibc/glibc/io/bits/statx-generic.h.html#_M/STATX_ALL]]
+			local err = dir_list_ffi.statx(-100 --[[AT_FDCWD]], file_path, 0, 0xfff --[[STATX_ALL]], stat)
 			return {
 				name = file_name, path = file_path,
 				--[[https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/stat.h#L23]]
-				is_dir = bit.band(stat[0].st_mode, 0xf000) == 0x4000,
-				size = err == 0 and tonumber(stat[0].st_size) or nil,
-				created = tonumber(stat[0].st_ctime),
-				modified = tonumber(stat[0].st_mtime)
+				is_dir = bit.band(stat[0].stx_mode, 0xf000) == 0x4000,
+				size = err == 0 and tonumber(stat[0].stx_size) or 0,
+				created = tonumber(stat[0].stx_btime_sec) + tonumber(stat[0].stx_btime_nsec) / 1000000000,
+				modified = tonumber(stat[0].stx_mtime_sec) + tonumber(stat[0].stx_mtime_nsec) / 1000000000,
 			}
 		end
 
 		--[[@return (fun(self: { dir: dir_c, path: string }): file_info)? iterator, dir_c|string state_or_error]]
 		--[[@param path string]]
 		mod.dir_list = function (path)
+			path = path or "."
 			if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
 			local dir = dir_list_ffi.opendir(path)
 			if dir == nil then return nil, "dir_list: could not open directory" end
+			--[[assume first two entries are . and ..]]
 			dir_list_ffi.readdir(dir)
-			dir_list_ffi.readdir(dir) --[[assume first two entries are . and ..]]
+			dir_list_ffi.readdir(dir)
 			return dir_list_iter, { dir = dir, path = path }
+		end
+
+		--[[@return file_info? info, string? error]] --[[@param path string]]
+		mod.dir_info = function (path)
+			path = path or "."
+			if type(path) ~= "string" then return nil, "dir_info: path must be a string" end
+			local dir = dir_list_ffi.opendir(path)
+			if dir == nil then return nil, "dir_info: could not open directory" end
+			local result = dir_list_iter({ dir = dir, path = path })
+			dir_list_ffi.closedir(dir)
+			result.path = path
+			return result
 		end
 	end
 elseif ffi.os == "Windows" then
@@ -240,15 +318,31 @@ elseif ffi.os == "Windows" then
 	--[[@return (fun(self: { dir: dir_c, path: string }): file_info)? iterator, dir_c|string state_or_error]]
 	--[[@param path string]]
 	mod.dir_list = function (path)
+		path = path or "."
 		if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
 		local dir = dir_list_ffi.FindFirstFileA(path .. "\\*", entry)
 		dir_list_ffi.FindNextFileA(dir, entry) --[[assume first two entries are . and ..]]
 		if dir == nil then return nil, "dir_list: could not open directory" end
 		return dir_list_iter, { dir = dir, path = path }
 	end
+
+	--[[@return file_info? info, string? error]] --[[@param path string]]
+	mod.dir_info = function (path)
+		path = path or "."
+		if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
+		local dir = dir_list_ffi.FindFirstFileA(path .. "\\*", entry)
+		if dir == nil then return nil, "dir_info: could not open directory" end
+		local result = dir_list_iter({ dir = dir, path = path })
+		local success = dir_list_ffi.FindClose(dir)
+		if not success then return nil, "dir_info: could not close directory" end
+		result.path = path
+		return result
+	end
 end
 
 --[[@return file_info[]? entries, string? error]] --[[@param path string]]
 mod.dir_list = mod.dir_list or function (path) return nil, "dir_list: os/processor not supported" end
+--[[@return file_info? info, string? error]] --[[@param path string]]
+mod.dir_info = mod.dir_info or function (path) return nil, "dir_info: dir_info: os/processor not supported" end
 
 return mod

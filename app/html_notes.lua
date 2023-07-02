@@ -8,6 +8,12 @@ end
 
 local h = require("lib.htmlxx")
 
+--[[@generic t]]
+--[[@type fun(x: t): t]]
+local async
+--[[@type fun(x: js_promise): unknown]]
+local await
+
 --[[TODO: handle save]]
 --[[TODO: handle rename]]
 --[[TODO: handle delete]]

@@ -36,6 +36,7 @@ local main_page = h.html {
 		}
 		--[[@class html_data_type_input_props]]
 		--[[@field onChange fun(type: type_)]]
+
 		local TypeInput
 		TypeInput = function (props) --[[@param props html_data_type_input_props]]
 			local value = { type = "text" }
@@ -43,6 +44,7 @@ local main_page = h.html {
 			local selectEl = el:appendChild(x.document:createElement("select"))
 			local childrenEl = el:appendChild(x.document:createElement("div"))
 			selectEl:addEventListener("change", function(e)
+				--[[@diagnostic disable-next-line: undefined-field]]
 				local newType = e.target.value --[[@type js_string_like]]
 				value = { type = type_types[newType] }
 				--[[FIXME: extra elements + default values + props for complex types like array, record etc]]
@@ -77,7 +79,6 @@ local main_page = h.html {
 
 		local typeInput = TypeInput({
 			onChange = function (type)
-				--[[FIXME: why is there a type error]]
 				x.console:log(x.JSON.stringify(type))
 			end,
 		})

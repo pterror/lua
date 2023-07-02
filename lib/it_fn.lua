@@ -28,6 +28,9 @@ mod.neg = function (self)
 	local f = self[fn_s]
 	return new_it(function (it) return -f(it) end)
 end
+--[[warning: does not short-circuit]]
+mod.and_ = bin_op(function (a, b) return a and b end)
+mod.or_ = bin_op(function (a, b) return a or b end)
 mod.add = bin_op(function (a, b) return a + b end)
 mod.sub = bin_op(function (a, b) return a - b end)
 mod.mul = bin_op(function (a, b) return a * b end)
@@ -55,9 +58,8 @@ it_mt.__pow = mod.pow
 it_mt.__concat = mod.concat
 it_mt.__index = mod.at
 
-it_mt.__call = function (self, ...)
-	return self[fn_s](...)
-end
+it_mt.__call = function (self, ...) return self[fn_s](...) end
+it_mt.__tostring = "<it object>"
 
 mod.it = new_it(function (it) return it end)
 

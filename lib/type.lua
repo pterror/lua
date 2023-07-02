@@ -18,6 +18,10 @@ mod.boolean = { type = "boolean" }
 --[[@type nil]]
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
 mod["nil"] = { type = "nil" }
+--[[@generic t]]
+--[[@return t]]
+--[[@param value t]]
+mod.literal = function (value) return { type = "literal", value = value } end
 --[[@generic t: unknown[] ]]
 --[[@return t]]
 --[[@param shape t]]
@@ -43,5 +47,32 @@ mod.dictionary = function (key, value) return { type = "dictionary", key = key, 
 --[[@return t?]]
 --[[@param t t]]
 mod.optional = function (t) return { type = "optional", inner = t } end
+--[[@generic t, u, v, w, x, y, z, a, b]]
+--[[@return t | u | v | w | x | y | z | a | b]]
+--[[@param t t]]
+--[[@param u? u]]
+--[[@param v? v]]
+--[[@param w? w]]
+--[[@param x? x]]
+--[[@param y? y]]
+--[[@param z? z]]
+--[[@param a? a]]
+--[[@param ... b]]
+mod.any_of = function (t, u, v, w, x, y, z, a, ...) return { type = "any_of", types = { t, u, v, w, x, y, z, a, ...} } end
+--[[@generic t]]
+--[[@return t]]
+--[[@param t t]]
+--[[@param ... unknown]]
+--[[NOTE: this is not correct, however intersections are not supported]]
+mod.all_of = function (t, ...) return { type = "all_of", types = { t, ... } } end
+
+--[[@generic t]]
+--[[@return t]]
+--[[@param t t]]
+--[[@diagnostic disable-next-line: undefined-field]]
+local unwrap = function (t) return t.shape end
+mod._unwrap_struct = unwrap
+mod._unwrap_tuple = unwrap
+mod._unwrap_struct_exact = unwrap
 
 return mod

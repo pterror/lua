@@ -43,6 +43,8 @@ local bin_op = function (op)
 end
 
 mod.neg = un_op("-")
+mod.and_ = bin_op("and")
+mod.or_ = bin_op("or")
 mod.add = bin_op("+")
 mod.sub = bin_op("-")
 mod.mul = bin_op("*")

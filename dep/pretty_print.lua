@@ -12,17 +12,24 @@ local sort_any_value = function (a, b)
 	else return a < b end
 end
 
-local pretty_print
+local pretty_print_
 local pretty_printers = {}
 pretty_printers["nil"] = function () io.write(tostring(nil)) end
 pretty_printers.boolean = function (b) io.write(tostring(b)) end
 pretty_printers.number = function (n) io.write((n % 1 == 0 and n >= minint and n <= maxint) and string.format("%d", n) or n) end
-pretty_printers.string = function (s) io.write("\"", s:gsub("[\"]", { ["\""] = "\\\"" }), "\"") end -- FIXME: proper string escape
+pretty_printers.string = function (s) io.write("\"", s:gsub("[\"\n\r\t\v]", { ["\""] = "\\\"", ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t", ["\v"] = "\\v" }), "\"") end -- FIXME: proper string escape
 pretty_printers["function"] = function ()  io.write("<function>") end -- TODO: yucky, replace with string.dump and loadstring(f, "b")
 pretty_printers.lightuserdata = function () io.write("<lightuserdata>") end
 pretty_printers.thread = function () io.write("<thread>") end
 pretty_printers.cdata = function () io.write("<cdata>") end
-pretty_printers.table = function (t)
+pretty_printers.userdata = function () io.write("<userdata>") end
+pretty_printers.table = function (t, seen)
+	seen[t] = true
+	do
+		local mt = getmetatable(t)
+		local tostring = mt and mt.__tostring
+		if tostring then io.write(tostring(t)); return end
+	end
 	if t.__keyorder then
 		local not_first = false
 		for _, k in ipairs(t.__keyorder) do
@@ -30,10 +37,10 @@ pretty_printers.table = function (t)
 			if type(k) == "string" and k:find("^[_%a][_%w]*$") then
 				io.write(k)
 			else
-				io.write("["); pretty_print(k, true); io.write("]")
+				io.write("["); pretty_print_(k, true); io.write("]")
 			end
 			io.write(" = ")
-			pretty_print(t[k], true)
+			pretty_print_(t[k], true)
 			not_first = true
 		end
 		io.write(not_first and " }" or "{}")
@@ -51,10 +58,10 @@ pretty_printers.table = function (t)
 			if type(k) == "string" and k:find("^[_%a][_%w]*$") then
 				io.write(k)
 			else
-				io.write("["); pretty_print(k, true); io.write("]")
+				io.write("["); pretty_print_(k, true); io.write("]")
 			end
 			io.write(" = ")
-			pretty_print(t[k], true)
+			pretty_print_(t[k], true, nil, seen)
 			not_first = true
 		end
 		io.write(not_first and " }" or "{}")
@@ -62,22 +69,37 @@ pretty_printers.table = function (t)
 		local not_first = false
 		for i = 1, max do
 			io.write(not_first and ", " or "{ ")
-			pretty_print(t[i], true)
+			pretty_print_(t[i], true, nil, seen)
 			not_first = true
 		end
 		io.write(not_first and " }" or "{}")
 	end
 end
+
 --[[@param opts? { no_trailing_newline: boolean; no_print_nil: boolean; }]]
-pretty_print = function (value, not_top_level, opts)
+--[[@param seen? table<unknown,true>]]
+pretty_print_ = function (value, not_top_level, opts, seen)
+	seen = seen or {}
+	if seen[value] then io.write("<circular>"); return end
 	opts = opts or {}
 	if not not_top_level then
 		if type(value) == "string" then io.write(value, "\n"); return
 		elseif value == nil and opts.no_print_nil then return end
 	end
-	pretty_printers[type(value)](value)
+	pretty_printers[type(value)](value, seen)
 	if not not_top_level and not opts.no_trailing_newline then io.write("\n") end
 end
-mod.pretty_print = pretty_print
+mod.pretty_print = function (...)
+	local count = select("#", ...)
+	if count == 1 then pretty_print_(select(1, ...))
+	else
+		if count > 1 then pretty_print_(select(1,  ...), true) end
+		for i = 2, count do
+			io.write(" ")
+			pretty_print_(select(i, ...), true)
+		end
+		io.write("\n")
+	end
+end
 
 return mod
