@@ -71,7 +71,7 @@ local expr_bracket = function (ast, ls)
 	return v
 end
 
-function expr_table(ast, ls)
+expr_table = function (ast, ls)
 	local line = ls.linenumber
 	local kvs = {}
 	lex_check(ls, "{")
@@ -93,7 +93,7 @@ function expr_table(ast, ls)
 	return ast:expr_table(kvs, line)
 end
 
-function expr_simple(ast, ls)
+expr_simple = function (ast, ls)
 	local tk = ls.token
 	local val = ls.tokenval
 	local e
@@ -115,7 +115,7 @@ function expr_simple(ast, ls)
 	return e
 end
 
-function expr_list(ast, ls)
+expr_list = function (ast, ls)
 	local exps = {}
 	exps[1] = expr(ast, ls)
 	while lex_opt(ls, ",") do exps[#exps + 1] = expr(ast, ls) end
@@ -124,7 +124,7 @@ function expr_list(ast, ls)
 	return exps
 end
 
-function expr_unop(ast, ls)
+expr_unop = function (ast, ls)
 	local tk = ls.token
 	if tk == "TK_not" or tk == "-" or tk == "#" then
 		local line = ls.linenumber
@@ -136,8 +136,8 @@ function expr_unop(ast, ls)
 	end
 end
 
--- Parse binary expressions with priority higher than the limit
-function expr_binop(ast, ls, limit)
+--[[Parse binary expressions with priority higher than `limit`]]
+expr_binop = function (ast, ls, limit)
 	local v = expr_unop(ast, ls)
 	local op = ls.token2str(ls.token)
 	while operator.is_binop(op) and operator.left_priority(op) > limit do
@@ -150,13 +150,12 @@ function expr_binop(ast, ls, limit)
 	return v, op
 end
 
-function expr(ast, ls)
-	return expr_binop(ast, ls, 0) -- Priority 0: parse whole expression
-end
+--[[Priority 0: parse whole expression]]
+expr = function (ast, ls) return expr_binop(ast, ls, 0) end
 
-function expr_primary(ast, ls)
+expr_primary = function (ast, ls)
 	local v, vk
-	-- Parse prefix expression
+	--[[Parse prefix expression]]
 	if ls.token == "(" then
 		local line = ls.linenumber
 		ls:next()
@@ -164,10 +163,8 @@ function expr_primary(ast, ls)
 		lex_match(ls, ")", "(", line)
 	elseif ls.token == "TK_name" or (not LJ_52 and ls.token == "TK_goto") then
 		vk, v = "var", var_lookup(ast, ls)
-	else
-		err_syntax(ls, "unexpected symbol")
-	end
-	while true do -- Parse multiple expression suffixes
+	else err_syntax(ls, "unexpected symbol") end
+	while true do --[[Parse multiple expression suffixes]]
 		local line = ls.linenumber
 		if ls.token == "." then
 			vk, v = "indexed", expr_field(ast, ls, v)
@@ -182,22 +179,19 @@ function expr_primary(ast, ls)
 		elseif ls.token == "(" or ls.token == "TK_string" or ls.token == "{" then
 			local args = parse_args(ast, ls)
 			vk, v = "call", ast:expr_function_call(v, args, line)
-		else
-			break
-		end
+		else break end
 	end
 	return v, vk
 end
 
 local parse_return = function (ast, ls, line)
-	ls:next() -- Skip "return"
+	ls:next() --[[Skip "return"]]
 	ls.fs.has_return = true
 	local exps
-	if EndOfBlock[ls.token] or ls.token == ";" then -- Base return
-		exps = {}
-	else -- Return with one or more values
-		exps = expr_list(ast, ls)
-	end
+	--[[Base return]]
+	if EndOfBlock[ls.token] or ls.token == ";" then exps = {}
+	--[[Return with one or more values]]
+	else exps = expr_list(ast, ls) end
 	return ast:return_stmt(exps, line)
 end
 
@@ -207,11 +201,8 @@ local parse_for_num = function (ast, ls, varname, line)
 	lex_check(ls, ",")
 	local last = expr(ast, ls)
 	local step
-	if lex_opt(ls, ",") then
-		step = expr(ast, ls)
-	else
-		step = ast:literal(1)
-	end
+	if lex_opt(ls, ",") then step = expr(ast, ls)
+	else step = ast:literal(1) end
 	lex_check(ls, "TK_do")
 	local body = parse_block(ast, ls, line)
 	local var = ast:identifier(varname)
@@ -220,9 +211,7 @@ end
 
 local parse_for_iter = function (ast, ls, indexname)
 	local vars = { ast:identifier(indexname) }
-	while lex_opt(ls, ",") do
-		vars[#vars + 1] = ast:identifier(lex_str(ls))
-	end
+	while lex_opt(ls, ",") do vars[#vars + 1] = ast:identifier(lex_str(ls)) end
 	lex_check(ls, "TK_in")
 	local line = ls.linenumber
 	local exps = expr_list(ast, ls)
@@ -232,32 +221,30 @@ local parse_for_iter = function (ast, ls, indexname)
 end
 
 local parse_for = function (ast, ls, line)
-	ls:next()  -- Skip "for"
-	local varname = lex_str(ls)  -- Get first variable name
+	ls:next() --[[Skip "for"]]
+	local varname = lex_str(ls)  --[[Get first variable name]]
 	local stmt
 	if ls.token == "=" then
 		stmt = parse_for_num(ast, ls, varname, line)
 	elseif ls.token == "," or ls.token == "TK_in" then
 		stmt = parse_for_iter(ast, ls, varname)
-	else
-		err_syntax(ls, "'=' or 'in' expected")
-	end
+	else err_syntax(ls, "'=' or 'in' expected") end
 	lex_match(ls, "TK_end", "TK_for", line)
 	return stmt
 end
 
 local parse_repeat = function (ast, ls, line)
 	ast:fscope_begin()
-	ls:next() -- Skip "repeat"
+	ls:next() --[[Skip "repeat"]]
 	local body = parse_block(ast, ls)
 	local lastline = ls.linenumber
 	lex_match(ls, "TK_until", "TK_repeat", line)
-	local cond = expr(ast, ls) -- Parse condition
+	local cond = expr(ast, ls) --[[Parse condition]]
 	ast:fscope_end()
 	return ast:repeat_stmt(cond, body, line, lastline)
 end
 
-function parse_args(ast, ls)
+parse_args = function (ast, ls)
 	local line = ls.linenumber
 	local args
 	if ls.token == "(" then
@@ -265,11 +252,9 @@ function parse_args(ast, ls)
 			err_syntax(ls, "ambiguous syntax (function call x new statement)")
 		end
 		ls:next()
-		if ls.token ~= ")" then -- Not f()
-			args = expr_list(ast, ls)
-		else
-			args = {}
-		end
+		--[[Not f()]]
+		if ls.token ~= ")" then args = expr_list(ast, ls)
+		else args = {} end
 		lex_match(ls, ")", "(", line)
 	elseif ls.token == "{" then
 		local a = expr_table(ast, ls)
@@ -278,9 +263,7 @@ function parse_args(ast, ls)
 		local a = ls.tokenval
 		ls:next()
 		args = { ast:literal(a) }
-	else
-		err_syntax(ls, "function arguments expected")
-	end
+	else err_syntax(ls, "function arguments expected") end
 	return args
 end
 
@@ -292,7 +275,7 @@ parse_assignment = function (ast, ls, vlist, var, vk)
 	if lex_opt(ls, ",") then
 		local n_var, n_vk = expr_primary(ast, ls)
 		return parse_assignment(ast, ls, vlist, n_var, n_vk)
-	else -- Parse RHS
+	else --[[Parse RHS]]
 		lex_check(ls, "=")
 		local exps = expr_list(ast, ls)
 		return ast:assignment_expr(vlist, exps, line)
@@ -504,8 +487,8 @@ local parse_chunk = function (ast, ls)
 	return ast:chunk(body, ls.chunkname, 0, lastline)
 end
 
--- Parse body of a function
-function parse_body(ast, ls, line, needself)
+--[[Parse body of a function]]
+parse_body = function (ast, ls, line, needself)
 	local pfs = ls.fs
 	ls.fs = new_proto(ls, false)
 	ast:fscope_begin()
@@ -525,7 +508,7 @@ function parse_body(ast, ls, line, needself)
 	return params, body, proto
 end
 
-function parse_block(ast, ls, firstline)
+parse_block = function (ast, ls, firstline)
 	ast:fscope_begin()
 	local body = parse_block_stmts(ast, ls)
 	body.firstline = firstline

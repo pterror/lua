@@ -48,7 +48,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 local mod = {}
 
-local function extract(v, from, width)
+--[[@param v integer]] --[[@param from integer]] --[[@param width integer]]
+local extract = function (v, from, width)
 	return bit.band(bit.rshift(v, from), bit.lshift(1, width) - 1)
 end
 
@@ -71,8 +72,8 @@ for b64code, charcode in pairs(encoder) do
 	decoder[charcode] = b64code
 end
 
---- @param str string
---- @param usecaching? boolean
+--[[@param str string]]
+--[[@param usecaching? boolean]]
 mod.encode = function (str, usecaching)
 	local t = {}
 	local k = 1
@@ -107,10 +108,10 @@ mod.encode = function (str, usecaching)
 end
 mod.string_to_base64url = mod.encode
 
---- @return string
---- @param b64 string
---- @param usecaching? boolean
-function mod.decode(b64, usecaching)
+--[[@return string]]
+--[[@param b64 string]]
+--[[@param usecaching? boolean]]
+mod.decode = function (b64, usecaching)
 	local pattern = "[^%w%-%_]"
 	b64 = b64:gsub(pattern, "")
 	local cache = usecaching and {}

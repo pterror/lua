@@ -6,13 +6,13 @@ local tcp_client = require("lib.tcp.client").client
 
 local mod = {}
 
--- FIXME: this isn't a client - it only sends a single message. so what should it be called
--- TODO: the positioning of epoll is very inconvenient. but breaking up the arguments isn't a great option either
+--[[this only sends a single message so "client" is a bit of a misnomer]]
+--[[TODO: the positioning of epoll is very inconvenient. but breaking up the arguments isn't a great option either]]
 --[[@param cb fun(msg: dns_message)]] --[[@param nameserver string]] --[[@param domain string]] --[[@param opcode? dns_opcode]] --[[@param type? dns_type]] --[[@param class? dns_class]] --[[@param epoll epoll?]]
 mod.client = function (cb, nameserver, domain, opcode, type, class, epoll)
 	local is_running = not epoll
 	epoll = epoll or require("dep.epoll").new()
-	--- @diagnostic disable-next-line: cast-local-type
+	--[[@diagnostic disable-next-line: cast-local-type]]
 	type = type or dns.type["*"]
 	class = class or dns.class.IN
 	local name_parts = {}

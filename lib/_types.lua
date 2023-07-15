@@ -4,6 +4,7 @@
 --[[@field cast fun(ct: ffi.cdata*|ffi.cdecl*|ffi.ctype*, init: any): cdata: unknown]]
 --[[@field string fun(ptr: string_c, len?: integer): string]]
 
+--[[@class string_c]]
 --[[@class error_c]]
 --[[@class pid_c]]
 --[[@class fd_c]]

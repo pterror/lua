@@ -19,7 +19,7 @@ mod.futurify_many = function (fn)
 	return function (...)
 		local params = { ... }
 		local done = false
-		-- TODO: figure out how to end iteration
+		--[[TODO: figure out how to end iteration]]
 		local next = function (step)
 			if done then return end
 			params[#params+1] = step
@@ -30,7 +30,7 @@ mod.futurify_many = function (fn)
 	end
 end
 
--- TODO: return yield() somehow?
+--[[TODO: return yield() somehow?]]
 mod.async = function (fn)
 	return function (...)
 		local args = { ... }
@@ -42,7 +42,7 @@ mod.async = function (fn)
 				if coroutine.status(co) == "dead" then
 					if cb then cb(cont) end
 				else
-					--- @diagnostic disable-next-line: need-check-nil
+					--[[@diagnostic disable-next-line: need-check-nil]]
 					cont(step)
 				end
 			end

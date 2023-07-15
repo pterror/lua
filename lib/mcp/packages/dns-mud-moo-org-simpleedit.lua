@@ -1,4 +1,4 @@
---- @type mcp_package
+--[[@type mcp_package]]
 local mod = {}
 
 mod.name = "dns-mud-moo-org-simpleedit"

@@ -470,7 +470,7 @@ local Lexer = {
 	error = lex_error,
 }
 
-function Lexer.next(ls)
+Lexer.next = function (ls)
 	ls.lastline = ls.linenumber
 	if ls.tklookahead == "TK_eof" then -- No lookahead token?
 		ls.token, ls.tokenval = llex(ls) -- Get nextchar token.
@@ -482,7 +482,7 @@ function Lexer.next(ls)
 	end
 end
 
-function Lexer.lookahead(ls)
+Lexer.lookahead = function (ls)
 	assert(ls.tklookahead == "TK_eof")
 	ls.tklookahead, ls.tklookaheadval = llex(ls)
 	ls.spaceahead = get_space_string(ls)
@@ -492,10 +492,9 @@ end
 local LexerClass = { __index = Lexer }
 
 local lex_setup = function (read_func, chunkname)
-	local header = false
 	local ls = {
 		n = 0,
-		tklookahead = "TK_eof", -- No look-ahead token.
+		tklookahead = "TK_eof", --[[No look-ahead token.]]
 		linenumber = 1,
 		lastline = 1,
 		read_func = read_func,
@@ -508,7 +507,6 @@ local lex_setup = function (read_func, chunkname)
 		ls.n = ls.n - 2
 		ls.p = ls.p + 2
 		nextchar(ls)
-		header = true
 	end
 	if ls.current == "#" then
 		repeat
@@ -516,7 +514,6 @@ local lex_setup = function (read_func, chunkname)
 			if ls.current == END_OF_STREAM then return ls end
 		until curr_is_newline(ls)
 		inclinenumber(ls)
-		header = true
 	end
 	return setmetatable(ls, LexerClass)
 end

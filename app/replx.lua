@@ -47,7 +47,12 @@ identity = function (...) return ... end
 iter_fn = require("lib.functional.iterable")
 iter = iter_fn.iter
 
-local wrap_in_iter = function (f) return function (...) return iter(f(...)) end end
+local wrap_in_iter = function (f)
+	return function (...)
+		local ret = { f(...) }
+		if ret[1] then return iter(unpack(ret)) else return unpack(ret) end
+	end
+end
 
 local lazy_load_table
 
@@ -64,6 +69,31 @@ null = setmetatable({}, { __tostring = function () return "null" end })
 
 local resume_true = function () coroutine.resume(co, true) end
 local with_epoll = function (f) return function (...) return f(epoll, ...) end end
+
+local http_mod_to_obj = function (mod) --[[@param mod { send: fun(req: http_client_request): string }]]
+	local http = require("lib.http.format")
+	local send = mod.send
+	local method = function (method) --[[@param method string]]
+		return function (url, opts)
+			opts = opts or {}
+			local host_and_port, path = url:match("(.-)(/.*)") --[[@type string?, string?]]
+			if not host_and_port then host_and_port = url end
+			if not path then path = "/" end
+			local host, port = host_and_port:match("(.-):(.+)")
+			return http.string_to_http_client_response(send({
+				--[[@diagnostic disable-next-line: assign-type-mismatch]]
+				host = host, path = path, port = tonumber(port),
+				body = opts.body or "", headers = opts.headers or {},
+			}))
+		end
+	end
+	return {
+		send = send, method = function (method_, url, opts) return method(method_)(url, opts) end,
+		get = method("GET"), head = method("HEAD"), post = method("POST"),
+		put = method("PUT"), delete = method("DELETE"), connect = method("CONNECT"),
+		options = method("OPTIONS"), trace = method("TRACE"), patch = method("PATCH"),
+	}
+end
 
 lazy_load_table = {
 	env = { "dep.get_environ", "get_environ" },
@@ -103,6 +133,9 @@ lazy_load_table = {
 	end },
 	set_timeout = { "dep.timerfd", "set_timeout", with_epoll },
 	set_interval = { "dep.timerfd", "set_interval", with_epoll },
+	--[[TODO: http.server???]]
+	http = { "lib.http.client", http_mod_to_obj },
+	https = { "lib.https.client", http_mod_to_obj },
 }
 
 sleep_ms = sleep_ms
@@ -114,6 +147,9 @@ arr_of = function (...) return arr({ ... }) end
 open = io.open
 rm = os.remove
 delete = os.remove
+mv = os.rename
+move = os.rename
+rename = os.rename
 
 slines = function (s) return string.gmatch(s, "%S+") end --[[@param s string]]
 

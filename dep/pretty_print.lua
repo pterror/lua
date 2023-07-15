@@ -28,7 +28,7 @@ pretty_printers.table = function (t, seen)
 	do
 		local mt = getmetatable(t)
 		local tostring = mt and mt.__tostring
-		if tostring then io.write(tostring(t)); return end
+		if tostring and type(tostring) == "function" then io.write(tostring(t)); return end
 	end
 	if t.__keyorder then
 		local not_first = false

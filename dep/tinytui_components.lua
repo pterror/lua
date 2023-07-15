@@ -33,12 +33,12 @@ frame_styles.double = {
 }
 -- TODO: merging frames
 
---- @class frame: element
+--[[@class frame: element]]
 local frame = element:new()
 mod.frame = frame
---- @type { [1]: { [1]: string, [2]: string, [3]: string }, [2]: { [1]: string, [2]: nil, [3]: string }, [3]: { [1]: string, [2]: string, [3]: string } }
+--[[@type { [1]: { [1]: string, [2]: string, [3]: string }, [2]: { [1]: string, [2]: nil, [3]: string }, [3]: { [1]: string, [2]: string, [3]: string } }]]
 frame.characters = frame_styles.normal
---- @param cursor cursor
+--[[@param cursor cursor]]
 frame.render = function (self, cursor)
 	local chars = self.characters
 	local left = self.x
@@ -57,7 +57,7 @@ frame.render = function (self, cursor)
 	write(chars[3][1], rep(chars[3][2], self.width - 2), chars[3][3])
 end
 
---- @class progress_bar: element
+--[[@class progress_bar: element]]
 local progress_bar = element:new()
 mod.frameprogress_bar = progress_bar
 progress_bar.characters = {

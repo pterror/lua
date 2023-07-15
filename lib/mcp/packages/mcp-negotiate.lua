@@ -1,4 +1,4 @@
---- @type mcp_package
+--[[@type mcp_package]]
 local mod = {}
 
 mod.name = "mcp-negotiate"
@@ -15,9 +15,7 @@ mod.messages["mcp-negotiate-end"] = function (self_)
 end
 
 mod.init = function (self_)
-	for k, v in pairs(self_.packages) do
-		
-	end
+	for k, v in pairs(self_.packages) do end
 end
 
 return mod

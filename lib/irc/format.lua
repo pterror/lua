@@ -33,43 +33,43 @@ mod.codes = {
 	[210] = { name = "RPL_TRACERECONNECT", string = "Unused." }, -- unused.
 	[211] = { name = "RPL_STATSLINKINFO", string = "<linkname> <sendq> <sent messages> <sent Kbytes> <received messages> <received Kbytes> <time open>" },
 	[212] = { name = "RPL_STATSCOMMANDS", string = "<command> <count> <byte count> <remote count>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[213] = { name = "RPL_STATSCLINE", string = "C <host> * <name> <port> <class>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[214] = { name = "RPL_STATSNLINE", string = "N <host> * <name> <port> <class>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[215] = { name = "RPL_STATSILINE", string = "I <host> * <host> <port> <class>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[216] = { name = "RPL_STATSKLINE", string = "K <host> * <username> <port> <class>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[217] = { name = "RPL_STATSQLINE", string = "Q unknown" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[218] = { name = "RPL_STATSYLINE", string = "Y <class> <ping frequency> <connect frequency> <max sendq>" },
 	[219] = { name = "RPL_ENDOFSTATS", string = "<stats letter> :End of STATS report" },
 	[221] = { name = "RPL_UMODEIS", string = "<user mode string>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[231] = { name = "RPL_SERVICEINFO", string = "Service info" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[232] = { name = "RPL_ENDOFSERVICES", string = ":End of SERVICES" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[233] = { name = "RPL_SERVICE", string = "Service" }, -- unknown string
 	[234] = { name = "RPL_SERVLIST", string = "<name> <server> <mask> <type> <hopcount> <info>" },
 	[235] = { name = "RPL_SERVLISTEND", string = "<mask> <type> :End of service listing" },
-	--- @deprecated
+	--[[@deprecated]]
 	[240] = { name = "RPL_STATSVLINE", string = "Unknown" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[241] = { name = "RPL_STATSLLINE", string = "L <hostmask> * <servername> <maxdepth>" },
 	[242] = { name = "RPL_STATSUPTIME", string = ":Server Up %d days %d:%02d:%02d" },
 	[243] = { name = "RPL_STATSOLINE", string = "O <hostmask> * <name>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[244] = { name = "RPL_STATSHLINE", string = "H <hostmask> * <servername>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[245] = { name = "RPL_STATSSLINE", string = "S <hostmask> * <servicename>" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[246] = { name = "RPL_STATSPING", string = "Unknown" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[247] = { name = "RPL_STATSBLINE", string = "Unknown" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[250] = { name = "RPL_STATSDLINE", string = "Unknown" }, -- unknown string
 	[251] = { name = "RPL_LUSERCLIENT", string = ":There are <integer> users and <integer> services on <integer> servers" },
 	[252] = { name = "RPL_LUSEROP", string = "<integer> :operator(s) online" },
@@ -85,7 +85,7 @@ mod.codes = {
 	-- When a server drops a command without processing it,
 	-- it MUST use the reply RPL_TRYAGAIN to inform the originating client.
 	[263] = { name = "RPL_TRYAGAIN", string = "<command> :Please wait a while and try again." },
-	--- @deprecated
+	--[[@deprecated]]
 	[300] = { name = "RPL_NONE", string = "unknown" }, -- unknown string
 	[301] = { name = "RPL_AWAY", string = "<nick> :<away message>" },
 	[302] = { name = "RPL_USERHOST", string = ":*1<reply> ( <reply>)*" },
@@ -97,12 +97,12 @@ mod.codes = {
 	[313] = { name = "RPL_WHOISOPERATOR", string = "<nick> :is an IRC operator" },
 	[314] = { name = "RPL_WHOWASUSER", string = "<nick> <user> <host> * :<real name>" },
 	[315] = { name = "RPL_ENDOFWHO", string = "<name> :End of WHO list" },
-	--- @deprecated
+	--[[@deprecated]]
 	[316] = { name = "RPL_WHOISCHANOP", string = "unknown" }, -- unknown string
 	[317] = { name = "RPL_WHOISIDLE", string = "<nick> <integer> :seconds idle" },
 	[318] = { name = "RPL_ENDOFWHOIS", string = "<nick> :End of WHOIS list" },
 	[319] = { name = "RPL_WHOISCHANNELS", string = "<nick> :([@+]<channel> )*" },
-	--- @deprecated
+	--[[@deprecated]]
 	[321] = { name = "RPL_LISTSTART", string = "Obsolete" },
 	[322] = { name = "RPL_LIST", string = "<channel> <# visible> :<topic>" },
 	[323] = { name = "RPL_LISTEND", string = ":End of LIST" },
@@ -120,11 +120,11 @@ mod.codes = {
 	[352] = { name = "RPL_WHOREPLY", string = "<channel> <user> <host> <server> <nick> [HG] > %*?[@+]? :<hopcount> <real name>" },
 	[353] = { name = "RPL_NAMREPLY", string = "[=*@]<channel> :[@+]?<nick> ( [@+]?<nick>)*" },
 	[364] = { name = "RPL_LINKS", string = "<mask> <server> :<hopcount> <server info>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[361] = { name = "RPL_KILLDONE", string = "unknown" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[362] = { name = "RPL_CLOSING", string = "unknown" }, -- unknown string
-	--- @deprecated
+	--[[@deprecated]]
 	[363] = { name = "RPL_CLOSEEND", string = "unknown" }, -- unknown string
 	[365] = { name = "RPL_ENDOFLINKS", string = "<mask> :End of LINKS list" },
 	[366] = { name = "RPL_ENDOFNAMES", string = "<channel> :End of NAMES list" },
@@ -133,7 +133,7 @@ mod.codes = {
 	[369] = { name = "RPL_ENDOFWHOWAS", string = "<nick> :End of WHOWAS" },
 	[371] = { name = "RPL_INFO", string = ":<string>" },
 	[372] = { name = "RPL_MOTD", string = ":- <text>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[373] = { name = "RPL_INFOSTART", string = "unknown" }, -- unknown string
 	[374] = { name = "RPL_ENDOFINFO", string = ":End of INFO list" },
 	[375] = { name = "RPL_MOTDSTART", string = ":- <server> Message of the day - " },
@@ -141,7 +141,7 @@ mod.codes = {
 	[381] = { name = "RPL_YOUREOPER", string = ":You are now an IRC operator" },
 	[382] = { name = "RPL_REHASHING", string = "<config file> :Rehashing" },
 	[383] = { name = "RPL_YOURESERVICE", string = "You are service <servicename>" },
-	--- @deprecated
+	--[[@deprecated]]
 	[384] = { name = "RPL_MYPORTIS", string = ":My port is <port>" }, -- unknown string
 	[391] = { name = "RPL_TIME", string = "<server> :<string showing server's local time>" },
 	[392] = { name = "RPL_USERSSTART", string = ":UserID   Terminal  Host" },
@@ -184,7 +184,7 @@ mod.codes = {
 	[463] = { name = "ERR_NOPERMFORHOST", string = ":Your host isn't among the privileged" },
 	[464] = { name = "ERR_PASSWDMISMATCH", string = ":Password incorrect" },
 	[465] = { name = "ERR_YOUREBANNEDCREEP", string = ":You are banned from this server" },
-	--- @deprecated
+	--[[@deprecated]]
 	[466] = { name = "ERR_YOUWILLBEBANNED", string = ":You will be banned" }, -- unknown string
 	[467] = { name = "ERR_KEYSET", string = "<channel> :Channel key already set" },
 	[471] = { name = "ERR_CHANNELISFULL", string = "<channel> :Cannot join channel (+l)" },
@@ -206,7 +206,7 @@ mod.codes = {
 	[502] = { name = "ERR_USERSDONTMATCH", string = ":Cannot change mode for other users" },
 }
 if false --[[delete_code_name]] then
-	--- @diagnostic disable-next-line: assign-type-mismatch
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	for k in pairs(mod.codes) do mod.codes[k] = mod.codes[k].string end
 end
 if true --[[delete_reserved]] then
@@ -215,12 +215,12 @@ if true --[[delete_reserved]] then
 	end
 end
 
+	--[[FIXME:]]
 --[[@param s string]] --[[@param i integer]]
 mod.read_targets = function (s, i)
 	i = i or 1
 	local ret = {}
-	while true do
-	end
+	while true do break end
 	return ret
 end
 
@@ -228,7 +228,7 @@ end
 local messages_iter = function (s, i)
 	while sub(s, i, i + 1) == "\r\n" do i = i + 2 end
 	local start, end_, servername, nick, user, host
-	-- check parsing of a@b@c
+	--[[check parsing of a@b@c]]
 	start, end_, nick, _, user, _, host = find(s, "(:(%a[%w%[%]\\`^{}-]*)(!([^%z \r\n][^%z \r\n]-))(@(?????????))? +)")
 	if not start then
 		start, end_, servername = find(s, ":(?????????) +(?????????)\r\n", i)
@@ -253,7 +253,7 @@ local messages_iter = function (s, i)
 	end
 end
 
---- @param s string
+--[[@param s string]]
 mod.messages = function (s)
 	return messages_iter, s, 1
 end

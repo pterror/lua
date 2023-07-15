@@ -17,7 +17,7 @@ local usage =
 	"For more details see uptime(1)."
 
 --[[@param comma boolean]] --[[@param name string]] --[[@param n integer]]
-local function s(comma, name, n) return (comma and ", " or "") .. n .. name .. (n ~= 1 and "s" or "") end
+local s = function (comma, name, n) return (comma and ", " or "") .. n .. name .. (n ~= 1 and "s" or "") end
 
 local long_options = {
 	pretty = function ()

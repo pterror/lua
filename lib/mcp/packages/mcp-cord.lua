@@ -1,8 +1,8 @@
---- @type mcp_package
+--[[@type mcp_package]]
 local mod = {}
 
 mod.name = "mcp-cord"
 
--- FIXME: everything...
+--[[IMPL]]
 
 return mod

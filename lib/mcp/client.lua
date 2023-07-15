@@ -1,26 +1,26 @@
--- https://www.moo.mud.org/mcp/mcp2.html
+--[[https://www.moo.mud.org/mcp/mcp2.html]]
 local mod = {}
 
--- TODO: need to create a mcp instance
--- TODO: sending messages, configuring which fields must be multiline regardless of newline presence,
--- support for mcp 1.0 (both understanding and sending)
--- FIXME: can't work since 
--- TODO: it should wrap write...
---- @return fun(s: string) cb, fun (write: fun (s: string)): fun (s: string) init
---- @param cb fun(s: string) callback
---- @param mcp_cb fun(type: string, value: {}) callback for mcp messages
+--[[TODO: need to create a mcp instance]]
+--[[TODO: sending messages, configuring which fields must be multiline regardless of newline presence,]]
+--[[support for mcp 1.0 (both understanding and sending)]]
+--[[FIXME: can't work since idk??]]
+--[[TODO: it should wrap write...]]
+--[[@return fun(s: string) cb, fun (write: fun (s: string)): fun (s: string) init]]
+--[[@param cb fun(s: string) callback]]
+--[[@param mcp_cb fun(type: string, value: {}) callback for mcp messages]]
 mod.wrap = function (cb, mcp_cb)
 	local authentication_key = nil
-	--- @type table<string, table<string, unknown>>
+	--[[@type table<string, table<string, unknown>>]]
 	local multiline_messages = {}
-	--- @param s string
+	--[[@param s string]]
 	return function (s)
-		-- TODO: consider switching to find() for speeeed
+		--[[TODO: consider switching to find() for speeeed]]
 		for line in s:gmatch("[\n]+") do
 			if line:sub(1, 3) == "#$\"" then
 				cb(line:sub(4) .. "\n")
 			elseif line:sub(1, 3) == "#$#" then
-				-- TODO
+				--[[TODO]]
 				if line:sub(4, 4) == "*" then
 					local tag, key, line_ = line:match("#$#* +(.-) +(.-): (.+)")
 					if tag then
@@ -42,11 +42,9 @@ mod.wrap = function (cb, mcp_cb)
 			end
 		end
 	end, function (write)
-		-- FIXME: this function is not accessible since this wraps the callback not the server...
+		--[[FIXME: this function is not accessible since this wraps the callback not the server...]]
 		return function(s) if s:sub(1, 3) == "#$#" then write("#$\"" .. s) else write(s) end end
-	end --- FIXME: also return function write_message() end
+	end --[[FIXME: also return function write_message() end]]
 end
-
--- 0xFF 0xFB 0xC9
 
 return mod

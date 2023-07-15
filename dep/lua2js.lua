@@ -26,7 +26,7 @@ local mod = {}
 
 local operator = require("dep.ljltk.operator")
 
---- @param op string
+--[[@param op string]]
 local js_operator = function (op)
 	return ({
 		["=="] = "===", ["~="] = "!==", ["^"] = "**", ["and"] = "&&", ["or"] = "||", ["not"] = "!",
@@ -86,7 +86,7 @@ local string_is_ident = function (str)
 	return not LuaReservedKeyword[str]
 end
 
---- @param destructure_if_multiple boolean?
+--[[@param destructure_if_multiple boolean?]]
 local comma_sep_list = function (ls, f, destructure_if_multiple)
 	local strls
 	if f then

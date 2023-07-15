@@ -236,8 +236,8 @@ do
 
 		do
 			ffi.cdef [[int WSAStartup(uint16_t version, void *wsa_data);]]
-			--- @class ljsocket_ffi
-			--- @field WSAStartup fun(version: integer, wsa_data: ffi.cdata*): integer
+			--[[@class ljsocket_ffi]]
+			--[[@field WSAStartup fun(version: integer, wsa_data: ffi.cdata*): integer]]
 
 			local wsa_data
 
@@ -276,8 +276,8 @@ do
 
 		do
 			ffi.cdef [[int WSACleanup();]]
-			--- @class ljsocket_ffi
-			--- @field WSACleanup fun(): integer
+			--[@class ljsocket_ffi]]
+			--[@field WSACleanup fun(): integer]]
 
 			socket.shutdown = function ()
 				if ljsocket_ffi.WSACleanup() == 0 then
@@ -290,8 +290,8 @@ do
 
 		if jit.arch ~= "x64" then -- xp or something
 			ffi.cdef [[int WSAAddressToStringA(struct sockaddr *, unsigned long, void *, char *, unsigned long *);]]
-			--- @class ljsocket_ffi
-			--- @field WSAAddressToStringA fun(lpsaAddress: ffi.cdata*, dwAddressLength: integer, lpProtocolInfo: ffi.cdata*?, lpszAddressString: ffi.cdata*, lpdwAddressStringLength: ffi.cdata*): integer
+			--[[@class ljsocket_ffi]]
+			--[[@field WSAAddressToStringA fun(lpsaAddress: ffi.cdata*, dwAddressLength: integer, lpProtocolInfo: ffi.cdata*?, lpszAddressString: ffi.cdata*, lpdwAddressStringLength: ffi.cdata*): integer]]
 
 			socket.inet_ntop = socket.inet_ntop or function (family, pAddr, strptr, strlen)
 				-- win XP: http://memset.wordpress.com/2010/10/09/inet_ntop-for-win32/
@@ -308,8 +308,8 @@ do
 
 		do
 			ffi.cdef [[int ioctlsocket(SOCKET s, long cmd, unsigned long* argp);]]
-			--- @class ljsocket_ffi
-			--- @field ioctlsocket fun(s: ffi.cdata*, cmd: integer, argp: ffi.cdata*): integer
+			--[[@class ljsocket_ffi]]
+			--[[@field ioctlsocket fun(s: ffi.cdata*, cmd: integer, argp: ffi.cdata*): integer]]
 
 			local IOCPARM_MASK    = 0x7
 			local IOC_IN          = 0x80000000
@@ -346,8 +346,8 @@ do
 
 			int poll(struct pollfd *fds, unsigned long nfds, int timeout);
 		]]
-		--- @class ljsocket_ffi
-		--- @field poll fun(fds: ffi.cdata*, nfds: integer, timout: integer): integer
+		--[[@class ljsocket_ffi]]
+		--[[@field poll fun(fds: ffi.cdata*, nfds: integer, timout: integer): integer]]
 
 		do
 			local cache = {}
@@ -368,8 +368,8 @@ do
 
 		do
 			ffi.cdef [[int fcntl(int, int, ...);]]
-			--- @class ljsocket_ffi
-			--- @field fcntl fun(fd: integer, cmd: integer, ...: unknown): integer
+			--[[@class ljsocket_ffi]]
+			--[[@field fcntl fun(fd: integer, cmd: integer, ...: unknown): integer]]
 
 			local F_GETFL = 3
 			local F_SETFL = 4
@@ -467,21 +467,16 @@ do
 	end
 
 	generic_function("shutdown", "int shutdown(SOCKET s, int how);")
-
 	generic_function("setsockopt", "int setsockopt(SOCKET s, int level, int optname, const void* optval, uint32_t optlen);")
 	generic_function("getsockopt", "int getsockopt(SOCKET s, int level, int optname, void *optval, uint32_t *optlen);")
-
 	generic_function("accept", "SOCKET accept(SOCKET s, struct sockaddr *, int *);", nil, false)
 	generic_function("bind", "int bind(SOCKET s, const struct sockaddr* name, int namelen);")
 	generic_function("connect", "int connect(SOCKET s, const struct sockaddr * name, int namelen);")
-
 	generic_function("listen", "int listen(SOCKET s, int backlog);")
 	generic_function("recv", "int recv(SOCKET s, char* buf, int len, int flags);", nil, true)
 	generic_function("recvfrom", "int recvfrom(SOCKET s, char* buf, int len, int flags, struct sockaddr *src_addr, unsigned int *addrlen);", nil, true)
-
 	generic_function("send", "int send(SOCKET s, const char* buf, int len, int flags);", nil, true)
 	generic_function("sendto", "int sendto(SOCKET s, const char* buf, int len, int flags, const struct sockaddr* to, int tolen);", nil, true)
-
 	generic_function("getpeername", "int getpeername(SOCKET s, struct sockaddr *, unsigned int *);")
 	generic_function("getsockname", "int getsockname(SOCKET s, struct sockaddr *, unsigned int *);")
 
@@ -1006,9 +1001,7 @@ do
 		return string.format("socket[%s-%s-%s][%s]", self.family, self.socket_type, self.protocol, self.fd)
 	end
 
-	--- @param family socket_family
-	--- @param socket_type socket_type
-	--- @param protocol socket_protocol
+	--[[@param family socket_family]] --[[@param socket_type socket_type]] --[[@param protocol socket_protocol]]
 	mod.create = function (family, socket_type, protocol)
 		local fd, err, num = socket.create(AF.strict_lookup(family), SOCK.strict_lookup(socket_type), IPPROTO.strict_lookup(protocol))
 
@@ -1050,9 +1043,7 @@ do
 	--[[@param service "http"|"https"|"ftp"|"ssh"|string|integer]]
 	meta.connect = function (self, host, service)
 		local res
-
-		if type(host) == "table" and host.addrinfo then
-			res = host
+		if type(host) == "table" and host.addrinfo then res = host
 		else
 			--[[@diagnostic disable-next-line: param-type-mismatch]]
 			local res_, err = mod.find_first_address(host, service, {
@@ -1063,9 +1054,7 @@ do
 			if not res_ then return res_, err end
 			res = res_
 		end
-
 		local ok, err, num = socket.connect(self.fd, res.addrinfo.ai_addr, res.addrinfo.ai_addrlen)
-
 		if not ok and not self.blocking then
 			if timeout_messages[num] then
 				self.timeout_connected = { host, service }
@@ -1075,7 +1064,6 @@ do
 			--[[@diagnostic disable-next-line: param-type-mismatch]]
 			self:on_connect(host, service)
 		end
-
 		if not ok then return ok, err, num end
 		return true
 	end
@@ -1229,7 +1217,7 @@ do
 		return self:receive(size, flags, src_addr, src_addr_size)
 	end
 
-	--- @param size integer?
+	--[[@param size integer?]]
 	meta.receive = function (self, size, flags, src_address, address_len)
 		size = size or 65536
 		local buf = ffi.new("char[?]", size)

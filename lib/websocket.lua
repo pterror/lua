@@ -30,7 +30,7 @@ mod.status_ids = {
 
 --[[@param sock luajitsocket]]
 --[[@param body string]]
-local function err(sock, body)
+local err = function (sock, body)
 	sock:send("HTTP/1.1 400 Bad Request\r\nContent-Length: " .. #body .. "\r\n\r\n" .. body)
 	sock:close()
 end
@@ -218,7 +218,7 @@ end
 --[[@param read fun(sock: luajitsocket, msg: websocket_message)]]
 --[[@param close fun(sock: luajitsocket)|nil]]
 --[[@param epoll epoll]]
-function mod.websocket(sock, req, read, close, epoll)
+mod.websocket = function (sock, req, read, close, epoll)
 	if (req.headers["upgrade"] or {})[1] ~= "websocket" or (req.headers["connection"] or {})[1] ~= "Upgrade" then return nil end
 	--[[FIXME: return numeric error, let caller decide how to respond]]
 	if (req.headers["sec-websocket-version"] or {})[1] ~= "13" then return err(sock, "Unsupported WebSocket version - only v13 supported") end

@@ -189,10 +189,10 @@ editor.readchar = function (prompt, charpat)
 		if ch:match(charpat) then return ch end
 		-- ignore all other keys
 	end
-end --readkey
+end
 
 editor.status = function (m)
-	-- display a status string on top screen line
+	--[[display a status string on top screen line]]
 	m = pad(m, editor.scrc)
 	go(1, 1); cleareol(); style.status()
 	out(m); style.normal(); flush()
@@ -214,13 +214,12 @@ editor.statusline = function ()
 	)
 end
 
--- screen display functions  (boxes, line display)
+--[[screen display functions  (boxes, line display)]]
 
 local boxnew = function (x, y, l, c)
-	-- a box is a rectangular area on the screen
-	-- defined by top left corner (`x`, `y`)
-	-- and number of lines and columns (`l`, `c`)
-	-- `clrl` is a full row of spaces used to clear box content
+	--[[a box is a rectangular area on the screen defined by top left corner (`x`, `y`)]]
+	--[[and number of lines and columns (`l`, `c`)]]
+	--[[`clrl` is a full row of spaces used to clear box content]]
 	return { x = x, y = y, l = l, c = c, clrl = rep(" ", c) }
 end
 
@@ -228,121 +227,90 @@ local boxfill = function (b, ch, stylefn)
 	local filler = rep(ch, b.c)
 	stylefn()
 	for i = 1, b.l do go(b.x+i-1, b.y); out(filler) end
-	style.normal() -- back to normal style
+	style.normal() --[[back to normal style]]
 	flush()
 end
 
--- line display
+--[[line display]]
 
 local ccrepr = function (b, j)
-	-- return display representation of unicode char with code b
-	-- at line offset j (j is used for tabs)
+	--[[return display representation of unicode char with code b at line offset j (j is used for tabs)]]
 	if b == 9 then return rep(" ", tabln - j % tabln)
 	elseif b < 32 then return NDC
 	else return uchar(b) end
 end
 
 local boxline = function (b, hs, bl, l, insel, jon, joff)
-	-- display line l at the bl-th line of box b,
-	-- with horizontal scroll hs
-	-- if s is too long for the box, return the
-	-- index of the first undisplayed char in l
-	-- insel: true if line start is in the selection
-	-- jon: if defined and not insel, position of beg of selection
-	-- joff: if defined, position of end of selection
+	--[[display line l at the bl-th line of box b, with horizontal scroll hs]]
+	--[[if s is too long for the box, return the index of the first undisplayed char in l]]
+	--[[insel: true if line start is in the selection]]
+	--[[jon: if defined and not insel, position of beg of selection]]
+	--[[joff: if defined, position of end of selection]]
 	assert(ulen(l), "invalid UTF8 sequence")
 	local bc = b.c
-	local cc = 0 --curent col in box
-	-- clear line (don't use cleareol - box maybe smaller than screen)
+	local cc = 0 --[[curent col in box]]
+	--[[clear line (don't use cleareol - box maybe smaller than screen)]]
 	go(b.x+bl-1, b.y); out(b.clrl)
 	go(b.x+bl-1, b.y)
 	if insel then style.sel() end
 	local j = 0
 	for _, uc in ucodes(l) do
-		-- j = char position in line, p = byte position in string
+		--[[j = char position in line, p = byte position in string]]
 		j = j + 1
-		if (not insel) and j == jon then
-			style.sel(); insel=true
-		end
-		if insel and j == joff then
-			style.normal()
-		end
+		if (not insel) and j == jon then style.sel(); insel = true end
+		if insel and j == joff then style.normal() end
 		local chs = ccrepr(uc, cc)
 		cc = cc + ulen(chs)
-		if cc >= bc + hs then
-			go(b.x+bl-1, b.y+b.c-1)
-			outf(EOL)
-			style.normal()
-			return j -- index of first undisplayed char in s
-		end
+		if cc >= bc + hs then go(b.x + bl - 1, b.y + b.c - 1); outf(EOL); style.normal(); return j end
 		if cc > hs then out(chs) end
 	end
 	style.normal()
-end --boxline
+end
 
-------------------------------------------------------------------------
--- screen redisplay functions
+--[[screen redisplay functions]]
 
 
 local adjcursor = function (buf)
-	-- adjust the screen cursor so that it matches with
-	-- the buffer cursor (buf.ci, buf.cj)
-	--
-	-- first, adjust buf.li
+	--[[adjust the screen cursor so that it matches with the buffer cursor (buf.ci, buf.cj)]]
+	--[[first, adjust buf.li]]
 	local bl = buf.box.l
 	if buf.ci < buf.li or buf.ci >= buf.li+bl then
-		-- cursor has moved out of box.
-		-- set li so that ci is in the middle of the box
-		--   replaced "//" with floor() - thx to Thijs Schreijer
+		--[[cursor has moved out of box. set li so that ci is in the middle of the box]]
+		--[[  replaced "//" with floor() - thx to Thijs Schreijer]]
 		buf.li = max(1, math.floor(buf.ci-bl/2))
 		buf.chgd = true
 	end
 	local cx = buf.ci - buf.li + 1
 	local cy = 1 -- box column index, ignoring horizontal scroll
---~   local cy = 0 -- box column index, ignoring horizontal scroll
+	--[[~local cy = 0 -- box column index, ignoring horizontal scroll]]
 	local col = buf.box.c
 	local l = buf.ll[buf.ci]
 	local cj = 1
-	for p,c in ucodes(l) do
+	for _, c in ucodes(l) do
 		if cj == buf.cj then break end
 		cj = cj + 1
-		if c == 9 then
-			cy = cy + (tabln - (cy-1) % tabln)
-		else
-			cy = cy + 1
-		end
+		if c == 9 then cy = cy + (tabln - (cy-1) % tabln) else cy = cy + 1 end
 	end
-	-- determine actual hs
-	local hs = 0 -- horizontal scroll
-	local cys = cy -- actual box column index
-	while true do
-		if cys >= col then
-			cys = cys - 40
-			hs = hs + 40
-		else
-			break
-		end
-	end
-	if hs ~= buf.hs then
-		buf.chgd = true
-		buf.hs = hs
-	end
-	if buf.chgd then return end -- (li or hs or content change)
-	-- here, assume that cursor will move within the box
+	--[[determine actual hs]]
+	local hs = 0 --[[horizontal scroll]]
+	local cys = cy --[[actual box column index]]
+	while true do if cys >= col then cys = cys - 40; hs = hs + 40 else break end end
+	if hs ~= buf.hs then buf.chgd = true; buf.hs = hs end
+	if buf.chgd then return end --[[li or hs or content change]]
+	--[[here, assume that cursor will move within the box]]
 	editor.status(editor.statusline())
 	go(buf.box.x + cx - 1, buf.box.y + cys - 1)
 	flush()
-end -- adjcursor
+end
 
 
 local displaylines = function (buf)
-	-- display buffer lines starting at index buf.li
-	-- in list of lines buf.ll
+	--[[display buffer lines starting at index buf.li in list of lines buf.ll]]
 	local box = buf.box; local ll = buf.ll; local li = buf.li; local hs = buf.hs
 	local ci = buf.ci; local cj = buf.cj; local si = buf.si; local sj = buf.sj
-	local bi, bj, ei, ej -- beginning and end of selection
+	local bi, bj, ei, ej --[[beginning and end of selection]]
 	local sel = false; local insel = false; local jon = -1; local joff = -1
-	if si then -- set beginning and end of selection
+	if si then --[[set beginning and end of selection]]
 		sel = true
 		if si < ci then bi=si; bj=sj; ei=ci; ej=cj
 		elseif si > ci then bi=ci; bj=cj; ei=si; ej=sj
@@ -367,33 +335,26 @@ local displaylines = function (buf)
 end
 
 local redisplay = function (buf)
-	-- adjust cursor and repaint buffer lines if needed
+	--[[adjust cursor and repaint buffer lines if needed]]
 	adjcursor(buf)
-	if buf.chgd or buf.si then
-		displaylines(buf)
-		buf.chgd = false
-		adjcursor(buf)
-	end
+	if buf.chgd or buf.si then displaylines(buf); buf.chgd = false; adjcursor(buf) end
 	buf.chgd = false
-end --redisplay
-
+end
 
 editor.fullredisplay = function ()
-	-- complete repaint of the screen
-	-- performed initially, or when a new buffer is displayed, or
-	-- when requested by the user (^L command) because the
-	-- screen is garbled or the screensize has changed (xterm, ...)
-	--
+	--[[complete repaint of the screen]]
+	--[[performed initially, or when a new buffer is displayed, or]]
+	--[[when requested by the user (^L command) because the]]
+	--[[screen is garbled or the screensize has changed (xterm, ...)]]
 	editor.scrl, editor.scrc = term.getscrlc()
-	-- [TMP!! editor.scrbox is a bckgnd box with a pattern to
-	-- visually check that edition does not overflow buf box
-	-- (this is for future multiple windows, including side by side)]
+	--[[[TMP!! editor.scrbox is a bckgnd box with a pattern to]]
+	--[[visually check that edition does not overflow buf box]]
+	--[[(this is for future multiple windows, including side by side)] ]]
 	editor.scrbox = boxnew(1, 1, editor.scrl, editor.scrc)
---~   -- debug layout
---~   boxfill(editor.scrbox, " ", style.bckg)
---~   buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)
-	--
-	-- regular layout
+	--[[~-- debug layout]]
+	--[[~boxfill(editor.scrbox, " ", style.bckg)]]
+	--[[~buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)]]
+	--[[regular layout]]
 	boxfill(editor.scrbox, " ", style.normal)
 	editor.buf.box = boxnew(2, 1, editor.scrl-2, editor.scrc)
 	editor.buf.chgd = true
@@ -402,47 +363,29 @@ end
 
 editor.redisplay = redisplay
 
--- BUFFER AND CURSOR MANIPULATION
--- missing?!
+--[[BUFFER AND CURSOR MANIPULATION: missing?!]]
 
--- EDITOR ACTIONS
+--[[EDITOR ACTIONS]]
 
 editor.actions = {}
 local e = editor.actions
-
-local msg = editor.msg; local readstr = editor.readstr; local readchar = editor.readchar
-
-e.cancel = function (b)
-	-- do nothing. cancel selection if any
-	b.si, b.sj = nil, nil
-	b.chgd = true
-end
-
+local msg = editor.msg
+local readstr = editor.readstr
+local readchar = editor.readchar
+--[[do nothing. cancel selection if any]]
+e.cancel = function (b) b.si, b.sj = nil, nil; b.chgd = true end
 e.redisplay = editor.fullredisplay
-
 e.gohome = function (b) b:movecur(0, -MAX) end
 e.goend = function (b) b:movecur(0, MAX) end
 e.gobot = function (b) b:setcur(1, 1) end
 e.goeot = function (b) b:setcur(MAX, MAX) end
 e.goup = function (b) b:movecur(-1, 0) end
 e.godown = function (b) b:movecur(1, 0) end
+e.goright = function (b) return b:ateot() or b:ateol() and b:movecur(1, -MAX) or b:movecur(0, 1) end
+e.goleft = function (b) return b:atbot() or b:atbol() and b:movecur(-1, MAX) or b:movecur(0, -1) end
 
-e.goright = function (b)
-	return b:ateot()
-		or b:ateol() and b:movecur(1, -MAX)
-		or b:movecur(0, 1)
-end
-
-e.goleft = function (b)
-	return b:atbot()
-		or b:atbol() and b:movecur(-1, MAX)
-		or b:movecur(0, -1)
-end
-
-local wordchar = function (u) -- used by nexword, prevword
-	-- return true if u is the code of a non-space char
-	return (u and u ~= 32 and u ~= 9)
-end
+--[[used by nexword, prevword. return true if u is the code of a non-space char]]
+local wordchar = function (u) return u and u ~= 32 and u ~= 9 end
 
 e.nextword = function (b)
 	local inw1 = wordchar(b:curcode())
@@ -475,41 +418,29 @@ e.prevword = function (b)
 	end
 end
 
-e.pgdn = function (b)
-	b:setcur(b.ci + b.box.l - 2, b.cj)
-end
-
-e.pgup = function (b)
-	b:setcur(b.ci - b.box.l - 2, b.cj)
-end
+e.pgdn = function (b) b:setcur(b.ci + b.box.l - 2, b.cj) end
+e.pgup = function (b) b:setcur(b.ci - b.box.l - 2, b.cj) end
 
 e.del = function (b)
-	-- if selection, delete it. else, delete char
-	if b.si then return e.wipe(b, true) end -- do not keep in wipe list
+	--[[if selection, delete it. else, delete char]]
+	if b.si then return e.wipe(b, true) end --[[do not keep in wipe list]]
 	if b:ateot() then return false end
 	local ci, cj = b:getcur()
 	if b:ateol() then return b:bufdel(ci+1, 0) end
 	return b:bufdel(ci, cj+1)
 end
 
-e.bksp = function (b)
-	return e.goleft(b) and e.del(b)
-end
-
-e.insch = function (b, k)
-	-- insert char with code k
-	-- (don't remove. used by editor loop)
-	return b:bufins(uchar(k))
-end
+e.bksp = function (b) return e.goleft(b) and e.del(b) end
+--[[insert char with code k. (don't remove. used by editor loop)]]
+e.insch = function (b, k) return b:bufins(uchar(k)) end
 
 e.tab = function (b)
 	local tn = editor.tabspaces
-	if not tn then -- insert a tab char
-		return b:bufins(char(9))
-	end
+	--[[insert a tab char]]
+	if not tn then return b:bufins(char(9)) end
 	local _, cj = b:getcur()
-	--- @type integer
-	--- @diagnostic disable-next-line: assign-type-mismatch
+	--[[@type integer]]
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	local n = tn - ((cj) % tn)
 	return b:bufins(rep(char(32), n))
 end

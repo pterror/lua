@@ -1,30 +1,29 @@
 ```lua
-fn(1, 2, 3) --- all function calls have parens, except the below exceptions
+fn(1, 2, 3) --[[all function calls have parens, except the below exceptions]]
 ffi.cdef [[
 	void foo();
 ]]
 local x = H.div {
-	--
 }
 
--- all declarations are local declarations
--- function a.b and a:b are regular assignments
+--[[all declarations are local declarations]]
+--[[function a.b and a:b are regular assignments]]
 local a = 1
 local b = function () end
 object.fn = function () end
 class.method = function (self) end
 
--- when to use assert, when to return `nil, error`?
+--[[when to use assert, when to return `nil, error`?]]
 
 -- when using ffi:
 
---- @class module_name_c
---- @field whatever fun(): error_c
--- c errors are typed as `error_c`
--- c structs are typed as `struct_name_c`
--- pointers are typed as `{ [0]: struct_name_c }`
--- arrays are typed as `struct_name_c[]`
-	-- do they need `[0]:` as well?
+--[[@class module_name_c]]
+--[[@field whatever fun(): error_c]]
+--[[c errors are typed as `error_c`]]
+--[[c structs are typed as `struct_name_c`]]
+--[[pointers are typed as `{ [0]: struct_name_c }`]]
+--[[arrays are typed as `struct_name_c[]`]]
+	--[[do they need `[0]:` as well?]]
 ```
 
 - module objects are `mod`

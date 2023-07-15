@@ -71,56 +71,50 @@ local SQLITE_NULL = 5
 --[[@field sqlite3_close_v2 fun(db: sqlite_c): sqlite_error_c]]
 --[[@field sqlite3_errmsg fun(db: sqlite_c): string_c]]
 
---[[FIXME: make the `ffi.load`s work]]
 --[[@type sqlite_ffi]]
 local sqlite_ffi
 if ffi.os == "Windows" then
-	if ffi.arch == "x64" then
-		sqlite_ffi = ffi.load("dep/sqlite.dll")
-	else --[[assume x86]]
-		sqlite_ffi = ffi.load("dep/sqlite-x86.dll")
-	end
+	if ffi.arch == "x64" then sqlite_ffi = ffi.load("dep/sqlite.dll")
+	--[[assume x86]]
+	else sqlite_ffi = ffi.load("dep/sqlite-x86.dll") end
 elseif ffi.os == "Linux" then
 	--[[TODO: bundle instead of relying on system installation]]
-	sqlite_ffi = ffi.load("sqlite3") --- @type sqlite_ffi
+	sqlite_ffi = ffi.load("sqlite3") --[[@type sqlite_ffi]]
 else
 	--[[TODO: i think macos has it built in]]
 	error("os " .. ffi.os .. "not supported")
 end
 
-local err = function (self) --[[@param self sqlite]]
-	return ffi.string(sqlite_ffi.sqlite3_errmsg(self.db[0]))
-end
+--[[@param self sqlite]]
+local err = function (self) return ffi.string(sqlite_ffi.sqlite3_errmsg(self.db[0])) end
 
---- @class sqlite_c
---- @class sqlite_stmt_c
+--[[@class sqlite_c]]
+--[[@class sqlite_stmt_c]]
 
--- we use a class here instead of a module since details are internal anyway
+--[[we use a class here instead of a module since details are internal anyway]]
 
---- @class sqlite
---- @field db sqlite_c
+--[[@class sqlite]]
+--[[@field db sqlite_c]]
 local sqlite = {}
 sqlite.__index = sqlite
 mod.sqlite = sqlite
 
 --[[@return sqlite? database, string? error]] --[[@param path string]]
 sqlite.open = function (self, path)
-	-- TODO: does the * to ** conversion work properly
-	local db = ffi.new("sqlite3 *[1]") --- @type sqlite_c
+	--[[TODO: does the * to ** conversion work properly]]
+	local db = ffi.new("sqlite3 *[1]") --[[@type sqlite_c]]
 	if sqlite_ffi.sqlite3_open(path, db) ~= 0 then return nil, "sqlite: sqlite3_open" end
-	-- FIXME: why does this need () around it to suppress error
+	--[[FIXME: why does this need () around it to suppress error]]
 	return (setmetatable({
 		db = db
 	}, self))
 end
---[[@param path string]]
+--[[@return sqlite? database, string? error]] --[[@param path string]]
 mod.open = function (path) return sqlite:open(path) end
 
-sqlite.close = function (self)
-	sqlite_ffi.sqlite3_close_v2(self.db)
-end
+sqlite.close = function (self) sqlite_ffi.sqlite3_close_v2(self.db) end
 
--- do we need binding for blobs?
+--[[do we need binding for blobs?]]
 
 --[[@param stmt sqlite_stmt_c]]
 --[[@param params (number|string|boolean?)[] ]]
@@ -152,7 +146,7 @@ end
 sqlite.execute = function (self, sql, ...)
 	local c_sql = sql
 	local next_sql = ffi.new("const char *[1]")
-	local stmt_ptr = ffi.new("sqlite3_stmt *[1]") --- @type sqlite_stmt_c
+	local stmt_ptr = ffi.new("sqlite3_stmt *[1]") --[[@type sqlite_stmt_c]]
 	while true do 
 		if sqlite_ffi.sqlite3_prepare_v2(self.db[0], c_sql, -1, stmt_ptr, next_sql) ~= 0 then return nil, "sqlite: sqlite3_prepare_v2: " .. err(self) end
 		local stmt = stmt_ptr[0]
@@ -173,7 +167,7 @@ end
 --[[if you don't have a non-nullable column then `SELECT 1` and ignore the first column  ]]
 --[[@return (fun():...:unknown)? iterator, string? error]] --[[@param sql string]] --[[@param ... number|string|boolean?]]
 sqlite.query = function (self, sql, ...)
-	local stmt_ptr = ffi.new("sqlite3_stmt *[1]") --- @type sqlite_stmt_c
+	local stmt_ptr = ffi.new("sqlite3_stmt *[1]") --[[@type sqlite_stmt_c]]
 	if sqlite_ffi.sqlite3_prepare_v2(self.db[0], sql, #sql+1, stmt_ptr, nil) ~= 0 then return nil, "sqlite: sqlite3_prepare_v2: " .. err(self) end
 	local stmt = stmt_ptr[0]
 	bind(stmt, { ... }, select("#", ...))

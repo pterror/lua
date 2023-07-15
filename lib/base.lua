@@ -15,7 +15,7 @@ mod.integer_to_base = function (n, base)
 	if n == 0 then parts[#parts+1] = "0" end
 	while n > 0 do
 		local i = n % base + 1
-		--- @diagnostic disable-next-line: param-type-mismatch
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
 		parts[#parts+1] = base_alphabet:sub(i, i)
 		n = math.floor(n / base)
 	end

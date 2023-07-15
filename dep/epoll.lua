@@ -91,7 +91,7 @@ epoll.new = function (self)
 		count = 0,
 	}, self)
 end
-function mod.new() return epoll:new() end
+mod.new = function () return epoll:new() end
 
 --[[@param fd fd_c]] --[[@param read epoll_read]]
 local read_cb = function (fd, read)

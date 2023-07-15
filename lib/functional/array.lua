@@ -97,11 +97,14 @@ end
 --[[@param fn fun(value: t): u]]
 mod.map = function (arr, fn)
 	local ret = {}
-	for i = 1, #arr do
-		ret[i] = fn(arr[i])
-	end
+	for i = 1, #arr do ret[i] = fn(arr[i]) end
 	return mod.array(ret)
 end
+
+--[[@generic t, u]]
+--[[@param arr t[] ]]
+--[[@param fn fun(value: t): u]]
+mod.each = function (arr, fn) for i = 1, #arr do fn(arr[i]) end end
 
 --[[@generic t, u]]
 --[[@return u[] ]]
@@ -109,11 +112,14 @@ end
 --[[@param fn fun(value: t, i: integer): u]]
 mod.map_i = function (arr, fn)
 	local ret = {}
-	for i = 1, #arr do
-		ret[i] = fn(arr[i], i)
-	end
+	for i = 1, #arr do ret[i] = fn(arr[i], i) end
 	return mod.array(ret)
 end
+
+--[[@generic t, u]]
+--[[@param arr t[] ]]
+--[[@param fn fun(value: t, i: integer): u]]
+mod.each_i = function (arr, fn) for i = 1, #arr do fn(arr[i], i) end end
 
 --[[@generic t, u]]
 --[[@return t[]|functional_array]]
@@ -121,9 +127,7 @@ end
 --[[@param fn fun(value: t): boolean]]
 mod.filter = function (arr, fn)
 	local ret = {}
-	for i = 1, #arr do
-		if fn(arr[i]) then ret[#ret+1] = arr[i] end
-	end
+	for i = 1, #arr do if fn(arr[i]) then ret[#ret+1] = arr[i] end end
 	return mod.array(ret)
 end
 
@@ -133,9 +137,7 @@ end
 --[[@param fn fun(value: t, i: integer): boolean]]
 mod.filter_i = function (arr, fn)
 	local ret = {}
-	for i = 1, #arr do
-		if fn(arr[i], i) then ret[#ret+1] = arr[i] end
-	end
+	for i = 1, #arr do if fn(arr[i], i) then ret[#ret+1] = arr[i] end end
 	return mod.array(ret)
 end
 

@@ -1,82 +1,77 @@
 -- current as of https://github.com/sindresorhus/file-type/commit/fd1e72c8624018fe67a50edcd1557f153260cdca
 -- TODO: attempt wma and wmv
 
--- NOTE: added formats: avro, mp3 without ID3, iso, isz, dwg, dxf, svf, ipt, iam, ipn
--- also specific cfb clsids: some versions of doc, xls, ppt, msi
--- for more formats see:
--- https://gist.github.com/Qti3e/6341245314bf3513abb080677cd1c93b
--- https://en.wikipedia.org/wiki/List_of_file_signatures
--- dwg is missing pre-2000 versions
--- missing fixtures: isz, binary dxf, ipt, iam, ipn, lz4 fuchsia format
--- todo detection: autodesk ipt, f3d, rfa, dxf binary
--- next up: https://fileinfo.com/software/autodesk/inventor
--- https://stackoverflow.com/questions/71253009/autodesk-forge-difftool-extension-for-dwf
--- https://www.threedy.io/scalability/anydata
--- https://forge.autodesk.com/en/docs/viewer/v7/developers_guide/viewer_basics/difftool/
+--[[NOTE: added formats: avro, mp3 without ID3, iso, isz, dwg, dxf, svf, ipt, iam, ipn]]
+--[[also specific cfb clsids: some versions of doc, xls, ppt, msi]]
+--[[for more formats see:]]
+--[[https://gist.github.com/Qti3e/6341245314bf3513abb080677cd1c93b]]
+--[[https://en.wikipedia.org/wiki/List_of_file_signatures]]
+--[[dwg is missing pre-2000 versions]]
+--[[missing fixtures: isz, binary dxf, ipt, iam, ipn, lz4 fuchsia format]]
+--[[todo detection: autodesk ipt, f3d, rfa, dxf binary]]
+--[[next up: https://fileinfo.com/software/autodesk/inventor]]
+--[[https://stackoverflow.com/questions/71253009/autodesk-forge-difftool-extension-for-dwf]]
+--[[https://www.threedy.io/scalability/anydata]]
+--[[https://forge.autodesk.com/en/docs/viewer/v7/developers_guide/viewer_basics/difftool/]]
 
--- quick testing:
--- rm out; for f in fixture_dir/*.{exts,of,interest}; echo $f; luajit lib/mimetype/by_contents.lua $f; end
--- for testing:
--- rm out; for f in fixture_dir/*; echo $f >> out; luajit lib/mimetype/by_contents.lua $f >> out; end
--- replace: .+(.+)\n\1.+\n|.+corrupt.+\n\n|.+\.elf\n\t.+\n
--- with: <empty>
+--[[quick testing:]]
+--[[rm out; for f in fixture_dir/*.{exts,of,interest}; echo $f; luajit lib/mimetype/by_contents.lua $f; end]]
+--[[for testing:]]
+--[[rm out; for f in fixture_dir/*; echo $f >> out; luajit lib/mimetype/by_contents.lua $f >> out; end]]
+--[[replace: .+(.+)\n\1.+\n|.+corrupt.+\n\n|.+\.elf\n\t.+\n]]
+--[[with: <empty>]]
 
 local mod = {}
 
 local json_parse
 
---- @param buffer string
---- @param pos integer?
-function mod.mimetype(buffer, pos)
+--[[@param buffer string]]
+--[[@param pos integer?]]
+mod.mimetype = function (buffer, pos)
 	if #buffer == 0 then return end
 	pos = pos or 1
-	--- @param pos_ integer
-	local function get_u16(pos_)
+	--[[@param pos_ integer]]
+	local get_u16 = function (pos_)
 		local a, b = buffer:byte(pos_, pos_ + 1)
 		local num = bit.bor(bit.lshift(a, 8), b)
 		if num < 0 then return num + 0x8000 else return num end
 	end
-	--- @param pos_ integer
-	local function get_u16_le(pos_)
+	--[[@param pos_ integer]]
+	local get_u16_le = function (pos_)
 		local a, b = buffer:byte(pos_, pos_ + 1)
 		local num = bit.bor(a, bit.lshift(b, 8))
 		if num < 0 then return num + 0x8000 else return num end
 	end
-	--- @param pos_ integer
-	local function get_i32(pos_)
+	--[[@param pos_ integer]]
+	local get_i32 = function (pos_)
 		local a, b, c, d = buffer:byte(pos_, pos_ + 3)
 		return bit.bor(bit.lshift(a, 24), bit.lshift(b, 16), bit.lshift(c, 8), d)
 	end
-	--- @param pos_ integer
-	local function get_u32(pos_)
+	--[[@param pos_ integer]]
+	local get_u32 = function (pos_)
 		local num = get_i32(pos_)
 		if num < 0 then return num + 0x80000000 else return num end
 	end
-	--- @param pos_ integer
-	local function get_u32_le(pos_)
+	--[[@param pos_ integer]]
+	local get_u32_le = function (pos_)
 		local a, b, c, d = buffer:byte(pos_, pos_ + 3)
 		local num = bit.bor(a, bit.lshift(b, 8), bit.lshift(c, 16), bit.lshift(d, 24))
 		if num < 0 then return num + 0x80000000 else return num end
 	end
-	-- returns uint64_t cdata
-	--- @param pos_ integer
-	local function get_u64_le(pos_)
+	--[[returns uint64_t cdata]]
+	--[[@param pos_ integer]]
+	local get_u64_le = function (pos_)
 		return bit.bor(get_u32_le(pos_), bit.lshift(0ULL + get_u32_le(pos_ + 4), 32))
 	end
-	--- @param s string
-	local function trim(s) return s:match("%S.*%S") or s:match("%S") or "" end
-	--- @param buffer_ string
-	--- @param header string
-	--- @param offset integer?
-	local function _check(buffer_, header, offset)
+	--[[@param s string]]
+	local trim = function (s) return s:match("%S.*%S") or s:match("%S") or "" end
+	--[[@param buffer_ string]] --[[@param header string]] --[[@param offset integer?]]
+	local _check = function (buffer_, header, offset)
 		local start = pos + (offset or 0)
 		return buffer_:sub(start, start + #header - 1) == header
 	end
-	--- @param buffer_ string
-	--- @param header string
-	--- @param offset integer
-	--- @param mask string
-	local function _check_mask(buffer_, header, offset, mask)
+	--[[@param buffer_ string]] --[[@param header string]] --[[@param offset integer]] --[[@param mask string]]
+	local _check_mask = function (buffer_, header, offset, mask)
 		local start = pos + offset - 1
 		for i = 1, #header do
 			local byte = buffer_:byte(start + i)
@@ -86,15 +81,12 @@ function mod.mimetype(buffer, pos)
 		end
 		return true
 	end
-	--- @param header string
-	--- @param offset integer?
-	local function check(header, offset)
+	--[[@param header string]] --[[@param offset integer?]]
+	local check = function (header, offset)
 		return _check(buffer, header, offset or 0)
 	end
-	--- @param header string
-	--- @param offset integer
-	--- @param mask string
-	local function check_mask(header, offset, mask)
+	--[[@param header string]] --[[@param offset integer]] --[[@param mask string]]
+	local check_mask = function (header, offset, mask)
 		return _check_mask(buffer, header, offset or 0, mask or nil)
 	end
 
@@ -112,9 +104,7 @@ function mod.mimetype(buffer, pos)
 	if check("\xff\xfb") or check("\xff\xf3") or check("\xff\xf2") then return "mp3", "audio/mpeg" end
 	if check("GIF") then return "gif", "image/gif" end
 	if check("\xff\xd8\xff") then
-		if check("\xe8", 3) then
-			return "spiff", "image/spiff"
-		end
+		if check("\xe8", 3) then return "spiff", "image/spiff" end
 		return "jpg", "image/jpeg"
 	end
 	if check("II\xBC") then return "jxr", "image/vnd.ms-photo" end
@@ -124,7 +114,7 @@ function mod.mimetype(buffer, pos)
 		pos = pos + 6
 		local n = get_u32(pos)
 		pos = pos + 4
-		-- XXX: check
+		--[[XXX: check]]
 		local header_length = bit.bor(
 			bit.band(n, 0x7F),
 			bit.lshift(bit.band(bit.rshift(n, 8), 0xFF), 7),
@@ -173,27 +163,18 @@ function mod.mimetype(buffer, pos)
 			if filename == "META-INF/mozilla.rsa" then return "xpi", "application/x-xpinstall" end
 			if filename:find("%.rels$") or filename:find("%.xml$") then
 				local type = filename:match("^(.-)/")
-				if type == "word" then
-					return "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-				elseif type == "ppt" then
-					return "pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-				elseif type == "xl" then
-					return "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-				end
+				if type == "word" then return "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+				elseif type == "ppt" then return "pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+				elseif type == "xl" then return "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" end
 			end
 			if filename:find("^xl/") then return "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" end
 			if filename:find("^3D/.+%.model$") then return "3mf", "model/3mf" end
 			if filename == "mimetype" and compressed_size == uncompressed_size then
 				local mimetype = trim(buffer:sub(pos, pos + compressed_size - 1))
-				if mimetype == "application/epub+zip" then
-					return "epub", mimetype
-				elseif mimetype == "application/vnd.oasis.opendocument.text" then
-					return "odt", mimetype
-				elseif mimetype == "application/vnd.oasis.opendocument.spreadsheet" then
-					return "ods", mimetype
-				elseif mimetype == "application/vnd.oasis.opendocument.presentation" then
-					return "odp", mimetype
-				end
+				if mimetype == "application/epub+zip" then return "epub", mimetype
+				elseif mimetype == "application/vnd.oasis.opendocument.text" then return "odt", mimetype
+				elseif mimetype == "application/vnd.oasis.opendocument.spreadsheet" then return "ods", mimetype
+				elseif mimetype == "application/vnd.oasis.opendocument.presentation" then return "odp", mimetype end
 			end
 			if compressed_size == 0 then
 				while pos + 4 < #buffer and not check("PK\x03\x04") do pos = pos + 1 end
@@ -240,13 +221,9 @@ function mod.mimetype(buffer, pos)
 		}
 		local result = lookup[brand_major]
 		if result then return result[1], result[2] end
-		if brand_major:find("^3g2") then
-			return "3g2", "video/3gpp2"
-		elseif brand_major:find("^3g") then
-			return "3gp", "video/3gpp"
-		else
-			return "mp4", "video/mp4"
-		end
+		if brand_major:find("^3g2") then return "3g2", "video/3gpp2"
+		elseif brand_major:find("^3g") then return "3gp", "video/3gpp"
+		else return "mp4", "video/mp4" end
 	end
 	-- this can be made much more optimal with a lookup indexed by buffer:sub(pos, pos + 3)
 	if check("MThd") then return "mid", "audio/midi" end
@@ -284,14 +261,12 @@ function mod.mimetype(buffer, pos)
 			end
 			return "tif", "image/tiff"
 		end
-		if version == 43 then
-			return "tif", "image/tiff"
-		end
-		-- fallthrough
+		if version == 43 then return "tif", "image/tiff" end
+		--[[fallthrough]]
 	end
 	if check("MAC ") then return "ape", "audio/ape" end
 	if check("\x1a\x45\xdf\xa3") then
-		local function read_field()
+		local  read_field = function ()
 			local msb = buffer:byte(pos) -- FIXME: `or 0` is a temporary workaround
 			local mask = 0x80
 			local ic = 0
@@ -301,26 +276,25 @@ function mod.mimetype(buffer, pos)
 			pos = pos + ic + 1
 			return buffer:sub(start, pos - 1)
 		end
-		local function read_element()
+		local read_element = function ()
 			local id = read_field()
 			local len = read_field()
 			len = string.char(bit.bxor(len:byte(1), bit.rshift(0x80, #len - 1))) .. len:sub(2)
-			--- @return integer
-			--- @param buf string
-			local function read(buf)
+			--[[@return integer]] --[[@param buf string]]
+			local read = function (buf)
 				local ret = 0ULL
 				for i = 1, #buf do
 					ret = bit.bor(bit.lshift(ret, 8), buf:byte(i))
 				end
-				--- @diagnostic disable-next-line: return-type-mismatch
+				--[[@diagnostic disable-next-line: return-type-mismatch]]
 				return tonumber(ret) -- lossy conversion
 			end
 			return read(id), read(len)
 		end
-		local function read_children(children)
+		local read_children = function (children)
 			while children > 0 do
 				local success, e, length = pcall(read_element)
-				if not success then return end -- invalid
+				if not success then return end --[[invalid]]
 				if e == 0x4282 then return buffer:sub(pos, pos + length - 1):gsub("%z.*", "") end
 				pos = pos + length
 				children = children - 1
@@ -354,9 +328,9 @@ function mod.mimetype(buffer, pos)
 		return "lzh", "application/x-lzh-compressed"
 	end
 	if check("\0\0\x01\xba") then
-		-- may also be .ps, .mpeg
+		--[[may also be .ps, .mpeg]]
 		if check_mask("\x21", 4, "\xF1") then return "mpg", "video/MP1S" end
-		-- may also be .mpeg, .m2p, .vob or .sub
+		--[[may also be .mpeg, .m2p, .vob or .sub]]
 		if check_mask("\x44", 4, "\xC4") then return "mpg", "video/MP2P" end
 	end
 	if check("\xfd\x37\x7a\x58\x5a\0") then return "xz", "application/x-xz" end
@@ -374,22 +348,18 @@ function mod.mimetype(buffer, pos)
 	end
 	if check("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a") then
 		pos = pos + 8
-		local function readChunkHeader()
+		local read_chunk_header = function ()
 			local length = get_i32(pos)
 			local name = buffer:sub(pos + 4, pos + 7)
 			pos = pos + 8
 			return length, name
 		end
 		while pos + 8 < #buffer do
-			local length, type = readChunkHeader()
+			local length, type = read_chunk_header()
 			if length < 0 then return end -- invalid
-			if type == "IDAT" then
-				return "png", "image/png"
-			elseif type == "acTL" then
-				return "apng", "image/vnd.mozilla.apng"
-			else
-				pos = pos + length + 4
-			end
+			if type == "IDAT" then return "png", "image/png"
+			elseif type == "acTL" then return "apng", "image/vnd.mozilla.apng"
+			else pos = pos + length + 4 end
 		end
 		return "png", "image/png"
 	end
@@ -397,85 +367,80 @@ function mod.mimetype(buffer, pos)
 		local sector_size = bit.lshift(1, get_u16_le(pos + 30))
 		local root_dir_index = get_u32_le(pos + 48)
 		pos = (root_dir_index + 1) * sector_size + 81
-		-- microsoft CLSIDs below
-		-- versions: 5 (95), 6 (6.0-7.0), 8 (97-2003), 12 (2007?)
-		-- https://raw.githubusercontent.com/decalage2/oletools/master/oletools/common/clsid.py
+		--[[microsoft CLSIDs below]]
+		--[[versions: 5 (95), 6 (6.0-7.0), 8 (97-2003), 12 (2007?)]]
+		--[[https://raw.githubusercontent.com/decalage2/oletools/master/oletools/common/clsid.py]]
 		if check("\x9b\x4c\x75\xf4\xf5\x64\x40\x4b\x8a\xf4\x67\x97\x32\xac\x06\x07") then
-			-- Word.Document.12: clsid f4754c9b-64f5-4b40-8af4-679732ac0607
+			--[[Word.Document.12: clsid f4754c9b-64f5-4b40-8af4-679732ac0607]]
 			return "doc", "application/msword"
 		elseif check("\x06\x09\x02\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- Word.Document.8: clsid 00020906-0000-0000-c000-000000000046
+			--[[Word.Document.8: clsid 00020906-0000-0000-c000-000000000046]]
 			return "doc", "application/msword"
 		elseif check("\x00\x09\x02\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- Word.Document.6: clsid 00020900-0000-0000-c000-000000000046
+			--[[Word.Document.6: clsid 00020900-0000-0000-c000-000000000046]]
 			return "doc", "application/msword"
 		elseif check("\x30\x08\x02\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- Excel.Sheet.12: clsid 00020830-0000-0000-c000-000000000046
+			--[[Excel.Sheet.12: clsid 00020830-0000-0000-c000-000000000046]]
 			return "xls", "application/vnd.ms-excel"
 		elseif check("\x20\x08\x02\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- Excel.Sheet.8: clsid 00020820-0000-0000-c000-000000000046
+			--[[Excel.Sheet.8: clsid 00020820-0000-0000-c000-000000000046]]
 			return "xls", "application/vnd.ms-excel"
 		elseif check("\x10\x08\x02\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- Excel.Sheet.5: clsid 00020810-0000-0000-c000-000000000046
+			--[[Excel.Sheet.5: clsid 00020810-0000-0000-c000-000000000046]]
 			return "xls", "application/vnd.ms-excel"
 		elseif check("\xf4\x55\x4f\xcf\x87\x8f\x47\x4d\x80\xbb\x58\x08\x16\x4b\xb3\xf8") then
-			-- Powerpoint.Show.12: clsid cf4f55f4-8f87-4d47-80bb-5808164bb3f8
+			--[[Powerpoint.Show.12: clsid cf4f55f4-8f87-4d47-80bb-5808164bb3f8]]
 			return "ppt", "application/vnd.ms-powerpoint"
 		elseif check("\x10\x8d\x81\x64\x9b\x4f\xcf\x11\x86\xea\0\xaa\0\xb9\x29\xe8") then
-			-- Powerpoint.Show.8: clsid 64818d10-4f9b-11cf-86ea-00aa00b929e8
+			--[[Powerpoint.Show.8: clsid 64818d10-4f9b-11cf-86ea-00aa00b929e8]]
 			return "ppt", "application/vnd.ms-powerpoint"
 		elseif check("\x46\xf0\x06\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- TemplateMessage: clsid 0006f046-0000-0000-c000-000000000046
+			--[[TemplateMessage: clsid 0006f046-0000-0000-c000-000000000046]]
 			return "oft", "application/vnd.ms-outlook"
 		elseif check("\x0b\x0d\x02\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- MailMessage: clsid 00020d0b-0000-0000-c000-000000000046
+			--[[MailMessage: clsid 00020d0b-0000-0000-c000-000000000046]]
 			return "msg", "application/vnd.ms-outlook"
 		elseif check("\x84\x10\x0c\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then
-			-- msi: clsid 000c1084-0000-0000-c000-000000000046
+			--[[msi: clsid 000c1084-0000-0000-c000-000000000046]]
 			return "msi", "application/octet-stream"
-		elseif -- autodesk inventor: https://knowledge.autodesk.com/search-result/caas/simplecontent/content/documentsubtype-list-common-name-inventors-name-cslid-inv-pro-2021-dev-tools.html
-			-- fixtures: https://knowledge.autodesk.com/support/inventor/troubleshooting/caas/downloads/content/inventor-sample-files.html
-			check("\x90\xb4\x29\x4d\xb2\x49\xd0\x11\x93\xc3\x7e\x07\x06\x00\x00\x00") or -- Part: clsid 4d29b490-49b2-11d0-93c3-7e07060000
-			check("\x03\x42\x46\x9c\xae\x9b\xd3\x11\x8b\xad\x00\x60\xb0\xce\x6b\xb4") or -- Sheet Metal Part: clsid 9c464203-9bae-11d3-8bad-0060b0ce6bb4
-			check("\x19\x54\x05\x92\xfa\xb3\xd3\x11\xa4\x79\x00\xc0\x4f\x6b\x95\x31") or -- Generic Proxy Part: clsid 92055419-b3fa-11d3-a479-00c04f6b9531
-			check("\x04\x42\x46\x9c\xae\x9b\xd3\x11\x8b\xad\x00\x60\xb0\xce\x6b\xb4") or -- Compatibility Proxy Part: clsid 9c464204-9bae-11d3-8bad-0060b0ce6bb4
-			check("\xaf\xd3\x88\x9c\xeb\xc3\xd3\x11\xb7\x9e\x00\x60\xb0\xf1\x59\xef") or -- Catalog Proxy Part: clsid 9c88d3af-c3eb-11d3-b79e-0060b0f159ef
-			check("\xd4\x80\x8d\x4d\xb0\xf5\x60\x44\x8c\xea\x4c\xd2\x22\x68\x44\x69")    -- Molded Part Document: clsid 4d8d80d4-f5b0-4460-8cea-4cd222684469
-		then
-			return "ipt", "application/vnd.autodesk.inventor" -- non-standard
+		elseif --[[autodesk inventor: https://knowledge.autodesk.com/search-result/caas/simplecontent/content/documentsubtype-list-common-name-inventors-name-cslid-inv-pro-2021-dev-tools.html]]
+			--[[fixtures: https://knowledge.autodesk.com/support/inventor/troubleshooting/caas/downloads/content/inventor-sample-files.html]]
+			check("\x90\xb4\x29\x4d\xb2\x49\xd0\x11\x93\xc3\x7e\x07\x06\x00\x00\x00") or --[[Part: clsid 4d29b490-49b2-11d0-93c3-7e07060000]]
+			check("\x03\x42\x46\x9c\xae\x9b\xd3\x11\x8b\xad\x00\x60\xb0\xce\x6b\xb4") or --[[Sheet Metal Part: clsid 9c464203-9bae-11d3-8bad-0060b0ce6bb4]]
+			check("\x19\x54\x05\x92\xfa\xb3\xd3\x11\xa4\x79\x00\xc0\x4f\x6b\x95\x31") or --[[Generic Proxy Part: clsid 92055419-b3fa-11d3-a479-00c04f6b9531]]
+			check("\x04\x42\x46\x9c\xae\x9b\xd3\x11\x8b\xad\x00\x60\xb0\xce\x6b\xb4") or --[[Compatibility Proxy Part: clsid 9c464204-9bae-11d3-8bad-0060b0ce6bb4]]
+			check("\xaf\xd3\x88\x9c\xeb\xc3\xd3\x11\xb7\x9e\x00\x60\xb0\xf1\x59\xef") or --[[Catalog Proxy Part: clsid 9c88d3af-c3eb-11d3-b79e-0060b0f159ef]]
+			check("\xd4\x80\x8d\x4d\xb0\xf5\x60\x44\x8c\xea\x4c\xd2\x22\x68\x44\x69")    --[[Molded Part Document: clsid 4d8d80d4-f5b0-4460-8cea-4cd222684469]]
+		then return "ipt", "application/vnd.autodesk.inventor" --[[non-standard]]
 		elseif
-			check("\xe1\x81\x0f\xe6\xb3\x49\xd0\x11\x93\xc3\x7e\x07\x06\x00\x00\x00") or -- Assembly: clsid e60f81e1-49b3-11d0-93c3-7e0706000000
-			check("\x54\x83\xec\x28\x24\x90\x0f\x44\xa8\xa2\x0e\x0e\x55\xd6\x35\xb0")    -- Weldment: clsid 28ec8354-9024-440f-a8a2-0e0e55d635b0
-		then
-			return "iam", "application/vnd.autodesk.inventor.assembly"
+			check("\xe1\x81\x0f\xe6\xb3\x49\xd0\x11\x93\xc3\x7e\x07\x06\x00\x00\x00") or --[[Assembly: clsid e60f81e1-49b3-11d0-93c3-7e0706000000]]
+			check("\x54\x83\xec\x28\x24\x90\x0f\x44\xa8\xa2\x0e\x0e\x55\xd6\x35\xb0")    --[[Weldment: clsid 28ec8354-9024-440f-a8a2-0e0e55d635b0]]
+		then return "iam", "application/vnd.autodesk.inventor.assembly"
 		elseif
-			check("\x80\x3a\x28\x76\xdd\x50\xd3\x11\xa7\xe3\x00\xc0\x4f\x79\xd7\xbc") or -- Presentation: clsid 76283a80-50dd-11d3-a7e3-00c04f79d7bc
-			check("\x7d\xc1\xb4\xa2\xd2\xf0\x0f\x4c\x97\x99\xdd\x5f\x71\xdf\xb2\x91")    -- Composite Presentation: clsid a2b4c17d-f0d2-4c0f-9799-dd5f71dfb291
-		then
-			return "ipn", "application/vnd.autodesk.inventor.presentation" -- non-standard
+			check("\x80\x3a\x28\x76\xdd\x50\xd3\x11\xa7\xe3\x00\xc0\x4f\x79\xd7\xbc") or --[[Presentation: clsid 76283a80-50dd-11d3-a7e3-00c04f79d7bc]]
+			check("\x7d\xc1\xb4\xa2\xd2\xf0\x0f\x4c\x97\x99\xdd\x5f\x71\xdf\xb2\x91")    --[[Composite Presentation: clsid a2b4c17d-f0d2-4c0f-9799-dd5f71dfb291]]
+		then return "ipn", "application/vnd.autodesk.inventor.presentation" --[[non-standard]]
 		elseif check("\xf1\xfd\xf9\xbb\xdc\x52\xd0\x11\x8c\x04\x08\x00\x09\x0b\xe8\xec") then
-			-- Drawing: clsid bbf9fdf1-52dc-11d0-8c04-0800090be8ec
-			return "idw", "application/vnd.autodesk.inventor.drawing" -- non-standard
+			--[[Drawing: clsid bbf9fdf1-52dc-11d0-8c04-0800090be8ec]]
+			return "idw", "application/vnd.autodesk.inventor.drawing" --[[non-standard]]
 		elseif check("\x5d\x5c\xb9\x81\x31\x8e\x65\x4f\x97\x90\xcc\xf6\xec\xab\xd1\x41") then
-			-- Design View: clsid 81b95c5d-8e31-4f65-9790-ccf6ecabd141
-			return "idv", "application/vnd.autodesk.inventor.designview" -- non-standard
+			--[[Design View: clsid 81b95c5d-8e31-4f65-9790-ccf6ecabd141]]
+			return "idv", "application/vnd.autodesk.inventor.designview" --[[non-standard]]
 		elseif check("\x30\xb0\xfb\x62\xc7\x24\xd3\x11\xb7\x8d\x00\x60\xb0\xf1\x59\xef") then
-			-- iFeature: clsid 62fbb030-24c7-11d3-b78d-0060b0f159ef
-			return "ide", "application/vnd.autodesk.inventor.ifeature" -- non-standard
-		else
-			return "cfb", "application/x-cfb"
-		end
+			--[[iFeature: clsid 62fbb030-24c7-11d3-b78d-0060b0f159ef]]
+			return "ide", "application/vnd.autodesk.inventor.ifeature" --[[non-standard]]
+		else return "cfb", "application/x-cfb" end
 	end
 	if check("\x41\x52\x52\x4f\x57\x31\0\0") then return "arrow", "application/x-apache-arrow" end
 	if check("\x67\x6c\x54\x46\x02\0\0\0") then return "glb", "model/gltf-binary" end
 	if check("gimp xcf ") then return "xcf", "image/x-xcf" end
-	-- `mdat` MJPEG??
+	--[[`mdat` MJPEG??]]
 	if check("free", 4) or check("mdat", 4) or check("moov", 4) or check("wide", 4) then return "mov", "video/quicktime" end
 	if check("\x49\x49\x52\x4f\x08\0\0\0\x18") then return "orf", "image/x-olympus-orf" end
 	if check("\x49\x49\x55\0\x18\0\0\0\x88\xe7\x74\xd8") then return "rw2", "image/x-panasonic-rw2" end
-	-- ASF_Header_Object first 80 bytes
+	--[[ASF_Header_Object first 80 bytes]]
 	if check("\x30\x26\xb2\x75\x8e\x66\xcf\x11\xa6\xd9") then
-		local function readHeader()
+		local read_header = function ()
 			local header = buffer:sub(pos, pos + 15)
 			local length = get_u64_le(pos + 16)
 			pos = pos + 24
@@ -483,21 +448,21 @@ function mod.mimetype(buffer, pos)
 		end
 		pos = pos + 30
 		while pos + 24 < #buffer do
-			local header, header_length = readHeader()
-			-- FIXME: header[1] or header[2]?
+			local header, header_length = read_header()
+			--[[FIXME: header[1] or header[2]?]]
 			local payload = header_length - 24
-			-- ASF_Stream_Properties_Object: guid B7DC0791-A9B7-11CF-8EE6-00C00C205365
+			--[[ASF_Stream_Properties_Object: guid B7DC0791-A9B7-11CF-8EE6-00C00C205365]]
 			if _check(header, "\x91\x07\xdc\xb7\xb7\xa9\xcf\x11\x8e\xe6\0\xc0\x0c\x20\x53\x65") then
 				local typeId = buffer:sub(pos, pos + 15)
 				pos = pos + 16
 				payload = payload - 16
-				-- ASF_Audio_Media: guid F8699E40-5B4D-11CF-A8FD-00805F5C442B
+				--[[ASF_Audio_Media: guid F8699E40-5B4D-11CF-A8FD-00805F5C442B]]
 				if _check(typeId, "\x40\x9e\x69\xf8\x4d\x5b\xcf\x11\xa8\xfd\0\x80\x5f\x5c\x44\x2b") then return "asf", "audio/x-ms-asf" end
-				-- ASF_Video_Media: guid BC19EFC0-5B4D-11CF-A8FD-00805F5C442B
+				--[[ASF_Video_Media: guid BC19EFC0-5B4D-11CF-A8FD-00805F5C442B]]
 				if _check(typeId, "\xc0\xef\x19\xbc\x4d\x5b\xcf\x11\xa8\xfd\0\x80\x5f\x5c\x44\x2b") then return "asf", "video/x-ms-asf" end
 				break
 			end
-			--- @diagnostic disable-next-line: cast-local-type
+			--[[@diagnostic disable-next-line: cast-local-type]]
 			pos = pos + tonumber(payload)
 		end
 		return "asf", "application/vnd.ms-asf"
@@ -507,24 +472,21 @@ function mod.mimetype(buffer, pos)
 	if check("\x27\x0a\0\0\0\0\0\0\0\0\0\0", 2) then return "shp", "application/x-esri-shape" end
 	if check("\0\0\0\x0c\x6a\x50\x20\x20\x0d\x0a\x87\x0a") then
 		local lookup = {
-			jp2 = { "jp2", "image/jp2" },
-			jpx = { "jpx", "image/jpx" },
-			jpm = { "jpm", "image/jpm" },
-			mjp2 = { "mj2", "image/mj2" },
+			jp2 = { "jp2", "image/jp2" }, jpx = { "jpx", "image/jpx" }, jpm = { "jpm", "image/jpm" }, mjp2 = { "mj2", "image/mj2" },
 		}
 		local type = trim(buffer:sub(pos + 20, pos + 23))
 		local ret = lookup[type]
-		if not ret then return type, "image/x-" .. type end -- non-standard
+		if not ret then return type, "image/x-" .. type end --[[non-standard]]
 		return ret[1], ret[2]
 	end
 	if check("<!DOCTYPE html>") or check("<!doctype html>") then return "html", "text/html" end
 	if check("SQLite format 3\0") then return "sqlite", "application/x-sqlite3" end
-	-- unsafe signatures
+	--[[unsafe signatures]]
 	if check("\0\0\x01\xba") or check("\0\0\x01\xb3") then return "mpg", "video/mpeg" end
 	if check("\0\x01\0\0\0") then return "ttf", "font/ttf" end
 	if check("\0\0\x01\0") then return "ico", "image/x-icon" end
 	if check("\0\0\x02\0") then return "cur", "image/x-icon" end
-	-- unsafe signatures end?
+	--[[unsafe signatures end?]]
 	if check("\xFF\x0A") or check("\0\0\0\x0cJXL \x0d\x0a\x87\x0a") then return "jxl", "image/jxl" end
 	if check("FUJIFILMCCD-RAW") then return "raf", "image/x-fujifilm-raf" end
 	if check("Extended Module:") then return "xm", "audio/x-xm" end
@@ -543,25 +505,27 @@ function mod.mimetype(buffer, pos)
 	if (check("G") and check("G", 188)) or (check("G", 4) and check("G", 196)) then return "mts", "video/mp2t" end
 	if check("BOOKMOBI", 60) then return "mobi", "application/x-mobipocket-ebook" end
 	if check("DICM", 128) then return "dcm", "application/dicom" end
-	-- ShellLink: clsid 00021401-0000-0000-C000-000000000046
+	--[[ShellLink: clsid 00021401-0000-0000-C000-000000000046]]
 	if check("\x4c\0\0\0\x01\x14\x02\0\0\0\0\0\xc0\0\0\0\0\0\0\x46") then return "lnk", "application/x-ms-shortcut" end -- non-standard
 	if check("book\0\0\0\0mark\0\0\0\0") then return "alias", "application/x-apple-alias" end -- non-standard
 	if check("LP", 34) and (check("\0\0\x01", 8) or check("\x01\0\x02", 8) or check("\x02\0\x02", 8)) then return "eot", "application/vnd.ms-fontobject" end
 	if check("\x06\x06\xed\xf5\xd8\x1d\x46\xe5\xbd\x31\xef\xe7\xfe\x74\xb7\x1d") then return "indd", "application/x-indesign" end
-	-- FIXME: is view.buffer == buffer?
+	--[[FIXME: is view.buffer == buffer?]]
 	local sum = (tonumber(trim(buffer:sub(149, 154):gsub("\0.*$", "")), 8) or (0/0)) - 256
 	if sum == sum then -- not nan
 		for i = 1, 148 do sum = sum - buffer:byte(i) end
 		for i = 157, 512 do sum = sum - buffer:byte(i) end
 		if sum == 0 then return "tar", "application/x-tar" end
 	end
-	if check("\xfe\xff") then -- utf16le bom
+	if check("\xfe\xff") then --[[utf16le bom]]
 		if check("\0<\0?\0x\0m\0l", 2) then return "xml", "application/xml" end
 		return
 	end
-	if check("\xff\xfe") then -- utf16be bom
+	if check("\xff\xfe") then --[[utf16be bom]]
 		if check("<\0?\0x\0m\0l\0", 2) then
-			if buffer:sub(1, 256):match("I\0n\0v\0e\0n\0t\0o\0r\0P\0r\0o\0j\0e\0c\0t") then return "ipj", "application/vnd.autodesk.inventor.project" end -- non-standard
+			if buffer:sub(1, 256):match("I\0n\0v\0e\0n\0t\0o\0r\0P\0r\0o\0j\0e\0c\0t") then
+				return "ipj", "application/vnd.autodesk.inventor.project" --[[non-standard]]
+			end
 			return "xml", "application/xml"
 		end
 		if check("\xff\x0eS\0k\0e\0t\0c\0h\0U\0p\0 \0M\0o\0d\0e\0l\0", 2) then return "skp", "application/vnd.sketchup.skp" end

@@ -77,6 +77,7 @@ it_mt.__call = function (self, ...)
 	self[fn_s] = self[fn_s] or loadstring(("return function (vars) return function (it) return %s end end"):format(self[str_s]))()(self[vars_s])
 	return self[fn_s](...)
 end
+it_mt.__tostring = function () return "<it object>" end
 
 mod.it = new_it("it")
 

@@ -1,11 +1,11 @@
 local mod
 
---- @class weakref<t>: { value: t }
+--[[@class weakref<t>: { value: t }]]
 
---- @generic t
---- @return weakref<t>
---- @param value t
-function mod.weakref(value)
+--[[@generic t]]
+--[[@return weakref<t>]]
+--[[@param value t]]
+mod.weakref = function (value)
 	return setmetatable({ value = value }, { __mode = "v" })
 end
 

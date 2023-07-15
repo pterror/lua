@@ -7,8 +7,8 @@ local epoll_ = require("dep.epoll")
 local client = require("lib.tcp.client").client
 
 local epoll = epoll_.new()
---- @diagnostic disable-next-line: param-type-mismatch
+--[[@diagnostic disable-next-line: param-type-mismatch]]
 local write = client(arg[1], tonumber(arg[2]), io.write, epoll)
----@diagnostic disable-next-line: param-type-mismatch
+--[[@diagnostic disable-next-line: param-type-mismatch]]
 epoll:add(0, write, nil, true)
 epoll:loop()

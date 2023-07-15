@@ -48,6 +48,18 @@ mod.at = function (self, key)
 	local f = self[fn_s]
 	return new_it(function (it) return f(it)[key] end)
 end
+mod.call = function (f, ...)
+	local args = { ... }
+	return new_it(function (it)
+		local args_ = {}
+		for i, arg in ipairs(args) do
+			if getmetatable(arg) == it_mt then args_[i] = arg[fn_s](it)
+			else args_[i] = arg end
+		end
+		local f_ = getmetatable(f) == it_mt and f(it) or f
+		return f_(unpack(args_))
+	end)
+end
 
 it_mt.__unm = mod.neg
 it_mt.__add = mod.add
@@ -59,7 +71,7 @@ it_mt.__concat = mod.concat
 it_mt.__index = mod.at
 
 it_mt.__call = function (self, ...) return self[fn_s](...) end
-it_mt.__tostring = "<it object>"
+it_mt.__tostring = function () return "<it object>" end
 
 mod.it = new_it(function (it) return it end)
 

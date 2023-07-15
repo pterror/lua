@@ -47,44 +47,37 @@ local dostring = function (s)
 	end
 end
 
---- @diagnostic disable-next-line: undefined-field
+--[[@diagnostic disable-next-line: undefined-field]]
 local maxint = math.maxinteger or 9007199254740992
---- @diagnostic disable-next-line: undefined-field
+--[[@diagnostic disable-next-line: undefined-field]]
 local minint = math.mininteger or -9007199254740992
 local nan = 0/0
 local ldexp = math.ldexp or function (x, exp) return x * 2.0 ^ exp end
 local inf = math.huge
 local m_type = math.type or function (n) return n % 1 == 0 and n <= maxint and n >= minint and "integer" or "float" end
---- @type nil|(fun(fmt: string, v1: string|number, v2: any, ...: string|number): string)
---- @diagnostic disable-next-line: deprecated
+--[[@type nil|(fun(fmt: string, v1: string|number, v2: any, ...: string|number): string)]]
+--[[@diagnostic disable-next-line: deprecated]]
 local pack = string.pack or softreq("struct", "pack")
---- @type nil|(fun(fmt: string, s: string, pos?: integer): ..., integer)
---- @diagnostic disable-next-line: deprecated
+--[[@type nil|(fun(fmt: string, s: string, pos?: integer): ..., integer)]]
+--[[@diagnostic disable-next-line: deprecated]]
 local unpack = string.unpack or softreq("struct", "unpack")
 local rshift = softreq("bit32", "rshift") or softreq("bit", "rshift") or
 	dostring("return function(a, b) return a >> b end") or
 	function (a, b) return math.max(0, math.floor(a / (2 ^ b))) end
 
--- sanity check
-if pack and pack(">I2", 0) ~= "\0\0" then
-	pack = nil
-end
-if unpack and unpack(">I2", "\1\2\3\4") ~= 0x102 then
-	unpack = nil
-end
-
-local _ENV = nil -- luacheck: ignore 211
+--[[sanity check]]
+if pack and pack(">I2", 0) ~= "\0\0" then pack = nil end
+if unpack and unpack(">I2", "\1\2\3\4") ~= 0x102 then unpack = nil end
+local _ENV = nil
 
 local encoder = {}
 
-local encode = function (obj, opts)
-	return encoder[type(obj)](obj, opts)
-end
+local encode = function (obj, opts) return encoder[type(obj)](obj, opts) end
 mod.encode = encode
 mod.value_to_cbor = encode
 
--- Major types 0, 1 and length encoding for others
---- @param num integer
+--[[Major types 0, 1 and length encoding for others]]
+--[[@param num integer]]
 local integer = function (num, m)
 	if m == 0 and num < 0 then
 		-- negative integer, major type 1
@@ -104,7 +97,7 @@ local integer = function (num, m)
 			num % 0x100)
 	elseif num < 2 ^ 64 then
 		local high = math.floor(num / 2 ^ 32)
-		--- @diagnostic disable-next-line: cast-local-type
+		--[[@diagnostic disable-next-line: cast-local-type]]
 		num = num % 2 ^ 32
 		return string.char(m + 27,
 			rshift(high, 24) % 0x100,
@@ -123,17 +116,11 @@ if pack then
 	integer = function (num, m)
 		local fmt
 		m = m or 0
-		if num < 24 then
-			fmt, m = ">B", m + num
-		elseif num < 256 then
-			fmt, m = ">BB", m + 24
-		elseif num < 65536 then
-			fmt, m = ">BI2", m + 25
-		elseif num < 4294967296 then
-			fmt, m = ">BI4", m + 26
-		else
-			fmt, m = ">BI8", m + 27
-		end
+		if num < 24 then fmt, m = ">B", m + num
+		elseif num < 256 then fmt, m = ">BB", m + 24
+		elseif num < 65536 then fmt, m = ">BI2", m + 25
+		elseif num < 4294967296 then fmt, m = ">BI4", m + 26
+		else fmt, m = ">BI8", m + 27 end
 		return pack(fmt, m, num)
 	end
 end
@@ -164,14 +151,12 @@ local undefined = simple(23, "undefined") -- undefined or nil
 mod.undefined = undefined
 local BREAK = simple(31, "break", "\255")
 
--- Number types dispatch
---- @param num number
+--[[Number types dispatch]] --[[@param num number]]
 encoder.number = function (num)
 	return encoder[m_type(num)](num)
 end
 
--- Major types 0, 1
---- @param num integer
+--[[Major types 0, 1]] --[[@param num integer]]
 encoder.integer = function (num)
 	if num < 0 then
 		return integer(-1 - num, 32)
@@ -180,17 +165,14 @@ encoder.integer = function (num)
 end
 
 if pack then
-	--- @param num number
-	encoder.float = function (num)
-		return pack(">Bd", 251, num)
-	end
+	--[[@param num number]]
+	encoder.float = function (num) return pack(">Bd", 251, num) end
 else
-	-- Major type 7
-	--- @param num number
+	--[[Major type 7]]
+	--[[@param num number]]
 	encoder.float = function (num)
-		if num ~= num then -- NaN shortcut
-			return "\251\127\255\255\255\255\255\255\255"
-		end
+		--[[NaN shortcut]]
+		if num ~= num then return "\251\127\255\255\255\255\255\255\255" end
 		local sign = (num > 0 or 1 / num > 0) and 0 or 1
 		num = math.abs(num)
 		if num == math.huge then
@@ -202,14 +184,10 @@ else
 		end
 		fraction = fraction * 2
 		exponent = exponent + 1024 - 2
-		if exponent <= 0 then
-			fraction = fraction * 2 ^ (exponent - 1)
-			exponent = 0
-		else
-			fraction = fraction - 1
-		end
+		if exponent <= 0 then fraction = fraction * 2 ^ (exponent - 1); exponent = 0
+		else fraction = fraction - 1 end
 		return string.char(251,
-			--- @diagnostic disable-next-line: param-type-mismatch
+			--[[@diagnostic disable-next-line: param-type-mismatch]]
 			sign * 2 ^ 7 + math.floor(exponent / 2 ^ 4) % 2 ^ 7,
 			exponent % 2 ^ 4 * 2 ^ 4 +
 			math.floor(fraction * 2 ^ 4 % 0x100),
@@ -224,30 +202,18 @@ else
 end
 
 
--- Major type 2 - byte strings
---- @param s string
-encoder.bytestring = function (s)
-	return integer(#s, 64) .. s
-end
-
--- Major type 3 - UTF-8 strings
---- @param s string
-encoder.utf8string = function (s)
-	return integer(#s, 96) .. s
-end
-
--- Lua strings are byte strings
+--[[Major type 2 - byte strings]] --[[@param s string]]
+encoder.bytestring = function (s) return integer(#s, 64) .. s end
+--[[Major type 3 - UTF-8 strings]] --[[@param s string]]
+encoder.utf8string = function (s) return integer(#s, 96) .. s end
+--[[Lua strings are byte strings]]
 encoder.string = encoder.bytestring
-
---- @param bool boolean
-encoder.boolean = function (bool)
-	return bool and "\245" or "\244"
-end
-
---- @param _ nil
+--[[@param bool boolean]]
+encoder.boolean = function (bool) return bool and "\245" or "\244" end
+--[[@param _ nil]]
 encoder["nil"] = function (_) return "\246" end
 
---- @param ud userdata
+--[[@param ud userdata]]
 encoder.userdata = function (ud, opts)
 	local mt = debug.getmetatable(ud)
 	if mt then
@@ -259,7 +225,7 @@ encoder.userdata = function (ud, opts)
 	error("can't encode userdata")
 end
 
---- @param t {}
+--[[@param t {}]]
 encoder.table = function (t, opts)
 	local mt = getmetatable(t)
 	if mt then
@@ -284,10 +250,8 @@ encoder.table = function (t, opts)
 	for k, v in pairs(t) do
 		is_array = is_array and i == k
 		i = i + 1
-
 		local encoded_v = encode(v, opts)
 		array[i] = encoded_v
-
 		map[p], p = encode(k, opts), p + 1
 		map[p], p = encoded_v, p + 1
 	end
@@ -296,8 +260,8 @@ encoder.table = function (t, opts)
 	return table.concat(is_array and array or map)
 end
 
--- Array or dict-only encoders, which can be set as __tocbor metamethod
---- @param t unknown[]
+--[[Array or dict-only encoders, which can be set as __tocbor metamethod]]
+--[[@param t unknown[] ]]
 encoder.array = function (t, opts)
 	local array = { }
 	for i, v in ipairs(t) do
@@ -306,7 +270,7 @@ encoder.array = function (t, opts)
 	return integer(#array, 128) .. table.concat(array)
 end
 
---- @param t {}
+--[[@param t {}]]
 encoder.map = function (t, opts)
 	local map = { "\191" }
 	local p = 2
@@ -322,7 +286,7 @@ encoder.map = function (t, opts)
 end
 encoder.dict = encoder.map -- COMPAT
 
---- @param t {}
+--[[@param t {}]]
 encoder.ordered_map = function (t, opts)
 	local map = {}
 	if not t[1] then -- no predefined order
@@ -339,35 +303,23 @@ encoder.ordered_map = function (t, opts)
 	return integer(#map, 160) .. table.concat(map)
 end
 
---- @param _ function
-encoder["function"] = function (_)
-	error("can't encode function")
-end
+--[[@param _ function]]
+encoder["function"] = function (_) error("can't encode function") end
 
 mod.type_encoders = encoder
 
--- Decoder
--- Reads from a file-handle like object
-local read_bytes = function (fh, len)
-	return fh:read(len)
-end
-
-local read_byte = function (fh)
-	return fh:read(1):byte()
-end
+--[[Decoder]]
+--[[Reads from a file-handle like object]]
+local read_bytes = function (fh, len) return fh:read(len) end
+local read_byte = function (fh) return fh:read(1):byte() end
 
 local read_length = function (fh, mintyp)
-	if mintyp < 24 then
-		return mintyp
+	if mintyp < 24 then return mintyp
 	elseif mintyp < 28 then
 		local out = 0
-		for _ = 1, 2 ^ (mintyp - 24) do
-			out = out * 256 + read_byte(fh)
-		end
+		for _ = 1, 2 ^ (mintyp - 24) do out = out * 256 + read_byte(fh) end
 		return out
-	else
-		error("invalid length")
-	end
+	else error("invalid length") end
 end
 
 local decoder = {}
@@ -383,51 +335,34 @@ local read_object = function (fh, opts)
 end
 mod.decode_file = read_object
 
-local read_integer = function (fh, mintyp)
-	return read_length(fh, mintyp)
-end
-
-local read_negative_integer = function (fh, mintyp)
-	return -1 - read_length(fh, mintyp)
-end
+local read_integer = function (fh, mintyp) return read_length(fh, mintyp) end
+local read_negative_integer = function (fh, mintyp) return -1 - read_length(fh, mintyp) end
 
 local read_string = function (fh, mintyp)
-	if mintyp ~= 31 then
-		return read_bytes(fh, read_length(fh, mintyp))
-	end
+	if mintyp ~= 31 then return read_bytes(fh, read_length(fh, mintyp)) end
 	local out = {}
 	local i = 1
 	local v = read_object(fh)
-	while v ~= BREAK do
-		out[i], i = v, i + 1
-		v = read_object(fh)
-	end
+	while v ~= BREAK do out[i], i = v, i + 1; v = read_object(fh) end
 	return table.concat(out)
 end
 
-local read_unicode_string = function (fh, mintyp)
-	return read_string(fh, mintyp)
-	-- local str = read_string(fh, mintyp)
-	-- if have_utf8 and not utf8.len(str) then
-		-- TODO How to handle this?
-	-- end
-	-- return str
-end
+-- local str = read_string(fh, mintyp)
+-- if have_utf8 and not utf8.len(str) then
+	-- TODO How to handle this?
+-- end
+-- return str
+local read_unicode_string = function (fh, mintyp) return read_string(fh, mintyp) end
 
 local read_array = function (fh, mintyp, opts)
 	local out = {}
 	if mintyp == 31 then
 		local i = 1
 		local v = read_object(fh, opts)
-		while v ~= BREAK do
-			out[i], i = v, i + 1
-			v = read_object(fh, opts)
-		end
+		while v ~= BREAK do out[i], i = v, i + 1; v = read_object(fh, opts) end
 	else
 		local len = read_length(fh, mintyp)
-		for i = 1, len do
-			out[i] = read_object(fh, opts)
-		end
+		for i = 1, len do out[i] = read_object(fh, opts) end
 	end
 	return out
 end
@@ -468,20 +403,13 @@ end
 local read_half_float = function (fh)
 	local exponent = read_byte(fh)
 	local fraction = read_byte(fh)
-	local sign = exponent < 128 and 1 or -1 -- sign is highest bit
-
-	fraction = fraction + (exponent * 256) % 1024 -- copy two(?) bits from exponent to fraction
-	exponent = rshift(exponent, 2) % 32 -- remove sign bit and two low bits from fraction
-
-	if exponent == 0 then
-		return sign * ldexp(fraction, -24)
-	elseif exponent ~= 31 then
-		return sign * ldexp(fraction + 1024, exponent - 25)
-	elseif fraction == 0 then
-		return sign * inf
-	else
-		return nan
-	end
+	local sign = exponent < 128 and 1 or -1 --[[sign is highest bit]]
+	fraction = fraction + (exponent * 256) % 1024 --[[copy two(?) bits from exponent to fraction]]
+	exponent = rshift(exponent, 2) % 32 --[[remove sign bit and two low bits from fraction]]
+	if exponent == 0 then return sign * ldexp(fraction, -24)
+	elseif exponent ~= 31 then return sign * ldexp(fraction + 1024, exponent - 25)
+	elseif fraction == 0 then return sign * inf
+	else return nan end
 end
 
 local read_float = function (fh)
@@ -492,23 +420,16 @@ local read_float = function (fh)
 	fraction = fraction % 128
 	fraction = fraction * 256 + read_byte(fh)
 	fraction = fraction * 256 + read_byte(fh)
-
-	if exponent == 0 then
-		return sign * ldexp(exponent, -149)
-	elseif exponent ~= 0xff then
-		return sign * ldexp(fraction + 2 ^ 23, exponent - 150)
-	elseif fraction == 0 then
-		return sign * inf
-	else
-		return nan
-	end
+	if exponent == 0 then return sign * ldexp(exponent, -149)
+	elseif exponent ~= 0xff then return sign * ldexp(fraction + 2 ^ 23, exponent - 150)
+	elseif fraction == 0 then return sign * inf
+	else return nan end
 end
 
 local read_double = function (fh)
 	local exponent = read_byte(fh)
 	local fraction = read_byte(fh)
-	local sign = exponent < 128 and 1 or -1 -- sign is highest bit
-
+	local sign = exponent < 128 and 1 or -1 --[[sign is highest bit]]
 	exponent = exponent %  128 * 16 + rshift(fraction, 4)
 	fraction = fraction % 16
 	fraction = fraction * 256 + read_byte(fh)
@@ -517,16 +438,10 @@ local read_double = function (fh)
 	fraction = fraction * 256 + read_byte(fh)
 	fraction = fraction * 256 + read_byte(fh)
 	fraction = fraction * 256 + read_byte(fh)
-
-	if exponent == 0 then
-		return sign * ldexp(exponent, -149)
-	elseif exponent ~= 0xff then
-		return sign * ldexp(fraction + 2 ^ 52, exponent - 1075)
-	elseif fraction == 0 then
-		return sign * inf
-	else
-		return nan
-	end
+	if exponent == 0 then return sign * ldexp(exponent, -149)
+	elseif exponent ~= 0xff then return sign * ldexp(fraction + 2 ^ 52, exponent - 1075)
+	elseif fraction == 0 then return sign * inf
+	else return nan end
 end
 
 
@@ -536,29 +451,16 @@ if unpack then
 end
 
 local read_simple = function (fh, value, opts)
-	if value == 24 then
-		value = read_byte(fh)
-	end
-	if value == 20 then
-		return false
-	elseif value == 21 then
-		return true
-	elseif value == 22 then
-		return null
-	elseif value == 23 then
-		return undefined
-	elseif value == 25 then
-		return read_half_float(fh)
-	elseif value == 26 then
-		return read_float(fh)
-	elseif value == 27 then
-		return read_double(fh)
-	elseif value == 31 then
-		return BREAK
-	end
-	if opts and opts.simple then
-		return opts.simple(value)
-	end
+	if value == 24 then value = read_byte(fh) end
+	if value == 20 then return false
+	elseif value == 21 then return true
+	elseif value == 22 then return null
+	elseif value == 23 then return undefined
+	elseif value == 25 then return read_half_float(fh)
+	elseif value == 26 then return read_float(fh)
+	elseif value == 27 then return read_double(fh)
+	elseif value == 31 then return BREAK end
+	if opts and opts.simple then return opts.simple(value) end
 	return simple(value)
 end
 
@@ -572,30 +474,23 @@ decoder[6] = read_semantic
 decoder[7] = read_simple
 mod.type_decoders = decoder
 
--- opts.more(n) -> want more data
--- opts.simple -> decode simple value
--- opts[int] -> tagged decoder
+--[[opts.more(n) -> want more data]]
+--[[opts.simple -> decode simple value]]
+--[[opts[int] -> tagged decoder]]
 mod.decode = function (s, opts)
 	local fh = {}
 	local pos = 1
-
-	--- @type fun(_: integer?, _, _)
+	--[[@type fun(_: integer?, _, _)]]
 	local more
-	if type(opts) == "function" then
-		more = opts
-	elseif type(opts) == "table" then
-		more = opts.more
+	if type(opts) == "function" then more = opts
+	elseif type(opts) == "table" then more = opts.more
 	elseif opts ~= nil then
 		error(("bad argument #2 to 'decode' (function or table expected, got %s)"):format(type(opts)))
 	end
-	if type(more) ~= "function" then
-		function more()
-			error("input too short")
-		end
-	end
+	if type(more) ~= "function" then more = function () error("input too short") end end
 
-	--- @param bytes integer
-	function fh:read(bytes)
+	--[[@param bytes integer]]
+	fh.read = function (self, bytes)
 		local ret = s:sub(pos, pos + bytes - 1)
 		if #ret < bytes then
 			ret = more(bytes - #ret, fh, opts)
@@ -606,12 +501,9 @@ mod.decode = function (s, opts)
 		return ret
 	end
 
-	function fh:write(bytes) -- luacheck: no self
+	fh.write = function (_, bytes)
 		s = s .. bytes
-		if pos > 256 then
-			s = s:sub(pos + 1)
-			pos = 1
-		end
+		if pos > 256 then s = s:sub(pos + 1); pos = 1 end
 		return #bytes
 	end
 

@@ -1,7 +1,7 @@
 local ffi = require("ffi")
 
--- TODO: better typings
---- @type table<string, function>
+--[[TODO: better typings]]
+--[[@type table<string, function>]]
 local tls_c = assert(ffi.load("tls"))
 ffi.cdef [[
 	struct tls {};
@@ -96,15 +96,14 @@ ffi.cdef [[
 	void tls_config_clear_keys(struct tls_config*);
 ]]
 
---- @class string_c
---- @class tls_config_c
---- @class tls_c
+--[[@class tls_config_c]]
+--[[@class tls_c]]
 
 --[[@type fun(): { [0]: tls_c }]]
---- @diagnostic disable-next-line: assign-type-mismatch
+--[[@diagnostic disable-next-line: assign-type-mismatch]]
 local tls_c_ptr = ffi.typeof("struct tls*[1]")
 
--- FIXME: wrap returned strings in ffi.string
+--[[FIXME: wrap returned strings in ffi.string]]
 local library = {
 	--[[@type fun(tls: tls_c): string_c]]
 	peer_ocsp_url = tls_c.tls_peer_ocsp_url,

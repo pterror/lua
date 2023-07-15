@@ -51,8 +51,6 @@ mod.take = function (iter, count)
 	end)
 end
 
---[[FIXME: map_i, flatmap_i]]
-
 --[[@generic t, u]]
 --[[@return (fun(): u?)|functional_iterable]]
 --[[@param iter fun(): t?]]
@@ -63,6 +61,23 @@ mod.map = function (iter, fn)
 		return val ~= nil and fn(val) or val
 	end)
 end
+
+--[[this behaves differently from `array:map`. this is necessary as returning `nil` stops the iterator]]
+mod.each = mod.map
+
+--[[@generic t, u]]
+--[[@return (fun(): u?)|functional_iterable]]
+--[[@param iter fun(): t?]]
+--[[@param fn fun(value: t, i: integer): u]]
+mod.map_i = function (iter, fn)
+	local i = 0
+	return mod.iter(function ()
+		local val = iter()
+		if val ~= nil then i = i + 1; return fn(val, i) end
+	end)
+end
+
+mod.each_i = mod.map_i
 
 --[[@generic t, u]]
 --[[@return (fun(): u?)|functional_iterable]]
@@ -77,6 +92,31 @@ mod.flat_map = function (iter, fn)
 			local val = iter()
 			if val == nil then finished = true; return end
 			inner_iter = fn(val)
+		end
+		local val = inner_iter()
+		while val == nil and inner_iter ~= nil do
+			inner_iter = iter()
+			val = inner_iter()
+		end
+		return val
+	end)
+end
+
+--[[@generic t, u]]
+--[[@return (fun(): u?)|functional_iterable]]
+--[[@param iter fun(): t?]]
+--[[@param fn fun(value: t, i: integer): fun(): u?]]
+mod.flat_map_i = function (iter, fn)
+	local inner_iter = nil
+	local finished = false
+	local i = 0
+	return mod.iter(function ()
+		if finished then return nil end
+		if inner_iter == nil then
+			local val = iter()
+			if val == nil then finished = true; return end
+			i = i + 1
+			inner_iter = fn(val, i)
 		end
 		local val = inner_iter()
 		while val == nil and inner_iter ~= nil do
