@@ -69,6 +69,7 @@ local is_valid_opcode = {
 --[[@class websocket_message_pong: websocket_message_base]]
 --[[@field type "pong"]]
 --[[@field payload string Must be the same as the payload of the ping, if sent in response to a ping.]]
+
 --[[@alias websocket_message websocket_message_text|websocket_message_binary|websocket_message_close|websocket_message_ping|websocket_message_pong]]
 
 -- FIXME: should it use string errors?

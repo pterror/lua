@@ -19,9 +19,7 @@ local co
 local is_cli = #arg > 0
 
 local resume = function (...)
-	local __, ret = coroutine.resume(co, ...)
-	_ = ret
-	if ret then print(ret) end
+	local rets = { coroutine.resume(co, ...) }
 	if co and coroutine.status(co) == "dead" then
 		co = nil
 		if not is_cli then
@@ -29,15 +27,16 @@ local resume = function (...)
 			io.stdout:flush()
 		end
 	end
+	return unpack(rets)
 end
 
 input = function (prompt)
 	io.stdout:write(prompt or "> ")
 	io.stdout:flush()
-	local ret = coroutine.yield()
-	return ret
+	return coroutine.yield()
 end
 
+id = function (...) return ... end
 sh_ = io.popen
 sh = function (cmd) return io.popen(cmd):read("*all") end
 it_ = function (code) return loadstring("return function (it) " .. (code and code:find("return") and "" or "return ") .. (code or "true") .. " end")() end
@@ -67,7 +66,7 @@ end
 
 null = setmetatable({}, { __tostring = function () return "null" end })
 
-local resume_true = function () coroutine.resume(co, true) end
+local resume_true = function () resume(true) end
 local with_epoll = function (f) return function (...) return f(epoll, ...) end end
 
 local http_mod_to_obj = function (mod) --[[@param mod { send: fun(req: http_client_request): string }]]
@@ -82,7 +81,7 @@ local http_mod_to_obj = function (mod) --[[@param mod { send: fun(req: http_clie
 			local host, port = host_and_port:match("(.-):(.+)")
 			return http.string_to_http_client_response(send({
 				--[[@diagnostic disable-next-line: assign-type-mismatch]]
-				host = host, path = path, port = tonumber(port),
+				host = host, path = path, method = method, port = tonumber(port),
 				body = opts.body or "", headers = opts.headers or {},
 			}))
 		end
@@ -102,7 +101,6 @@ lazy_load_table = {
 	arr = { "lib.functional.array", "array" },
 	dig = { "lib.dns.tcp_client", "client", function (client)
 		return function (domain, type)
-			--[[FIXME: somehow use custom `tostring`?]]
 			client(resume, "localhost", domain, nil, type and require("lib.dns.format").type[type], nil, epoll)
 			return coroutine.yield()
 		end
@@ -139,7 +137,7 @@ lazy_load_table = {
 }
 
 sleep_ms = sleep_ms
-sleep = function (s) sleep_ms(s * 1000) end
+sleep = function (s) return sleep_ms(s * 1000) end
 
 arr = arr
 arr_of = function (...) return arr({ ... }) end
@@ -369,22 +367,14 @@ local eval = function (data)
 		if fn then
 			co = coroutine.create(fn)
 			--[[TODO: consider printing multiple returns]]
-			local rets = { coroutine.resume(co) }
-			local ret = rets[2]
+			local __, ret = resume()
 			_ = ret
 			if ret then smart_print(ret) end
-		else io.stderr:write("error:\n", err or "", "\n") end
+		else io.stderr:write("error: ", err or "", "\n") end
 	else
-		local __, ret = coroutine.resume(co, data:sub(1, -2))
+		local __, ret = resume(data:sub(1, -2))
 		_ = ret
 		if ret then smart_print(ret) end
-	end
-	if co and coroutine.status(co) == "dead" then
-		co = nil
-		if not is_cli then
-			io.stdout:write("$ ")
-			io.stdout:flush()
-		end
 	end
 end
 
@@ -409,7 +399,6 @@ if not is_cli or co ~= nil or epoll.count > 1 then
 				io.stdout:write("$ ")
 				io.stdout:flush()
 			end
-			--[[FIXME: this breaks for `sleep(1) and input()`]]
 		elseif is_cli and co == nil and epoll.count <= 1 then break end
 	end
 end

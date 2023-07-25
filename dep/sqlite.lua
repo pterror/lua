@@ -6,11 +6,17 @@ ffi.cdef [[
 	// opaque structs
 	typedef struct sqlite3 sqlite3;
 	typedef struct sqlite3_stmt sqlite3_stmt;
+	typedef int64_t sqlite3_int64;
 
 	int sqlite3_open(const char *filename, sqlite3 **ppDb);
 	int sqlite3_prepare_v2(sqlite3 *db, const char *zSql, int nByte, sqlite3_stmt **ppStmt, const char **pzTail);
 	int sqlite3_step(sqlite3_stmt*);
 	int sqlite3_reset(sqlite3_stmt *pStmt);
+
+	int sqlite3_get_autocommit(sqlite3*);
+	sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
+	int sqlite3_changes(sqlite3*);
+	sqlite3_int64 sqlite3_changes64(sqlite3*);
 
 	// reading columns
 	int sqlite3_column_count(sqlite3_stmt *pStmt);
@@ -53,6 +59,10 @@ local SQLITE_NULL = 5
 
 -- TODO: enum for the error
 --[[@class sqlite_ffi]]
+--[[@field sqlite3_last_insert_rowid fun(db: sqlite_c): integer]]
+--[[@field sqlite3_get_autocommit fun(db: sqlite_c): integer]]
+--[[@field sqlite3_changes fun(db: sqlite_c): integer]]
+--[[@field sqlite3_changes64 fun(db: sqlite_c): integer]]
 --[[@field sqlite3_open fun(filename: string, ppDb: sqlite_c): sqlite_error_c]]
 --[[@field sqlite3_prepare_v2 fun(db: sqlite_c, zSql: string, nByte: integer, ppStmt: sqlite_stmt_c, pzTail: ffi.cdata* | nil): sqlite_error_c]]
 --[[@field sqlite3_step fun(stmt: sqlite_stmt_c): sqlite_error_c]]
@@ -142,12 +152,21 @@ local bind = function (stmt, params, length)
 	end
 end
 
+--[[@return integer]]
+--[[@diagnostic disable-next-line: return-type-mismatch]]
+sqlite.last_insert_rowid = function (self) return tonumber(sqlite_ffi.sqlite3_last_insert_rowid(self.db[0])) end
+sqlite.get_autocommit = function (self) return sqlite_ffi.sqlite3_get_autocommit(self.db[0]) ~= 0 end
+
+--[[@return integer]]
+--[[@diagnostic disable-next-line: return-type-mismatch]]
+sqlite.changes = function (self) return tonumber(sqlite_ffi.sqlite3_changes64(self.db[0])) end
+
 --[[@return true? success, string? error]] --[[@param sql string]] --[[@param ... number|string|boolean?]]
 sqlite.execute = function (self, sql, ...)
 	local c_sql = sql
 	local next_sql = ffi.new("const char *[1]")
 	local stmt_ptr = ffi.new("sqlite3_stmt *[1]") --[[@type sqlite_stmt_c]]
-	while true do 
+	while true do
 		if sqlite_ffi.sqlite3_prepare_v2(self.db[0], c_sql, -1, stmt_ptr, next_sql) ~= 0 then return nil, "sqlite: sqlite3_prepare_v2: " .. err(self) end
 		local stmt = stmt_ptr[0]
 		if stmt == nil then break end

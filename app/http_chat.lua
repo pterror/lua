@@ -74,7 +74,8 @@ require("lib.http.serverx").server({
 	end,
 	ws = function (_, msg)
 		for _, fns in pairs(ws_clients) do
-			fns.send({ type = "text", payload = msg.payload })
+			local reply = { type = "text", payload = msg.payload } --[[@type websocket_message_text]]
+			fns.send(reply)
 		end
 	end,
 	ws_open = function (sock, send, close)
@@ -86,7 +87,8 @@ require("lib.http.serverx").server({
 --[[FIXME: something is not adding to count...]]
 set_interval(epoll, 60000, function ()
 	for _, fns in pairs(ws_clients) do
-		fns.send({ type = "ping", payload = "" })
+		local msg = { type = "ping", payload = "" } --[[@type websocket_message_ping]]
+		fns.send(msg)
 	end
 end)
 

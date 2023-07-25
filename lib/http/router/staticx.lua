@@ -86,7 +86,7 @@ mod.static_router = function (base)
 			if dir then
 				res.headers["Content-Type"] = "text/html"
 				local parts = {}
-				parts[#parts+1] = "<!DOCTYPE html><html><head><title>Index of " .. html_escape(full_path) .. "</title></head><body><table><thead><tr><th>Name</th><th>Size</th><th>Created</th><th>Last modified</th></tr></thead><tbody><h1>Index of " .. html_escape(full_path) .. "</h1><a href=\"..\">[up one level]</a>"
+				parts[#parts+1] = [[<!DOCTYPE html><html><head><meta charset="utf-8"><title>Index of ]] .. html_escape(full_path) .. "</title></head><body><table><thead><tr><th>Name</th><th>Size</th><th>Created</th><th>Last modified</th></tr></thead><tbody><h1>Index of " .. html_escape(full_path) .. "</h1><a href=\"..\">[up one level]</a>"
 				for file_info in iter, dir do
 					--[[TODO: consider adding sorting (via js)]]
 					local slash = (file_info.is_dir and "/" or "")
