@@ -10,3 +10,4 @@
 --[[@class fd_c]]
 --[[@class unix_epoch: number]]
 --[[@class ptr_c<t>: { [0]: t }]]
+--[[@class long_long_c: integer]]

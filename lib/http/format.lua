@@ -40,10 +40,10 @@ mod.method = {
 mod.string_to_http_request = function (s, i)
 	i = i or 1
 	local head, body = s:match("(.-)\r\n\r\n(.*)", i) --[[@type string, string]]
-	if not head then return end --[[maybe it's https, either way we don't support it]]
+	if not head then return nil, "http/format: not http/1.1" end --[[not http/1.1]]
 	--[[@type string, string, string, string]]
 	local method, path, version_raw, headers_raw = head:match("([^ ]*) ([^ ]*) ([^ ]*)\r\n(.*)")
-	if not method then return end
+	if not method then return nil, "http/format: first line must have method, path and http version" end
 	local version = tonumber(version_raw:match("HTTP/([0-9.]+)")) or nan
 	local headers = {} --[[@type table<string, string[]>]]
 	for line in (headers_raw .. "\r\n"):gmatch("(.-)\r\n") do
@@ -67,8 +67,7 @@ mod.string_to_http_request = function (s, i)
 	--[[TODO: http/2]]
 	--[[@class http_request]]
 	return {
-		method = method, path = path, params = params, version_raw = version_raw, version = version,
-		headers = headers, body = body
+		method = method, path = path, params = params, version = version, headers = headers, body = body
 	}, #s + 1 --[[realistically this should take into account content-length]]
 end
 
@@ -133,8 +132,7 @@ mod.string_to_http_client_response = function (s, i)
 	local status = tonumber(status_raw)
 	--[[@class http_client_response]]
 	return {
-		--[[status_raw could be added but for now it is not deemed useful]]
-		version_raw = version_raw, version = version, status = status, status_text = status_text, headers = headers,
+		version = version, status = status, status_text = status_text, headers = headers,
 		body = body,
 	}, #s + 1
 end
