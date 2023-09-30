@@ -1,11 +1,12 @@
--- changes:
--- - combine into single file
--- - other stuff i forgot
--- - local function x -> local x = function
--- - inline _decode_error into decode_error
--- TODO: MYOW: copy file to lua
+--[[changes made:]]
+--[[- combine into single file]]
+--[[- other stuff i forgot]]
+--[[- local function x -> local x = function]]
+--[[- inline _decode_error into decode_error]]
 
 local mod = {}
+
+mod.null = {}
 
 local f_string_esc_pat = "[^ -!#-[%]^-\255]"
 local f_str_ctrl_pat = "[^\32-\255]"
@@ -110,7 +111,7 @@ end
 local enc_dispatcher = setmetatable({
 	boolean = f_tostring, number = f_number, string = f_string, table = f_table,
 }, {
-	__index = function() error("invalid type value") end
+	__index = function (_, type) error("invalid type value: " .. type) end
 })
 
 doencode = function (v2)
@@ -123,7 +124,7 @@ doencode = function (v2)
 end
 
 mod.encode = function (v_, nullv_)
-	v, enc_nullv = v_, nullv_
+	v, enc_nullv = v_, nullv_ or mod.null
 	i, builder, visited = 1, {}, {}
 	doencode(v)
 	return concat(builder)
@@ -166,10 +167,9 @@ end
 
 local number_error = function () return decode_error("invalid number") end
 
--- `0(\.[0-9]*)?([eE][+-]?[0-9]*)?`
+--[[`0(\.[0-9]*)?([eE][+-]?[0-9]*)?`]]
 local f_zro = function (mns)
-	local num, c = match(json, "^(%.?[0-9]*)([-+.A-Za-z]?)", pos)  -- skipping 0
-
+	local num, c = match(json, "^(%.?[0-9]*)([-+.A-Za-z]?)", pos)  --[[skipping 0]]
 	if num == "" then
 		if c == "" then if mns then return -0.0 end; return 0 end
 		if c == "e" or c == "E" then
@@ -184,9 +184,7 @@ local f_zro = function (mns)
 	end
 	if byte(num) ~= 0x2E or byte(num, -1) == 0x2E then number_error() end
 	if c ~= "" then
-		if c == "e" or c == "E" then
-			num, c = match(json, "^([^eE]*[eE][-+]?[0-9]+)([-+.A-Za-z]?)", pos)
-		end
+		if c == "e" or c == "E" then num, c = match(json, "^([^eE]*[eE][-+]?[0-9]+)([-+.A-Za-z]?)", pos) end
 		if c ~= "" then number_error() end
 	end
 	pos = pos + #num
@@ -235,7 +233,7 @@ local f_str_hextbl = setmetatable({
 end })
 
 local f_str_escapetbl = setmetatable({
-	["\""]  = "\"", ["\\"] = "\\", ["/"]  = "/", ["b"]  = "\b", ["f"]  = "\f", ["n"]  = "\n", ["r"]  = "\r", ["t"]  = "\t",
+	["\""] = "\"", ["\\"] = "\\", ["/"] = "/", ["b"] = "\b", ["f"] = "\f", ["n"] = "\n", ["r"] = "\r", ["t"] = "\t",
 }, {
 	__index = function () decode_error("invalid escape sequence") end,
 })
@@ -248,17 +246,17 @@ local f_str_subst = function (ch, ucode)
 		local c1, c2, c3, c4, rest = byte(ucode, 1, 5)
 		ucode = f_str_hextbl[c1 - 47] * 0x1000 + f_str_hextbl[c2 - 47] * 0x100 + f_str_hextbl[c3 - 47] * 0x10 + f_str_hextbl[c4 - 47]
 		if ucode ~= 1e999 then
-			if ucode < 0x80 then  --[[1byte]]
+			if ucode < 0x80 then --[[1byte]]
 				if rest then return char(ucode, rest) end
 				return char(ucode)
-			elseif ucode < 0x800 then  --[[2bytes]]
+			elseif ucode < 0x800 then --[[2bytes]]
 				c1 = floor(ucode / 0x40)
 				c2 = ucode - c1 * 0x40
 				c1 = c1 + 0xC0
 				c2 = c2 + 0x80
 				if rest then return char(c1, c2, rest) end
 				return char(c1, c2)
-			elseif ucode < 0xD800 or 0xE000 <= ucode then  --[[3bytes]]
+			elseif ucode < 0xD800 or 0xE000 <= ucode then --[[3bytes]]
 				c1 = floor(ucode / 0x1000)
 				ucode = ucode - c1 * 0x1000
 				c2 = floor(ucode / 0x40)
@@ -268,7 +266,7 @@ local f_str_subst = function (ch, ucode)
 				c3 = c3 + 0x80
 				if rest then return char(c1, c2, c3, rest) end
 				return char(c1, c2, c3)
-			elseif 0xD800 <= ucode and ucode < 0xDC00 then  --[[surrogate pair 1st]]
+			elseif 0xD800 <= ucode and ucode < 0xDC00 then --[[surrogate pair 1st]]
 				if f_str_surrogate_prev == 0 then
 					f_str_surrogate_prev = ucode
 					if not rest then return "" end
@@ -276,7 +274,7 @@ local f_str_subst = function (ch, ucode)
 				end
 				f_str_surrogate_prev = 0
 				surrogate_first_error()
-			else  --[[surrogate pair 2nd]]
+			else --[[surrogate pair 2nd]]
 				if f_str_surrogate_prev ~= 0 then
 					ucode = 0x10000 + (f_str_surrogate_prev - 0xD800) * 0x400 + (ucode - 0xDC00)
 					f_str_surrogate_prev = 0
@@ -309,32 +307,27 @@ local f_str = function (iskey)
 	local newpos = pos
 	local tmppos, c1, c2
 	repeat
-		newpos = find(json, "\"", newpos, true)  -- search "\""
+		newpos = find(json, "\"", newpos, true) --[[search "\""]]
 		if not newpos then decode_error("unterminated string") end
 		tmppos = newpos-1
 		newpos = newpos+1
 		c1, c2 = byte(json, tmppos-1, tmppos)
-		if c2 == 0x5C and c1 == 0x5C then  --[[skip preceding "\\"s]]
+		if c2 == 0x5c and c1 == 0x5c then --[[skip preceding "\\"s]]
 			repeat
 				tmppos = tmppos-2
 				c1, c2 = byte(json, tmppos-1, tmppos)
-			until c2 ~= 0x5C or c1 ~= 0x5C
+			until c2 ~= 0x5c or c1 ~= 0x5c
 			tmppos = newpos-2
 		end
-	until c2 ~= 0x5C  --[[leave if "\"" is not preceded by "\\""]]
-
+	until c2 ~= 0x5c --[[leave if "\"" is not preceded by "\\""]]
 	local str = sub(json, pos, tmppos)
 	pos = newpos
-
-	if iskey then  --[[check key cache]]
-		tmppos = f_str_keycache[str]  --[[reuse tmppos for cache key/val]]
+	if iskey then --[[check key cache]]
+		tmppos = f_str_keycache[str] --[[reuse tmppos for cache key/val]]
 		if tmppos then return tmppos end
 		tmppos = str
 	end
-
-	if find(str, f_str_ctrl_pat) then
-		decode_error("unescaped control string")
-	end
+	if find(str, f_str_ctrl_pat) then decode_error("unescaped control string") end
 	if find(str, "\\", 1, true) then  --[[check whether a backslash exists]]
 		--[[We need to grab 4 characters after the escape char, for encoding unicode codepoint to UTF-8.]]
 		--[[As we need to ensure that every first surrogate pair byte is immediately followed by second one,]]
@@ -442,8 +435,10 @@ dec_dispatcher = setmetatable({ [0] =
 	end
 })
 
+--[[@return unknown v2, integer? pos]]
+--[[@param json_ string]] --[[@param pos_ integer?]] --[[@param nullv_ unknown?]] --[[@param arraylen_ integer?]]
 mod.decode = function (json_, pos_, nullv_, arraylen_)
-	json, pos, dec_nullv, arraylen = json_, pos_, nullv_, arraylen_
+	json, pos, dec_nullv, arraylen = json_, pos_, nullv_ or mod.null, arraylen_
 	rec_depth = 0
 	pos = match(json, "^[ \n\r\t]*()", pos)
 	f = dec_dispatcher[byte(json, pos)]

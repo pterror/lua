@@ -2,13 +2,19 @@ local mod = {}
 
 --[[@param routes http_table_handler]]
 mod.table_router = function (routes)
-	--[[@return boolean?]] --[[@param req http_request]] --[[@param res http_response]]
-	return function (req, res)
+	--[[@return boolean?]] --[[@param req http_request]] --[[@param res http_response]] --[[@param sock luajitsocket]]
+	return function (req, res, sock)
 		local route = routes
 		if type(route) == "function" then
-			return route(req, res)
+			local success = route(req, res, sock)
+			return success == nil or success
 		end
-		for part in req.path:gmatch("/([^/]*)") do
+		local start
+		local end_ = 0
+		local part
+		repeat
+			--[[@diagnostic disable-next-line: cast-local-type]]
+			start, end_, part = req.path:find("/([^/]*)", end_ + 1)
 			local new_route = route[part]
 			if not new_route then
 				new_route = route[1]
@@ -17,11 +23,18 @@ mod.table_router = function (routes)
 				req.globs = globs
 			end
 			route = new_route
-			if type(route) == "function" then return route(req, res)
+			if type(route) == "function" then
+				if end_ < #req.path then req.globs.rest = req.path:sub(end_ + 1) end
+				local success = route(req, res, sock)
+				return success == nil or success
 			elseif route == nil then return end
-		end
+		until end_ == #req.path
 		route = route[""]
-		if type(route) == "function" then return route(req, res) end
+		if type(route) == "function" then
+			if end_ < #req.path then req.globs.rest = req.path:sub(end_ + 1) end
+			local success = route(req, res, sock)
+			return success == nil or success
+		end
 	end
 end
 

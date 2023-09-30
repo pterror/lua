@@ -2410,9 +2410,10 @@ mod.display = display
 display.new = function (self, name)
 	local display_c = mod.open_display(name)
 	if not display_c then return nil end
-	return setmetatable({ --[[@class xlib_display]]
+	local display = { --[[@class xlib_display]]
 		c = display_c
-	}, self)
+	}
+	return setmetatable(display, self)
 end
 
 --[[@param display_ ptr_c<xlib_display_c>]]

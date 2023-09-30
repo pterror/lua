@@ -13,7 +13,7 @@ mod.make_connection_handler = function (handler)
 		if not s then return end --[[silently fail]]
 		--[[TODO: multi-packet bodies]]
 		local req, i = http.string_to_http_request(s)
-		if not req or not i then client:send(http.http_response_to_string({ status = 400 })); return end
+		if not req or not i then client:send(http.http_response_to_string({ status = 400, headers = {} })); return end
 		local res = { headers = {} } --[[@type http_response]]
 		handler(req, res, client)
 		client:send(http.http_response_to_string(res))
@@ -21,6 +21,7 @@ mod.make_connection_handler = function (handler)
 	end
 end
 
+--[[@return luajitsocket sock]]
 --[[@param handler http_callback]] --[[@param port? integer]] --[[@param epoll? epoll]]
 mod.server = function (handler, port, epoll)
 	return socket.server(mod.make_connection_handler(handler), port or 80, epoll)

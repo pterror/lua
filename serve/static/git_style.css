@@ -1,0 +1,35 @@
+:root {
+	/* TODO: light theme colors */
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-status-new: #6bd67d;
+		--color-status-modified: #9ee0af;
+		--color-status-deleted: #d47b70;
+		--color-status-ignored: #7f9ead;
+	}
+}
+
+.status-new > svg,
+.status-modified > svg,
+.status-deleted > svg,
+.status-ignored > svg {
+	--color: currentColor;
+}
+
+.status-new {
+	color: var(--color-status-new);
+}
+
+.status-modified {
+	color: var(--color-status-modified);
+}
+
+.status-deleted {
+	color: var(--color-status-deleted);
+}
+
+.status-ignored {
+	color: var(--color-status-ignored);
+}

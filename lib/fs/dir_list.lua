@@ -1,5 +1,8 @@
 local ffi = require("ffi")
 
+--[[@diagnostic disable-next-line: undefined-global]]
+if register_ffi_module then register_ffi_module("lib.fs.dir_list") end
+
 local mod = {}
 
 --[[@class file_info]]

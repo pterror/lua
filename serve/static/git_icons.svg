@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 56" fill="none">
+	<clipPath id="clip-border">
+		<rect width="100%" height="100%" rx="4"></rect>
+	</clipPath>
+	<rect width="100%" height="100%" rx="4" stroke="var(--color, black)" stroke-width="2" clip-path="url(#clip-border)">
+	</rect>
+	<pattern id="pattern-frames" x="4" y="4" width="24" height="24" patternUnits="userSpaceOnUse">
+		<clipPath id="clip-frame-inner">
+			<rect x="3" y="3" width="3" height="1"></rect>
+			<rect x="3" y="3" width="1" height="3"></rect>
+			<rect x="18" y="3" width="3" height="1"></rect>
+			<rect x="20" y="3" width="1" height="3"></rect>
+			<rect x="3" y="20" width="3" height="1"></rect>
+			<rect x="3" y="18" width="1" height="3"></rect>
+			<rect x="18" y="20" width="3" height="1"></rect>
+			<rect x="20" y="18" width="1" height="3"></rect>
+		</clipPath>
+		<clipPath id="clip-frame">
+			<rect x="3" y="3" width="18" height="18" rx="1" clip-path="url(#clip-frame-inner)"></rect>
+		</clipPath>
+		<rect x="4" y="4" width="16" height="16" stroke="rgba(0 0 0 / 50%)" stroke-width="2" clip-path="url(#clip-frame)">
+		</rect>
+	</pattern>
+	<rect width="100%" height="100%" rx="4" fill="url(#pattern-frames)"></rect>
+	<symbol id="symbol-ref-branch" viewBox="0 0 16 16">
+		<path d="M10 13H12V15C12 15.5523 11.5523 16 11 16V16C10.4477 16 10 15.5523 10 15V13Z" fill="var(--color, black)" />
+		<path
+			d="M8 10C7.60603 10 7.21593 9.9224 6.85195 9.77164C6.48797 9.62087 6.15726 9.3999 5.87868 9.12132C5.6001 8.84274 5.37913 8.51203 5.22836 8.14805C5.0776 7.78407 5 7.39397 5 7"
+			stroke="var(--color, black)" stroke-width="2" />
+		<path
+			d="M8 10C8.39397 10 8.78407 10.0776 9.14805 10.2284C9.51203 10.3791 9.84274 10.6001 10.1213 10.8787C10.3999 11.1573 10.6209 11.488 10.7716 11.852C10.9224 12.2159 11 12.606 11 13"
+			stroke="var(--color, black)" stroke-width="2" />
+		<path
+			d="M4.59456 4.5618C4.79413 4.28527 5.20587 4.28527 5.40544 4.5618L6.59305 6.2074C6.8317 6.53808 6.59541 7 6.18761 7H3.81239C3.40459 7 3.1683 6.53808 3.40695 6.2074L4.59456 4.5618Z"
+			fill="var(--color, black)" />
+		<path d="M12 4H10V8.41742C10.5725 8.66729 11.0934 9.02236 11.5355 9.46447C11.7032 9.63214 11.8584 9.81114 12 10V4Z"
+			fill="var(--color, black)" />
+		<path
+			d="M13 4H9C8.58798 4 8.35279 3.52962 8.6 3.2L10.6 0.533333C10.8 0.266667 11.2 0.266667 11.4 0.533333L13.4 3.2C13.6472 3.52962 13.412 4 13 4Z"
+			fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-ref-branch" x="8" y="8" width="16" height="16"></use>
+	<symbol id="symbol-ref-remote-branch" viewBox="0 0 16 16">
+		<path d="M10 13H12V15C12 15.5523 11.5523 16 11 16V16C10.4477 16 10 15.5523 10 15V13Z" fill="var(--color, black)" />
+		<path
+			d="M8 10C7.60603 10 7.21593 9.9224 6.85195 9.77164C6.48797 9.62087 6.15726 9.3999 5.87868 9.12132C5.6001 8.84274 5.37913 8.51203 5.22836 8.14805C5.0776 7.78407 5 7.39397 5 7"
+			stroke="var(--color, black)" stroke-width="2" />
+		<path
+			d="M8 10C8.39397 10 8.78407 10.0776 9.14805 10.2284C9.51203 10.3791 9.84274 10.6001 10.1213 10.8787C10.3999 11.1573 10.6209 11.488 10.7716 11.852C10.9224 12.2159 11 12.606 11 13"
+			stroke="var(--color, black)" stroke-width="2" />
+		<path
+			d="M4.59456 4.5618C4.79413 4.28527 5.20587 4.28527 5.40544 4.5618L6.59305 6.2074C6.8317 6.53808 6.59541 7 6.18761 7H3.81239C3.40459 7 3.1683 6.53808 3.40695 6.2074L4.59456 4.5618Z"
+			fill="var(--color, black)" />
+		<path d="M12 4H10V8.41742C10.5725 8.66729 11.0934 9.02236 11.5355 9.46447C11.7032 9.63214 11.8584 9.81114 12 10V4Z"
+			fill="var(--color, black)" />
+		<path
+			d="M13 4H9C8.58798 4 8.35279 3.52962 8.6 3.2L10.6 0.533333C10.8 0.266667 11.2 0.266667 11.4 0.533333L13.4 3.2C13.6472 3.52962 13.412 4 13 4Z"
+			fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-ref-remote-branch" x="32" y="8" width="16" height="16"></use>
+	<symbol id="symbol-ref-commit" viewBox="0 0 16 16">
+		<circle cx="8" cy="8" r="3" stroke="var(--color, black)" stroke-width="2" />
+		<path
+			d="M8 0C7.44772 0 7 0.447715 7 1V4.12602C7.31962 4.04375 7.6547 4 8 4C8.3453 4 8.68038 4.04375 9 4.12602V1C9 0.447715 8.55228 0 8 0ZM9 11.874C8.68038 11.9562 8.3453 12 8 12C7.6547 12 7.31962 11.9562 7 11.874V15C7 15.5523 7.44772 16 8 16C8.55228 16 9 15.5523 9 15V11.874Z"
+			fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-ref-commit" x="56" y="8" width="16" height="16"></use>
+	<symbol id="symbol-ref-tag" viewBox="0 0 16 16">
+		<path fill-rule="evenodd" clip-rule="evenodd"
+			d="M14.5 4C15.0523 4 15.5 4.44772 15.5 5V11C15.5 11.5523 15.0523 12 14.5 12H4.41422C4.149 12 3.89464 11.8946 3.70711 11.7071L0.707108 8.70711C0.316584 8.31658 0.316584 7.68342 0.707109 7.29289L3.70711 4.29289C3.89465 4.10536 4.149 4 4.41422 4H14.5ZM4.82 6H13.5V10H4.82L2.82 8L4.82 6Z"
+			fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-ref-tag" x="80" y="8" width="16" height="16"></use>
+	<symbol id="symbol-ref-notes" viewBox="0 0 16 16">
+		<path fill-rule="evenodd" clip-rule="evenodd"
+			d="M1 2V14C1 14.5523 1.44772 15 2 15H14C14.5523 15 15 14.5523 15 14V6.11421C15 5.849 14.8946 5.59464 14.7071 5.40711L10.5929 1.29289C10.4054 1.10536 10.151 1 9.88579 1H2C1.44772 1 1 1.44772 1 2ZM3 3.00003V13H13V7.50003H9.5V7.5C9.36868 7.5 9.23864 7.47413 9.11732 7.42388C8.99599 7.37362 8.88575 7.29997 8.79289 7.20711C8.70003 7.11425 8.62638 7.00401 8.57612 6.88268C8.52587 6.76136 8.5 6.63132 8.5 6.5V3.00003H3ZM10.5 5.5V3.75L12.25 5.5H10.5Z"
+			fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-ref-notes" x="104" y="8" width="16" height="16"></use>
+	<symbol id="symbol-file-new" viewBox="0 0 16 16">
+		<rect x="7" y="3" width="2" height="10" rx="1" fill="var(--color, black)" />
+		<path d="M3 8C3 7.44772 3.44772 7 4 7H7V9H4C3.44772 9 3 8.55228 3 8V8Z" fill="var(--color, black)" />
+		<path d="M9 7H12C12.5523 7 13 7.44772 13 8V8C13 8.55228 12.5523 9 12 9H9V7Z" fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-file-new" x="8" y="32" width="16" height="16"></use>
+	<symbol id="symbol-file-deleted" viewBox="0 0 16 16">
+		<rect x="3" y="7" width="10" height="2" rx="1" fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-file-deleted" x="32" y="32" width="16" height="16"></use>
+	<symbol id="symbol-file-modified" viewBox="0 0 16 16">
+		<rect x="4" y="11.5" width="8" height="2" rx="1" fill="var(--color, black)" />
+		<rect x="7" y="2.5" width="2" height="8" rx="1" fill="var(--color, black)" />
+		<path d="M4 6.5C4 5.94772 4.44772 5.5 5 5.5H7V7.5H5C4.44772 7.5 4 7.05228 4 6.5V6.5Z" fill="var(--color, black)" />
+		<path d="M9 5.5H11C11.5523 5.5 12 5.94772 12 6.5V6.5C12 7.05228 11.5523 7.5 11 7.5H9V5.5Z"
+			fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-file-modified" x="56" y="32" width="16" height="16"></use>
+	<symbol id="symbol-file-ignored" viewBox="0 0 16 16">
+		<circle cx="8" cy="8" r="4" stroke="var(--color, black)" stroke-width="2" />
+		<path fill-rule="evenodd" clip-rule="evenodd"
+			d="M10.6927 6.67578L6.67577 10.6927C6.41109 10.5623 6.16842 10.394 5.95484 10.1949L5.80514 10.0452C5.59062 9.81504 5.41185 9.55114 5.2777 9.26231L9.26231 5.27771C9.88399 5.56647 10.3902 6.06191 10.6927 6.67578Z"
+			fill="var(--color, black)" />
+	</symbol>
+	<use href="#symbol-file-ignored" x="80" y="32" width="16" height="16"></use>
+</svg>

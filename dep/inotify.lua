@@ -54,7 +54,7 @@ mod.event_mask = {
 	IN_UNMOUNT = 0x00002000, --[[Backing fs was unmounted.]]
 	IN_Q_OVERFLOW = 0x00004000, --[[Event queued overflowed.]]
 	IN_IGNORED = 0x00008000, --[[File was ignored.]]
-	IN_ONLYDIR = 0x01000000, --[[Only watch the path if it is a  directory.]]
+	IN_ONLYDIR = 0x01000000, --[[Only watch the path if it is a directory.]]
 	IN_DONT_FOLLOW = 0x02000000, --[[Do not follow a sym link.]]
 	IN_EXCL_UNLINK = 0x04000000, --[[Exclude events on unlinked objects.]]
 	IN_MASK_CREATE = 0x10000000, --[[Only create watches.]]
@@ -111,6 +111,7 @@ mod.new = function (epoll, flags) return inotify:new(epoll, flags) end
 --[[@return fun() remove]] --[[@param pathname string]] --[[@param mask inotify_event_mask]] --[[@param cb fun(event: inotify_event_c)]]
 inotify.add = function (self, pathname, mask, cb)
 	local wd = inotify_ffi.inotify_add_watch(self.fd, pathname, mask)
+	assert(wd >= 0, "inotify: inotify_add_watch failed")
 	self.callbacks[wd] = cb
 	return function ()
 		inotify_ffi.inotify_rm_watch(self.fd, wd)

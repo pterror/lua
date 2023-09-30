@@ -9,13 +9,14 @@ local socket = {}
 local e = {}
 local errno = {}
 
+--[[@diagnostic disable-next-line: undefined-global]]
+if register_ffi_module then register_ffi_module("dep.ljsocket") end
+
 do
 	local ljsocket_ffi --[[@type ljsocket_ffi]]
 
 	if ffi.os == "Windows" then ljsocket_ffi = assert(ffi.load("Ws2_32"))
 	else ljsocket_ffi = ffi.C end
-
-	local M = {}
 
 	local generic_function = function (C_name, cdef, alias, size_error_handling)
 		ffi.cdef(cdef)

@@ -184,7 +184,7 @@ require("lib.http.serverx").server({
 	end,
 	ws_close = function (sock) ws_clients[sock] = nil end,
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
-}, tonumber(arg[1] or os.getenv("port") or os.getenv("PORT")), epoll)
+}, tonumber(arg[1] or os.getenv("PORT") or os.getenv("port")), epoll)
 --[[FIXME: something is not adding to count...]]
 set_interval(epoll, 60000, function ()
 	for _, fns in pairs(ws_clients) do

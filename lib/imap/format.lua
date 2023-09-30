@@ -1,5 +1,9 @@
 --[[https://datatracker.ietf.org/doc/rfc9051/]]
 --[[https://www.mailenable.com/kb/content/article.asp?ID=ME020711]]
+--[[Client and server implementations MUST implement the capabilities
+"AUTH=PLAIN" (described in [PLAIN]), and MUST implement "STARTTLS"
+and "LOGINDISABLED" on the cleartext port.]]
+
 
 local maxint = 9007199254740991
 
@@ -104,14 +108,31 @@ mod.read_flag = function (s, i)
 	return match, i + #match
 end
 
+--[[@param s string]] --[[@param i? integer]]
+mod.read_capability = function (s, i)
+	i = i or 1
+	local match = s:match("[Aa][Uu][Tt][Hh]=[^%z- \x7f(){%*\"\\\\]+", i) --[[@type imap_capability?]]
+	if not match then match = s:match("[^%z- \x7f(){%*\"\\\\]+", i) --[[@type imap_capability?]] end
+	if not match then return nil, "imap: expected capability, found \"" .. s:sub(i, i) .. "\"" end
+	return match, i + #match
+end
+
 local noop_command_reader = function () return {} end
+
+--[[@param s string]] --[[@param i integer]]
+local mailbox_command_reader = function (s, i)
+	local mailbox
+	--[[@diagnostic disable-next-line: cast-local-type]]
+	mailbox, i = mod.read_astring(s, i)
+	if not mailbox then return nil, "imap: error reading mailbox:\n" .. i end
+	return { mailbox = mailbox }, i
+end
 
 --[[@type table<imap_command_type, fun(s: string, i: integer): table?, integer|string>]]
 mod.command_readers = {}
 mod.command_readers.capability = noop_command_reader
 mod.command_readers.logout = noop_command_reader
 mod.command_readers.noop = noop_command_reader
---[[mailbox [SP flag-list] [SP date-time] SP literal]]
 mod.command_readers.append = function (s, i)
 	local mailbox
 	--[[@diagnostic disable: param-type-mismatch]]
@@ -137,10 +158,24 @@ mod.command_readers.append = function (s, i)
 	local message
 	message, i = mod.read_literal(s, i)
 	--[[@diagnostic enable: param-type-mismatch]]
-	--[[@diagnostic disable-next-line: return-type-mismatch]]
-	return { mailbox = mailbox:lower(), flags = flags, date_time = date_time, message = message }, i
+	return { mailbox = mailbox, flags = flags, date_time = date_time, message = message }, i
 end
-mod.command_readers.create = noop_command_reader
+--[[use of "inbox" should give a NO error]]
+mod.command_readers.create = mailbox_command_reader
+--[[use of "inbox" should give a NO error]]
+mod.command_readers.delete = mailbox_command_reader
+mod.command_readers.enable = function (s, i)
+	local capabilities = {} --[[@type imap_capability[] ]]
+	while s:byte(i) == 0x20 do
+		i = i + 1
+		local capability
+		capability, i = mod.read_capability(s, i)
+		if not capability then break end
+		capabilities[#capabilities+1] = capability
+	end
+	--[[@diagnostic enable: param-type-mismatch]]
+	return { capabilities = capabilities }, i
+end
 mod.command_readers.starttls = noop_command_reader
 mod.command_readers.close = noop_command_reader
 mod.command_readers.unselect = noop_command_reader
@@ -169,6 +204,7 @@ mod.string_to_imap_command = mod.read_command
 return mod
 
 --[[@class imap_flag: string]]
+--[[@class imap_capability: string]]
 --[[@class imap_mailbox: string]]
 --[[@class imap_message: string]]
 --[[@class imap_message_id: string]]
@@ -195,13 +231,13 @@ return mod
 --[[@field date_time imap_date_time?]]
 --[[@field messsage imap_message]]
 
---[[TODO: Use of INBOX gives a NO error]]
 --[[@class imap_create_command: imap_command]]
 --[[@field type "create" case insensitive]]
 --[[@field mailbox imap_mailbox]]
 
---[[class imap_delete_command: imap_command]]
---[[field type "delete" case insensitive]]
+--[[@class imap_delete_command: imap_command]]
+--[[@field type "delete" case insensitive]]
+--[[@field mailbox imap_mailbox]]
 
 --[[class imap_enable_command: imap_command]]
 --[[field type "enable" case insensitive]]

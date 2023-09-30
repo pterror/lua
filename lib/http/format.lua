@@ -65,10 +65,10 @@ mod.string_to_http_request = function (s, i)
 	--[[TODO: application/x-www-form-urlencoded, multipart/form-data, text/plain]]
 	--[[https://www.rfc-editor.org/rfc/rfc9112#name-message-body-length]]
 	--[[TODO: http/2]]
-	--[[@class http_request]]
-	return {
-		method = method, path = path, params = params, version = version, headers = headers, body = body
-	}, #s + 1 --[[realistically this should take into account content-length]]
+	local req = { --- @class http_request
+	method = method, path = path, params = params, version = version, headers = headers, body = body
+}
+	return req, #s + 1 --[[realistically this should take into account content-length]]
 end
 
 --[[@param res http_response]]
@@ -131,10 +131,10 @@ mod.string_to_http_client_response = function (s, i)
 	end
 	local status = tonumber(status_raw)
 	--[[@class http_client_response]]
-	return {
-		version = version, status = status, status_text = status_text, headers = headers,
-		body = body,
-	}, #s + 1
+	local res = {
+		version = version, status = status, status_text = status_text, headers = headers, body = body,
+	}
+	return res, #s + 1
 end
 
 return mod
