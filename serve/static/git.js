@@ -1,4 +1,3 @@
-// @ts-check
 /** @typedef {
 | { type: "branch"; name: string; branch: string; }
 | { type: "remote_branch"; name: string; remote: string; branch: string }

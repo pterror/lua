@@ -1,0 +1,13 @@
+{
+	"include": ["**/*.js"],
+	"compilerOptions": {
+		"noEmit": true,
+		"allowJs": true,
+		"checkJs": true,
+		"target": "ESNext",
+		"module": "ESNext",
+		"strict": true,
+		"noUncheckedIndexedAccess": false,
+		"exactOptionalPropertyTypes": true
+	}
+}

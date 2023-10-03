@@ -45,7 +45,7 @@ while true do
 	local success, err = xpcall(epoll.wait, debug.traceback, epoll)
 	if not success and err then
 		if err:match("^.+: interrupted!") then return end
-		print(err)
+		io.stderr:write(err, "\n")
 		io.stdout:write("$ ")
 		io.stdout:flush()
 	end

@@ -46,6 +46,7 @@ else
 	if ok then print("server loaded.")
 	else print("error loading server:"); io.stdout:write(sock, "\n") end
 end
+--[[FIXME: recrsive watch]]
 --[[@diagnostic disable-next-line: undefined-field]]
 while epoll.count > 0 do
 	local err

@@ -29,3 +29,9 @@ body {
 	height: 1em;
 	width: 1em;
 }
+
+.semantic-ul {
+	margin-block-start: 0;
+	padding-inline-start: 0;
+	list-style-type: none;
+}
