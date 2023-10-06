@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="/style.css" />
+<script type="module" src="/xyt.js"></script>
+<h1>xyt test</h1>
+<div x-app>
+	<h2>basic reactivity</h2>
+	<div x-data="{ count: 0 }">
+		<div>count: <span x-text="count"></span></div>
+		<button x-on:click="count++">count up!</button>
+	</div>
+	<br />
+	<h2>ticking</h2>
+	<div x-data="{ count: 0 }">
+		<div>count: <span x-text="count"></span></div>
+		<div>and again: <span x-text="++count"></span></div>
+		<button x-on:click="count++">count up!</button>
+	</div>
+	<br />
+	<h2><code>x-if</code></h2>
+	<div x-data="{ count: 0, visible: true }">
+		<div>
+			<wbr /><span x-if="visible">count: <span x-text="count"></span></span>
+		</div>
+		<button x-on:click="count++">count up!</button>
+		<button x-on:click="(visible = !visible), console.log(visible)">
+			toggle visibility
+		</button>
+	</div>
+	<br />
+	<h2>indirect dependencies</h2>
+	<div x-data="{ count: 0, doubled: 0, tripled: 0 }">
+		<div>count: <span x-text="count"></span></div>
+		<div>doubled: <span x-text="doubled = count * 2"></span></div>
+		<div>tripled: <span x-text="tripled = doubled / 2 * 3"></span></div>
+		<button x-on:click="count++">count up!</button>
+	</div>
+	<br />
+	<h2>no vdom so <code>x-for</code> doesn't work:</h2>
+	<div x-data="[0,1,2]">
+		<ul x-for="data">
+			<li><input type="number" :value="data" /></li>
+		</ul>
+		<button x-on:click="console.log(data), data.push(data.length)">push</button>
+	</div>
+</div>
