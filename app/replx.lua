@@ -17,16 +17,11 @@ end
 
 local co
 local is_cli = #arg > 0
+local prompt = is_cli and function () end or function () io.stdout:write("$ "); io.stdout:flush() end
 
 local resume = function (...)
 	local rets = { coroutine.resume(co, ...) }
-	if co and coroutine.status(co) == "dead" then
-		co = nil
-		if not is_cli then
-			io.stdout:write("$ ")
-			io.stdout:flush()
-		end
-	end
+	if co and coroutine.status(co) == "dead" then co = nil end
 	return unpack(rets)
 end
 
@@ -95,7 +90,7 @@ local http_mod_to_obj = function (mod) --[[@param mod { send: fun(req: http_clie
 end
 
 lazy_load_table = {
-	env = { "dep.get_environ", "get_environ" },
+	env = { "dep.env", "env" },
 	f = { "lib.it_fn" },
 	it = { "lib.it_fn", "it" },
 	arr = { "lib.functional.array", "array" },
@@ -134,6 +129,7 @@ lazy_load_table = {
 	--[[TODO: http.server???]]
 	http = { "lib.http.client", http_mod_to_obj },
 	https = { "lib.https.client", http_mod_to_obj },
+	sqlite = { "dep.sqlite", "sqlite" },
 }
 
 sleep_ms = sleep_ms
@@ -370,11 +366,16 @@ local eval = function (data)
 			local __, ret = resume()
 			_ = ret
 			if ret then smart_print(ret) end
-		else io.stderr:write("error: ", err or "", "\n") end
+			prompt()
+		else
+			io.stderr:write("error: ", err or "", "\n")
+			prompt()
+		end
 	else
 		local __, ret = resume(data:sub(1, -2))
 		_ = ret
 		if ret then smart_print(ret) end
+		prompt()
 	end
 end
 
@@ -389,16 +390,15 @@ else
 	epoll:add(0, eval)
 end
 
+--[[@diagnostic disable-next-line: undefined-field]]
 if not is_cli or co ~= nil or epoll.count > 1 then
 	while true do
 		local success, err = xpcall(epoll.wait, debug.traceback, epoll)
 		if not success and err then
 			if err:match("^.+: interrupted!") then return end
 			io.stderr:write(err, "\n")
-			if not is_cli then
-				io.stdout:write("$ ")
-				io.stdout:flush()
-			end
+			prompt()
+			--[[@diagnostic disable-next-line: undefined-field]]
 		elseif is_cli and co == nil and epoll.count <= 1 then break end
 	end
 end

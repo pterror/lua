@@ -4,6 +4,8 @@ local mod = {}
 
 --[[https://gist.github.com/bastibe/f4977c7e8b44a5064bada760902d2176]]
 
+--[[@diagnostic disable: duplicate-doc-alias]]
+
 ffi.cdef [[
 	typedef struct {
 		int /*pa_sample_format_t*/ format;
@@ -97,9 +99,8 @@ local error_buf = ffi.new("int[1]") --[[@type ptr_c<integer>]]
 pulseaudio.new = function (self, server, name, dir, dev, stream_name, ss, map, attr)
 	local c = pa_simple_ffi.pa_simple_new(server, name, dir, dev, stream_name, ss, map, attr, error_buf)
 	if error_buf[0] ~= 0 then return nil, error_buf[0] end
-	return setmetatable({ --[[@class pa_simple]]
-		c = c,
-	}, self)
+	local ret = { c = c } --[[@class pa_simple]]
+	return setmetatable(ret, self)
 end
 --[[@param server string?]] --[[@param name string]] --[[@param dir pa_stream_direction]] --[[@param dev string?]] --[[@param stream_name string]] --[[@param ss pa_sample_spec_c]] --[[@param map pa_channel_map_c?, attr: pa_buffer_attr_c?]]
 mod.new = function (server, name, dir, dev, stream_name, ss, map, attr)

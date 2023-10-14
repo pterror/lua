@@ -1,8 +1,30 @@
 <!DOCTYPE html>
 <link rel="stylesheet" href="/style.css" />
+<style>
+	.blue {
+		color: rgb(126, 189, 226);
+	}
+	.hidden {
+		display: none;
+	}
+</style>
 <script type="module" src="/xyt.js"></script>
 <h1>xyt test</h1>
 <div x-app>
+	<h2>init</h2>
+	<div x-data="{ count: 0 }" x-init="count += 123">
+		<div>
+			count: <span x-text="count"></span> (should be increased by 123 only once)
+		</div>
+		<button x-on:click="count++">count up!</button>
+	</div>
+	<br />
+	<h2>effect (fixme: initial should be 11, not 21)</h2>
+	<div x-data="{ count: 1 }" x-effect="console.log(count += 10)">
+		<div x-text="count"></div>
+		<button x-on:click="count++">count up by 11 and log!</button>
+	</div>
+	<br />
 	<h2>basic reactivity</h2>
 	<div x-data="{ count: 0 }">
 		<div>count: <span x-text="count"></span></div>
@@ -27,6 +49,54 @@
 		</button>
 	</div>
 	<br />
+	<h2>nested updates</h2>
+	<div x-data="{ a: { b: 0 } }">
+		<div>
+			a: <span x-text="JSON.stringify(a)"></span><br />
+			a.b: <span x-text="a.b"></span>
+		</div>
+		<button x-on:click="a.b++">count up!</button>
+	</div>
+	<br />
+	<h2>nested updates 2</h2>
+	<div x-data="{ a: { b: 0 } }">
+		<div>
+			a: <span x-text="JSON.stringify(a)"></span><br />
+			a: <span x-data="a">b: <span x-text="b"></span></span>
+		</div>
+		<button x-on:click="a.b++">count up!</button>
+	</div>
+	<br />
+	<h2>nested updates 3</h2>
+	<div x-data="{ a: { b: 0 } }">
+		<div>
+			a: <span x-text="JSON.stringify(a)"></span><br />
+			a: <span x-data="a">b: <span x-text="b"></span></span>
+		</div>
+		<div x-data="a">
+			<button x-on:click="b++">count up!</button>
+		</div>
+	</div>
+	<br />
+	<h2>class object</h2>
+	<div x-data="{ hidden: false }">
+		<wbr /><span class="blue" x-class="{ hidden }">aaa</span><br />
+		<button x-on:click="hidden = !hidden">toggle</button>
+	</div>
+	<br />
+	<h2>class string (incompatible with class object)</h2>
+	<div x-data="{ hidden: false }">
+		<wbr /><span class="blue" x-class="hidden ? 'hidden' : ''">aaa</span><br />
+		<button x-on:click="hidden = !hidden">toggle</button>
+	</div>
+	<br />
+	<h2>class array (incompatible with class object)</h2>
+	<div x-data="{ hidden: false }">
+		<wbr /><span class="blue" x-class="hidden ? ['hidden'] : []">aaa</span
+		><br />
+		<button x-on:click="hidden = !hidden">toggle</button>
+	</div>
+	<br />
 	<h2>indirect dependencies</h2>
 	<div x-data="{ count: 0, doubled: 0, tripled: 0 }">
 		<div>count: <span x-text="count"></span></div>
@@ -34,6 +104,10 @@
 		<div>tripled: <span x-text="tripled = doubled / 2 * 3"></span></div>
 		<button x-on:click="count++">count up!</button>
 	</div>
+	<br />
+	<h2>not working: adding new dependencies</h2>
+	<br />
+	<h2>not working: removing dependencies</h2>
 	<br />
 	<h2>no vdom so <code>x-for</code> doesn't work:</h2>
 	<div x-data="[0,1,2]">

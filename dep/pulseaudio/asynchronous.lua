@@ -2,6 +2,8 @@ local ffi = require("ffi")
 
 --[[IMPL]]
 
+--[[@diagnostic disable: duplicate-doc-alias]]
+
 local mod = {}
 
 ffi.cdef [[
@@ -32,11 +34,13 @@ ffi.cdef [[
   void pa_mainloop_wakeup(pa_mainloop *m);
 ]]
 
+--[[@class pollfd_c]]
+
 --[[@class pa_async_ffi]]
 --[[@field pa_mainloop_new fun(): ptr_c<pa_mainloop_c>]]
 --[[@field pa_mainloop_poll fun(m: ptr_c<pa_mainloop_c>): error_c]]
---[[@field pa_mainloop_prepare fun(m: ptr_c<pa_mainloop_c>, timeout: int): error_c]]
---[[@field pa_mainloop_quit fun(m: ptr_c<pa_mainloop_c>, retval: int)]]
+--[[@field pa_mainloop_prepare fun(m: ptr_c<pa_mainloop_c>, timeout: integer): error_c]]
+--[[@field pa_mainloop_quit fun(m: ptr_c<pa_mainloop_c>, retval: integer)]]
 --[[@field pa_mainloop_set_poll_func fun(m: ptr_c<pa_mainloop_c>, poll_func: pa_poll_func_c, userdata: ffi.cdata*)]]
 --[[@field pa_mainloop_wakeup fun(m: ptr_c<pa_mainloop_c>)]]
 
@@ -44,8 +48,8 @@ ffi.cdef [[
 
 --[[@class pa_mainloop_c]]
 
---[[@type pa_simple_ffi]]
-local pa_simple_ffi = ffi.load("pulse-simple")
+--[[@type pa_async_ffi]]
+local pa_async_ffi = ffi.load("pulse-async") --[[FIXME: correct name]]
 
 --[[@enum pa_stream_direction]]
 mod.stream_direction = {
@@ -76,54 +80,21 @@ mod.sample_format = {
 
 --[[@enum pa_channel_position]]
 mod.channel_position = {
-	--
+	--[[FIXME:]]
 }
 
---[[@class pa_sample_spec_c]]
---[[@field format pa_sample_format]]
---[[@field rate integer]]
---[[@field channels integer]]
-
---[[@class pa_channel_map_c]]
---[[@field channels integer]]
---[[@field map pa_channel_position[] ]]
-
---[[@class pa_simple_c opaque]]
-
---[[@class pa_buffer_attr_c]]
---[[@field maxlength integer]]
---[[@field tlength integer]]
---[[@field prebuf integer]]
---[[@field minreq integer]]
---[[@field fragsize integer]]
-
-local pulseaudio = {} --[[@class pa_simple]]
+local pulseaudio = {} --[[@class pa_asynchronous]]
 pulseaudio.__index = pulseaudio
 
 local error_buf = ffi.new("int[1]") --[[@type ptr_c<integer>]]
 
---[[@param server string?]] --[[@param name string]] --[[@param dir pa_stream_direction]] --[[@param dev string?]] --[[@param stream_name string]] --[[@param ss pa_sample_spec_c]] --[[@param map pa_channel_map_c?, attr: pa_buffer_attr_c?]]
-pulseaudio.new = function (self, server, name, dir, dev, stream_name, ss, map, attr)
-	local c = pa_simple_ffi.pa_simple_new(server, name, dir, dev, stream_name, ss, map, attr, error_buf)
+pulseaudio.new = function (self)
+	local c = pa_async_ffi.pa_mainloop_new()
 	if error_buf[0] ~= 0 then return nil, error_buf[0] end
 	return setmetatable({ --[[@class pa_simple]]
 		c = c,
 	}, self)
 end
---[[@param server string?]] --[[@param name string]] --[[@param dir pa_stream_direction]] --[[@param dev string?]] --[[@param stream_name string]] --[[@param ss pa_sample_spec_c]] --[[@param map pa_channel_map_c?, attr: pa_buffer_attr_c?]]
-mod.new = function (server, name, dir, dev, stream_name, ss, map, attr)
-	return pulseaudio:new(server, name, dir, dev, stream_name, ss, map, attr)
-end
-
-pulseaudio.read = function (self)
-	local buf = ffi.new("char[65536]") --[[TODO: variable size]]
-	if pa_simple_ffi.pa_simple_read(self.c, buf, #buf, error_buf) < 0 then return nil, error_buf[0] end
-	return buf
-end
-
-pulseaudio.write = function (self, data)
-	if pa_simple_ffi.pa_simple_write(self.c, data, #data, error_buf) < 0 then return nil, error_buf[0] end
-	return true
-end
+mod.new = function () return pulseaudio:new() end
 
 return mod

@@ -7,6 +7,7 @@ local mimetype_by_contents
 
 local mod = {}
 
+--[[@return http_callback]]
 --[[@param path? string]]
 mod.path_based_router = function (path)
 	local handle_file = function (path2) --[[@param path2 string]]
@@ -61,9 +62,8 @@ mod.path_based_router = function (path)
 		return routes
 	end
 	local cb = table_router(handle_dir(path or ""))
-	--[[@return boolean?]]
-	return function (req, res)
-		local ret = cb(req, res)
+	return function (req, res, sock)
+		local ret = cb(req, res, sock)
 		if not ret then res.status = 404 end
 		return ret
 	end

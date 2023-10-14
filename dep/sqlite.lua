@@ -45,7 +45,7 @@ local is_float_like_cdata = function (a)
 	return type == float or type == double
 end
 
-local SQLITE_STATIC = 0 --[[application controls lifetime]]
+--[[local SQLITE_STATIC = 0]] --[[application controls lifetime]]
 local SQLITE_TRANSIENT = ffi.cast("void(*)(void*)", -1) --[[sqlite makes copy]]
 
 -- datatypes
@@ -217,5 +217,30 @@ sqlite.query = function (self, sql, ...)
 		else return nil, "sqlite: sqlite3_step: unhandled code " .. code end
 	end
 end
+
+--[[@class sqlite_table]]
+--[[@field type "table"|"index"|"view"|"trigger"]]
+--[[@field name string]]
+--[[@field table_name string]]
+--[[@field root_page integer the page number of the root b-tree page for tables and indexes, 0 or NULL for everything else]]
+--[[@field sql string]]
+
+local table_keyorder = { "type", "name", "table_name", "root_page", "sql" }
+
+--[[@return (fun():sqlite_table?)? iterator, string? error]]
+local tables = function (self)
+	local f = self:query("SELECT type, name, tbl_name, rootpage, sql FROM sqlite_schema WHERE type='table' ORDER BY name")
+	return function ()
+		local type, name, table_name, root_page, sql = f()
+		if not type then return end
+		return { type = type, name = name, table_name = table_name, root_page = root_page, sql = sql, __keyorder = table_keyorder }
+	end
+end
+
+--[[@return (fun():name:string)? iterator, string? error]]
+sqlite.tables = package.loaded["lib.functional.iterable"] and function (self)
+	--[[@diagnostic disable-next-line: return-type-mismatch, param-type-mismatch]]
+	return require("lib.functional.iterable").iter(tables(self))
+end or tables
 
 return mod

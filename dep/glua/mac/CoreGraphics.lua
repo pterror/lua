@@ -137,7 +137,7 @@ function cg.ImageFromPNGDataProvider(cgdp)
     nil,
     true,
     cg.RenderingIntentDefault
-  ), CGImageRelease)
+  ), cg.ImageRelease)
 end
 function cg.Image(path)
   local url = ffi.istype(cf.CFURLRef, path) and path or cf.PathURL(path)

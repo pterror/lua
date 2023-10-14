@@ -9,8 +9,9 @@ mod.readers = {} --[[@type table<string, (fun(s: string, i: integer): {type:stri
 --[[@type fun(s: string, i: integer, prefix_i?: integer): {type:string;}, integer]]
 mod.readers.normal = function (s, i, prefix_i)
 	local j = i
+	--[[FIXME:]]
+	--[[@diagnostic disable-next-line: missing-return]]
 	if prefix_i then i = prefix_i end
-
 end
 
 mod.readers.heading = function (s, i)

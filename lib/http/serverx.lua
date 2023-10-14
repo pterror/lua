@@ -48,7 +48,7 @@ mod.make_connection_handler = function (handler, epoll)
 				handler.ws_open(client, send, close)
 			end
 		else
-			handler.http(req, res)
+			handler.http(req, res, client)
 			client:send(http.http_response_to_string(res))
 			client:close()
 		end

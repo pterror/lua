@@ -1,4 +1,4 @@
-local ffi = require 'ffi'
+local ffi = require "ffi"
 
 ffi.cdef [[
 typedef const void * CFTypeRef;
@@ -220,18 +220,18 @@ CFStringRef CFURLGetString (
 ]]
 
 -- setup library & remove CF prefix
-local lib = ffi.load 'CoreFoundation.framework/CoreFoundation'
+local lib = ffi.load "CoreFoundation.framework/CoreFoundation"
 local cf  = { AllocatorDefault = lib.kCFAllocatorDefault }
 setmetatable(cf, {
   __index = function(t, n)
-    local s = lib['CF'..n]
+    local s = lib["CF"..n]
     rawset(t, n, s)
     return s
   end
 })
 
 -- CFString
-cf.CFStringRef = ffi.typeof('CFStringRef')
+cf.CFStringRef = ffi.typeof("CFStringRef")
 function cf.str(str)
   if str == nil then
    return nil
@@ -240,17 +240,17 @@ function cf.str(str)
     cf.AllocatorDefault,
     str,
     cf.StringEncodingUTF8
-  ), CFRelease)
+  ), cf.Release)
 end
 
 -- CFURL
-cf.CFURLRef   = ffi.typeof('CFURLRef')
+cf.CFURLRef   = ffi.typeof("CFURLRef")
 cf.mainBundle = cf.BundleGetMainBundle()
 function cf.ExecutableURL()
-  return ffi.gc(cf.BundleCopyExecutableURL(cf.mainBundle), CFRelease)
+  return ffi.gc(cf.BundleCopyExecutableURL(cf.mainBundle), cf.Release)
 end
 function cf.ResourcesURL()
-  return ffi.gc(cf.BundleCopyResourcesDirectoryURL(cf.mainBundle), CFRelease)
+  return ffi.gc(cf.BundleCopyResourcesDirectoryURL(cf.mainBundle), cf.Release)
 end
 function cf.PathURL(path, isDir)
   isDir = isDir or false
@@ -259,7 +259,7 @@ function cf.PathURL(path, isDir)
     cf.str(path),
     cf.URLPOSIXPathStyle,
     isDir
-  ), CFRelease)
+  ), cf.Release)
 end
 function cf.ResourceURL(name, kind, dir)
   return ffi.gc(cf.BundleCopyResourceURL(
@@ -267,7 +267,7 @@ function cf.ResourceURL(name, kind, dir)
     cf.str(name),
     cf.str(kind),
     cf.str(dir)
-  ), CFRelease)
+  ), cf.Release)
 end
 function cf.AppendURLComponent(cfurl, component, isDir)
   isDir = isDir or false
@@ -276,7 +276,7 @@ function cf.AppendURLComponent(cfurl, component, isDir)
     cfurl,
     cf.str(component),
     false
-  ), CFRelease)
+  ), cf.Release)
 end
 
 -- global type to string conversion function
@@ -288,7 +288,7 @@ function cf.tostring(cftype)
   elseif ffi.istype(cf.CFStringRef, cftype) then
     local len = cf.StringGetLength(cftype)
     local clen = cf.StringGetMaximumSizeForEncoding(len, cf.StringEncodingUTF8)
-    local cstr = ffi.new('char[?]', clen)
+    local cstr = ffi.new("char[?]", clen)
     cf.StringGetCString(cftype, cstr, clen, cf.StringEncodingUTF8)
     return ffi.string(cstr)
   end

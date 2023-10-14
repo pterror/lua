@@ -2387,7 +2387,7 @@ local font_struct_pap_c = ffi.typeof("XFontStruct **[1]") --[[@type fun(): ptr_c
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
 local text_property_p_c = ffi.typeof("XTextProperty[1]") --[[@type fun(value?: xlib_text_property_c): ptr_c<xlib_text_property_c>]]
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
-local color_p_c = ffi.typeof("XColor[1]") --[[@type fun(value?: xlib_color_c): ptr_c<xlib_color_c>]]
+local color_p_c = ffi.typeof("XColor[1]") --[[@type fun(value?: {[1]:xlib_color_c}): ptr_c<xlib_color_c>]]
 
 --[[@param data ptr_c<unknown>)]]
 mod.free = function (data) xlib_ffi.XFree(data) end
@@ -3065,7 +3065,8 @@ end
 
 --[[@param display_ ptr_c<xlib_display_c>]] --[[@param colormap xlib_colormap_c]] --[[@param red integer 0x0000-0xffff]] --[[@param green integer 0x0000-0xffff]] --[[@param blue integer 0x0000-0xffff]]
 mod.alloc_color = function (display_, colormap, red, green, blue)
-	local screen = color_p_c({ { red = red, green = green, blue = blue } })
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
+	local screen = color_p_c({ { red = red, green = green, blue = blue, pixel = 0, flags = 0 } })
 	if xlib_ffi.XAllocColor(display_, colormap, screen) == 0 then return nil end
 	return screen[0].pixel
 end

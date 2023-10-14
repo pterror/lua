@@ -1,4 +1,4 @@
-local gl = require("dep.glua")
+local gl = require("dep.glua.init")
 
 local primitive = {}
 

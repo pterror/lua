@@ -31,6 +31,10 @@ mod.new = function (path) return database:new(path) end
 
 --[[@class sqlitex_model<t>: { schema: t; }]]
 --[[@field name string]]
+--[[@field db sqlitex_database]]
+--[[@field keyorder string[] ]]
+--[[@field add_stmt string]]
+--[[@field delete_stmt string]]
 local model = {}
 mod.model = model
 model.__index = model
@@ -78,12 +82,15 @@ model.new = function (self, db, name, schema, keyorder)
 		end
 		table.sort(keyorder)
 	end
-	local ret = setmetatable({ --[[@class sqlitex_model]]
-		name = name,
-		schema = schema,
-		db = db,
-		keyorder = keyorder,
-	}, self)
+	local qs = {} --[[@type string[] ]]
+	for i = 1, #keyorder do qs[i] = "?" end
+	local ret = { --[[@type sqlitex_model]]
+		name = name, schema = schema, db = db, keyorder = keyorder,
+		add_stmt = "INSERT INTO `" .. self.name .. "` VALUES (" .. table.concat(qs, ", ") .. ");",
+		--[[FIXME: prepare?]]
+		delete_stmt = "DELETE FROM `" .. self.name .. "` WHERE ID = ?;",
+	}
+	setmetatable(ret, self)
 	local parts = {}
 	parts[#parts+1] = "CREATE TABLE IF NOT EXISTS `" .. name .. "` ("
 	local prefix = ""
@@ -92,7 +99,7 @@ model.new = function (self, db, name, schema, keyorder)
 		prefix = ","
 	end
 	parts[#parts+1] = ");"
-	print(table.concat(parts))
+	print(table.concat(parts)) --[[FIXME: remove]]
 	local success, err = db.db:execute(table.concat(parts))
 	if not success then return success, err end
 	return ret
@@ -104,37 +111,26 @@ end
 database.model = function (self, name, schema) return model:new(self, name, schema) end
 
 --[[@generic t]]
---[[@param self sqlitex_model<t>]]
+--[[@param self sqlitex_model|sqlitex_model<t>]]
 --[[@param value t]]
 model.add = function (self, value)
-	local values = {}
+	local values = {} --[[@type unknown[] ]]
 	local v_i = 1
-	--[[@diagnostic disable-next-line: undefined-field]]
 	for _, k in ipairs(self.keyorder) do
-		--[[@diagnostic disable-next-line: undefined-field]]
 		if k ~= "id" then values[v_i] = value[self.keyorder[k]] end
 	end
-	--[[@diagnostic disable-next-line: undefined-field]]
 	return self.db.db:execute(self.add_stmt, unpack(values))
 end
 
---[[TODO: model.set]]
---[[TODO: model.delete]]
+--[[TODO: model.set (update)]]
+--[[FIXME: migrations]]
 
 --[[@generic t]]
---[[@param self sqlitex_model<t>]]
+--[[@param self sqlitex_model|sqlitex_model<t>]]
 --[[@param value t]]
 model.delete = function (self, value)
 	--[[@diagnostic disable-next-line: undefined-field]]
-	self.db.db:execute("DELETE FROM `" .. self.name .. "`", unpack(values))
-	local values = {}
-	local v_i = 1
-	--[[@diagnostic disable-next-line: undefined-field]]
-	for _, k in ipairs(self.keyorder) do
-		if k ~= "id" then values[v_i] = self.keyorder[k] end
-	end
-	--[[@diagnostic disable-next-line: undefined-field]]
-	return self.db.db:execute(self.add_stmt, unpack(values))
+	self.db.db:execute(self.delete_stmt, value.id)
 end
 
 return mod

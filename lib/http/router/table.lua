@@ -6,12 +6,12 @@ local mod = {}
 mod.table_router = function (routes)
 	--[[LINT: it'd be nice if @type lua_http_handler worked]]
 	--[[@return nil]] --[[@param req http_request]] --[[@param res http_response]]
-	return function (req, res)
+	return function (req, res, sock)
 		local route = routes
-		if type(route) == "function" then return route(req, res) end
+		if type(route) == "function" then return route(req, res, sock) end
 		for part in req.path:gmatch("/([^/]*)") do
 			route = route[part]
-			if type(route) == "function" then return route(req, res)
+			if type(route) == "function" then return route(req, res, sock)
 			elseif route == nil then return end
 		end
 	end

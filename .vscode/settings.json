@@ -1,5 +1,9 @@
 {
 	"Lua.runtime.version": "LuaJIT",
 	"C_Cpp.clang_format_style": "{ ColumnLimit: 200, UseTab: Always, IndentWidth: 4, TabWidth: 4 }",
-	"Lua.diagnostics.disable": ["inject-field"]
+	"Lua.diagnostics.disable": ["inject-field"],
+	"prettier.printWidth": 120,
+	"prettier.arrowParens": "avoid",
+	"prettier.trailingComma": "all",
+	"prettier.useTabs": true
 }

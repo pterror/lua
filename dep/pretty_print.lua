@@ -44,6 +44,7 @@ pretty_printers.table = function (t, seen)
 			not_first = true
 		end
 		io.write(not_first and " }" or "{}")
+		return
 	end
 	local is_hash = false
 	local max = #t
