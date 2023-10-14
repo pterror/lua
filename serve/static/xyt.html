@@ -32,9 +32,10 @@
 	</div>
 	<br />
 	<h2>ref</h2>
-	<div x-data="{ aaaa: undefined }">
-		<span x-ref="aaaa">aaa bbb</span><br />
-		ref contains: <span x-text="aaaa.innerText"></span>
+	<div x-data="{ aaaa: undefined, text: 'aaa bbb' }">
+		<input x-model="text" /><br />
+		<span x-ref="aaaa" x-text="text"></span><br />
+		ref initially contained: <span x-text="aaaa.innerText"></span>
 	</div>
 	<br />
 	<h2>basic reactivity</h2>
@@ -130,8 +131,6 @@
 		<ul x-for="$data">
 			<li><input type="number" :value="$data" /></li>
 		</ul>
-		<button x-on:click="console.log($data), $data.push($data.length)">
-			push
-		</button>
+		<button x-on:click="$data.push($data.length)">push</button>
 	</div>
 </div>
