@@ -1,9 +1,11 @@
-const af = (async () => {}).constructor,
+const f = (() => {}).constructor,
+	af = (async () => {}).constructor,
 	S = Symbol(),
 	P = Symbol(),
 	T = Symbol(),
 	R = Symbol(),
 	C = Symbol(),
+	M = Symbol(),
 	E = console.error,
 	Od = Object.defineProperties,
 	Op = Object.getOwnPropertyDescriptors,
@@ -11,10 +13,14 @@ const af = (async () => {}).constructor,
 X.prefix = document.body?.getAttribute("xyt-prefix") ?? "x-";
 export default X;
 /**@type{(()=>void)|undefined}*/ X.currentEffect = undefined;
-/**@type{(expression:string)=>(scope:unknown)=>Promise<unknown>}*/
-X.evaluator = (e) => af("$", "with($)return " + e.trim());
+/**@type{(expression:string,args?:string)=>(scope:unknown)=>unknown}*/
+X.evaluator = (e, a) =>
+	(/\bawait\b/.test(e) ? af : f)(
+		"$" + (a ? "," + a : ""),
+		"with($)return " + e
+	);
 X.defaultDirective = "bind";
-/**@typedef{HTMLElement&{[S]:any,[P]:Comment|undefined,[T]:Element|undefined,[C]:string|undefined}}XytElement*/
+/**@typedef{HTMLElement&{[S]:any,[P]:Comment|undefined,[T]:Element|undefined,[C]:string|undefined,[M]:true|undefined}}XytElement*/
 /**@typedef{(this:typeof X,element:XytElement,value:any,name:string,originalAttributeName:string,queueTransform:(elements:Element[])=>void) => void}D*/
 /**@type Record<string,D>*/
 const d = (X.directives = {});
@@ -43,19 +49,31 @@ X.mount = async function (e) {
 				const f = this.evaluator(/**@type{string}*/ (c.getAttribute(a_)));
 				let v;
 				if (/**@type{any}*/ (d).raw) v = f.bind(undefined, s);
-				else {
+				else if (/**@type{any}*/ (d).rw) {
+					let w = this.evaluator(
+						/**@type{string}*/ (c.getAttribute(a_) + "=$value"),
+						"$value"
+					);
+					// @ts-expect-error
+					const V = () => [f(s), (v) => w(s, v)];
+					t.currentEffect = async () =>
+						d.call(this, c, await Promise.all(V()), n, a_, () => {});
+					const p = V();
+					t.currentEffect = undefined;
+					v = p[0] instanceof Promise ? await Promise.all(p) : p;
+				} else {
 					// TODO: reactive x-for will be difficult.
 					t.currentEffect = async () =>
 						d.call(this, c, await f(s), n, a_, () => {});
 					const p = f(s);
 					t.currentEffect = undefined;
-					v = await p;
+					v = p instanceof Promise ? await p : p;
 				}
 				/**@type{Element[]|undefined}*/ let q;
 				d.call(this, c, v, n, a_, (e) => {
 					(q ??= []).push(...e);
 				});
-				if (q) for (const e of q) await x(/**@type{XytElement}*/ (e));
+				if (q) for (const e of q) x(/**@type{XytElement}*/ (e));
 			} catch (e) {
 				E("Error processing element:", c);
 				E(e);
@@ -76,29 +94,29 @@ X.reactive = function (v, d = true, p) {
 		Object.fromEntries(
 			Object.entries(v).map(([k, v]) => {
 				/**@type{Set<()=>void>}*/ const D = new Set();
-				p && D.add(p);
+				if (p) D.add(p);
 				const U = () => {
 					for (const d of D) d();
 				};
 				if (d && typeof v === "object")
-					v = this.reactive(v, d, /**@type{never}*/ (U));
-				let u = this.tick;
+					v = t.reactive(v, d, /**@type{never}*/ (U));
+				let u = t.tick;
 				return [
 					k,
 					{
 						get: () => {
-							this.currentEffect && D.add(this.currentEffect);
+							if (t.currentEffect) D.add(t.currentEffect);
 							return v;
 						},
 						set: (v_) => {
 							if (!Object.is(v, v_)) {
 								v = v_;
-								if (!this.tick) {
+								if (!t.tick) {
 									u = t.tick = {};
 									U();
 									t.tick = void 0;
-								} else if (u !== this.tick) {
-									u = this.tick;
+								} else if (u !== t.tick) {
+									u = t.tick;
 									U();
 								}
 							}
@@ -144,6 +162,19 @@ d.on = /**@type{D}*/ (e, v, n) => {
 d.show = /**@type{D}*/ (e, v) => {
 	e.style.display = v ? "" : "none";
 };
+d.ref = /**@type{D}*/ (e, { 1: w }) => {
+	w(e);
+};
+d.data = /**@type{D}*/ function (e, v) {
+	Od(e[S], Op((e[S].$data = this.reactive(v))));
+};
+d.model = /**@type{D}*/ function (e, { 0: r, 1: w }) {
+	/**@type{any}*/ (e).value = r;
+	if (!e[M]) {
+		e[M] = true;
+		e.addEventListener("keyup", () => w(/**@type{any}*/ (e).value));
+	}
+};
 d.if = /**@type{D}*/ (e, v) => {
 	if (!v && e.isConnected)
 		e.replaceWith((e[P] ??= document.createComment("if")));
@@ -157,19 +188,20 @@ d.for = /**@type{D}*/ (e, v, _, a_, q) => {
 	})());
 	//@ts-expect-error
 	const ps = e.parentElement?.[S] ?? bS;
-	const c = Array.from(v, (data) => {
+	const c = Array.from(v, ($data) => {
 		const e2 = /**@type{Element}*/ (t.cloneNode(true));
 		//@ts-expect-error
-		e2[S] = Od({ __proto__: ps, data }, Op(data));
+		e2[S] = Od({ __proto__: ps, $data }, Op($data));
 		return e2;
 	});
 	e.replaceWith(...c);
 	q(c);
 };
-d.data = /**@type{D}*/ function (e, v) {
-	Od(e[S], Op((e[S].data = this.reactive(v))));
-};
-/**@type{any}*/ (d.on).raw = /**@type{any}*/ (d.init).raw = true;
+/**@type{any}*/ (d.on).raw =
+	/**@type{any}*/ (d.init).raw =
+	/**@type{any}*/ (d.ref).rw =
+	/**@type{any}*/ (d.model).rw =
+		true;
 const root = /**@type{XytElement?}*/ (
 	document.querySelector("[" + X.prefix + "app]")
 );

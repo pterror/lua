@@ -25,6 +25,18 @@
 		<button x-on:click="count++">count up by 11 and log!</button>
 	</div>
 	<br />
+	<h2>model</h2>
+	<div x-data="{ text: 'text' }">
+		<input x-model="text" /><br />
+		text: <span x-text="text"></span>
+	</div>
+	<br />
+	<h2>ref</h2>
+	<div x-data="{ aaaa: undefined }">
+		<span x-ref="aaaa">aaa bbb</span><br />
+		ref contains: <span x-text="aaaa.innerText"></span>
+	</div>
+	<br />
 	<h2>basic reactivity</h2>
 	<div x-data="{ count: 0 }">
 		<div>count: <span x-text="count"></span></div>
@@ -44,9 +56,7 @@
 			<wbr /><span x-if="visible">count: <span x-text="count"></span></span>
 		</div>
 		<button x-on:click="count++">count up!</button>
-		<button x-on:click="(visible = !visible), console.log(visible)">
-			toggle visibility
-		</button>
+		<button x-on:click="visible = !visible">toggle visibility</button>
 	</div>
 	<br />
 	<h2>nested updates</h2>
@@ -76,6 +86,12 @@
 		<div x-data="a">
 			<button x-on:click="b++">count up!</button>
 		</div>
+	</div>
+	<br />
+	<h2>show</h2>
+	<div x-data="{ hidden: false }">
+		<wbr /><span x-show="!hidden">aaa</span><br />
+		<button x-on:click="hidden = !hidden">toggle</button>
 	</div>
 	<br />
 	<h2>class object</h2>
@@ -111,9 +127,11 @@
 	<br />
 	<h2>no vdom so <code>x-for</code> doesn't work:</h2>
 	<div x-data="[0,1,2]">
-		<ul x-for="data">
-			<li><input type="number" :value="data" /></li>
+		<ul x-for="$data">
+			<li><input type="number" :value="$data" /></li>
 		</ul>
-		<button x-on:click="console.log(data), data.push(data.length)">push</button>
+		<button x-on:click="console.log($data), $data.push($data.length)">
+			push
+		</button>
 	</div>
 </div>
