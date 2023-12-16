@@ -4,8 +4,7 @@ local mod = {}
 
 --[[@param routes http_table_handler]]
 mod.table_router = function (routes)
-	--[[LINT: it'd be nice if @type lua_http_handler worked]]
-	--[[@return nil]] --[[@param req http_request]] --[[@param res http_response]]
+	--[[@type http_callback]]
 	return function (req, res, sock)
 		local route = routes
 		if type(route) == "function" then return route(req, res, sock) end

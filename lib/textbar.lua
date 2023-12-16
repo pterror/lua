@@ -136,7 +136,8 @@ textbar.new = function (self, display, x, y, width, height, background, font, do
 			y_offset = bit.rshift(line_height + ascent, 1),
 		}
 	end
-	return setmetatable({ --[[@class textbar]]
+	--[[@class textbar]]
+	local ret = {
 		-- TODO: make line height configurable
 		display = display,
 		window = window,
@@ -151,7 +152,8 @@ textbar.new = function (self, display, x, y, width, height, background, font, do
 		--[[WARN: may cause leak if you keep loading xbms]]
 		xbm_cache = {}, --[[@type table<string, { bitmap: xlib_pixmap_c; width: integer; height: integer; x_hot: integer; y_hot: integer; }>]]
 		color_cache = { [background] = background_pixel }, --[[@type table<integer, integer>]]
-	}, self)
+	}
+	return setmetatable(ret, self)
 end
 --[[@param display xlib_display]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param background? integer 0xrrggbb]] --[[@param font? string]] --[[@param dock_side? textbar_dock_side]]
 mod.new = function (display, x, y, width, height, background, font, dock_side)

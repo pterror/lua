@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="/style.css" />
+<script type="module" src="/xyt.js"></script>
+<h1>whiskr</h1>
+<div x-app>
+	<table>
+		<thead>
+			<tr>
+				<th>subject</th>
+				<th>predicate</th>
+				<th>object</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody
+			x-data="fetch('api/list').then(r=>r.json()).then(facts => ({ facts }))"
+		>
+			<tr x-for="facts">
+				<td x-text="subject"></td>
+				<td x-text="predicate"></td>
+				<td x-text="object"></td>
+				<td>
+					<!-- x-on:click="
+						fetch('api/delete', { method: 'POST', body: JSON.stringify($data), headers: { 'Content-Type': 'application/json' } })
+							.then(res => res.ok /* && $el[$.parent][$.data].facts.splice($el[$.parent][$.data].facts.indexOf($data), 1) */)
+					" -->
+					<button
+						class="icon-button"
+						x-on:click="facts.splice(facts.indexOf($data), 1)"
+					>
+						🗑️
+					</button>
+				</td>
+			</tr>
+			<tr x-data="{ subject: '', predicate: '', object: '' }">
+				<td><input x-model="subject" /></td>
+				<td><input x-model="predicate" /></td>
+				<td><input x-model="object" /></td>
+				<!-- x-on:click="
+					fetch('api/add', { method: 'POST', body: JSON.stringify($data), headers: { 'Content-Type': 'application/json' } })
+						.then(res => res.ok /* && $el[$.parent][$.data].facts.push($data) */ && (subject = '', predicate = '', object = ''))
+				" -->
+				<td>
+					<button
+						class="icon-button"
+						x-on:click="facts.push($data), subject = '', predicate = '', object = ''"
+					>
+						+
+					</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

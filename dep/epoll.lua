@@ -1,16 +1,19 @@
 local ffi = require("ffi")
 
--- notes:
--- EPOLLET (edge triggered) is not supported at all
--- since wepoll does not support it.
--- same with EPOLLWAKEUP and EPOLLEXCLUSIVE
+--[[notes:]]
+--[[EPOLLET (edge triggered) is not supported at all since wepoll does not support it.]]
+--[[same with EPOLLWAKEUP and EPOLLEXCLUSIVE]]
+--[[also same with things that are not sockets... like files, like stdin :(]]
 
 local mod = {}
 
-local epoll_c, read_c, write_c
+local epoll_ffi
+local read_c
+local write_c
 
 if ffi.os == "Windows" then
-	epoll_c = assert(ffi.load("wepoll.dll"))
+	--[[@type epoll_ffi]]
+	epoll_ffi = assert(ffi.load("wepoll.dll"))
 	local ws2_32 = assert(ffi.load("Ws2_32.dll"))
 	-- https://github.com/piscisaureus/wepoll/blob/0598a791bf9cbbf480793d778930fc635b044980/wepoll.h
 	ffi.cdef [[
@@ -40,7 +43,8 @@ if ffi.os == "Windows" then
 	read_c = function (s, buf, len) return ws2_32.recv(s, buf, len, 0) end
 	write_c = function (s, buf, len) return ws2_32.send(s, buf, len, 0) end
 else
-	epoll_c = ffi.C
+	--[[@type epoll_ffi]]
+	epoll_ffi = ffi.C
 	--[[https://github.com/torvalds/linux/blob/5bfc75d92efd494db37f5c4c173d3639d4772966/include/uapi/linux/eventpoll.h]]
 	ffi.cdef [[
 		struct epoll_event {
@@ -54,8 +58,8 @@ else
 		int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
 		int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
 	]]
-	read_c = epoll_c.read
-	write_c = epoll_c.write
+	read_c = epoll_ffi.read
+	write_c = epoll_ffi.write
 end
 
 local epoll_event = ffi.typeof("struct epoll_event[1]")
@@ -64,7 +68,7 @@ local buf = ffi.new("char[65536]") --[[@type string_c]]
 --[[@class epoll_event]]
 --[[@field events integer]]
 --[[@field fd fd_c]]
---[[@class ffi.namespace*]]
+--[[@class epoll_ffi]]
 --[[@field read fun(fd: fd_c, buf: ffi.cdata*, count: integer): integer]]
 --[[@field write fun(fd: fd_c, buf: string, count: integer): integer]]
 --[[@field epoll_create fun(size: integer): fd_c]]
@@ -82,14 +86,16 @@ epoll.__index = epoll
 mod.epoll = epoll
 
 epoll.new = function (self)
-	return setmetatable({ --[[@class epoll]]
-		fd = epoll_c.epoll_create(1),
-		read_cbs = {}, --[[@type (fun()?)[] ]]
-		write_cbs = {}, --[[@type (fun()?)[] ]]
-		close_cbs = {}, --[[@type (fun()?)[] ]]
-		rets = {}, --[[@type { [1]: epoll_write; [2]: epoll_remove; }? }[] ]]
-		count = 0,
-	}, self)
+	--[[@class epoll]]
+	local obj = {
+	fd = epoll_ffi.epoll_create(1),
+	read_cbs = {}, --[[@type (fun()?)[] ]]
+	write_cbs = {}, --[[@type (fun()?)[] ]]
+	close_cbs = {}, --[[@type (fun()?)[] ]]
+	rets = {}, --[[@type { [1]: epoll_write; [2]: epoll_remove; }? }[] ]]
+	count = 0,
+}
+	return setmetatable(obj, self)
 end
 mod.new = function () return epoll:new() end
 
@@ -128,19 +134,20 @@ epoll.add = function (self, fd, read, close, weak)
 		write_c(fd, write_buf, #write_buf)
 		write_buf = ""
 		events[0].events = 1 --[[EPOLLIN]]
-		epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_MOD]] 3, fd, events)
+		assert(epoll_ffi.epoll_ctl(self.fd, --[[EPOLL_CTL_MOD]] 3, fd, events) == 0, "epoll: write callback failed")
 	end
 	self.close_cbs[fd] = close
 	local write = function (data) --[[@param data string]]
 		write_buf = write_buf .. data
 		events[0].events = 5 --[[EPOLLIN | EPOLLOUT]]
-		epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_MOD]] 3, fd, events)
+		assert(epoll_ffi.epoll_ctl(self.fd, --[[EPOLL_CTL_MOD]] 3, fd, events) == 0, "epoll: write failed")
 	end
 	local remove = function ()
 		remove_fd(self, fd)
-		epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_DEL]] 2, fd, events)
+		--[[this may silently fail if the socket has been closed.]]
+		epoll_ffi.epoll_ctl(self.fd, --[[EPOLL_CTL_DEL]] 2, fd, events)
 	end
-	epoll_c.epoll_ctl(self.fd, --[[EPOLL_CTL_ADD]] 1, fd, events)
+	assert(epoll_ffi.epoll_ctl(self.fd, --[[EPOLL_CTL_ADD]] 1, fd, events) == 0, "epoll: add failed")
 	self.rets[fd] = { write, remove }
 	if not weak then self.count = self.count + 1 end
 	return write, remove
@@ -161,7 +168,7 @@ end
 
 epoll.wait = function (self)
 	local events = epoll_event() --[[@type epoll_event[] ]]
-	epoll_c.epoll_wait(self.fd, events, 1, -1)
+	epoll_ffi.epoll_wait(self.fd, events, 1, -1)
 	local event = events[0] --[[@type epoll_event]]
 	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	local fd = tonumber(event.fd) --[[@type fd_c]]

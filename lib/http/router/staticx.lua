@@ -12,11 +12,7 @@ local system_specific_mime_type = function (file_path) end
 
 if jit.os == "Linux" then
 	local ffi = require("ffi")
-
-	ffi.cdef [[
-		ssize_t getxattr(const char *path, const char *name, void *value, size_t size);
-	]]
-
+	ffi.cdef [[ ssize_t getxattr(const char *path, const char *name, void *value, size_t size); ]]
 	local buf = ffi.new("char[128]")
 	--[[@type fun(path: string, name: string, value: ffi.cdata*, size: integer)]]
 	local getxattr = ffi.C.getxattr
@@ -47,8 +43,7 @@ local human_readable_size = function (size)
 	end
 end
 
--- FIXME: refactor out
-
+--[[FIXME: refactor out]]
 local html_escape_lookup = {
 	["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ["\""] = "&quot;", ["'"] = "&#039;",
 }
@@ -97,9 +92,7 @@ mod.static_router = function (base)
 				end
 				parts[#parts+1] = "</tbody></table></body>"
 				res.body = table.concat(parts)
-			else
-				res.status = 404
-			end
+			else res.status = 404 end
 			return
 		end
 		res.headers["Content-Type"] = system_specific_mime_type(full_path) or mimetype_by_name(req.path)

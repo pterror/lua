@@ -10,7 +10,7 @@ mod.static_router = function (base)
 		return nil, "static_router() expects string as base path, got " .. tostring(base)
 	end
 	base = (base or "."):gsub("/$", "")
-	--[[@return true?]] --[[@param req http_request]] --[[@param res http_response]]
+	--[[@type http_callback]]
 	return function (req, res)
 		-- TODO: urldecode? urldecode(req.path)
 		local file = io.open(path.resolve(base, req.path), "r")

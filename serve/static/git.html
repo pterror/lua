@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="/style.css" />
 <link rel="stylesheet" href="/git_style.css" />
 <script type="module" src="/xyt.js"></script>
-<h1>git gui</h1>
+<h1>git</h1>
 <div x-app>
 	<h2>current head</h2>
 	<div
@@ -17,14 +17,14 @@
 		class="semantic-ul"
 		x-data="fetch('api/reference/list').then(r=>r.json()).then(j=>import('/git.js').then(g=>j.map(g.parseRef)))"
 	>
-		<li class="icon-and-text" x-for="data">
+		<li class="icon-and-text" x-for="$data">
 			<svg class="icon"><use :href="refSym(type)"></use></svg>
 			<span x-text="name"></span>
 		</li>
 	</ul>
 	<h2>changed files</h2>
 	<ul class="semantic-ul" x-data="fetch('api/status').then(r=>r.json())">
-		<li class="icon-and-text" x-for="data" x-class="diffClass(type)">
+		<li class="icon-and-text" x-for="$data" x-class="diffClass(type)">
 			<svg class="icon"><use :href="worktreeSym(type)"></use></svg>
 			<svg class="icon"><use :href="indexSym(type)"></use></svg>
 			<span

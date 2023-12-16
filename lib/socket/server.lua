@@ -23,14 +23,9 @@ mod.server = function (callback, port, epoll)
 		if not client then return end --[[silently fail]]
 		local state, remove
 		local client_close = client.close
-		_, remove = epoll:add(
-			client.fd,
-			function () state = callback(client, state) end,
-			--[[@diagnostic disable-next-line: need-check-nil]]
-			function () client_close(client); remove() end
-		)
 		--[[@diagnostic disable-next-line: duplicate-set-field, need-check-nil]]
-		client.close = function (self) client_close(self); remove() end
+		client.close = function () client_close(client); remove() end
+		_, remove = epoll:add(client.fd, function () state = callback(client, state) end, client.close)
 	end, is_running and function () is_running = false end or nil)
 	local server_close = server.close
 	--[[@diagnostic disable-next-line: duplicate-set-field, need-check-nil]]

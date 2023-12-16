@@ -74,6 +74,7 @@ local http_mod_to_obj = function (mod) --[[@param mod { send: fun(req: http_clie
 			if not host_and_port then host_and_port = url end
 			if not path then path = "/" end
 			local host, port = host_and_port:match("(.-):(.+)")
+			host = host or host_and_port
 			return http.string_to_http_client_response(send({
 				--[[@diagnostic disable-next-line: assign-type-mismatch]]
 				host = host, path = path, method = method, port = tonumber(port),
@@ -130,6 +131,7 @@ lazy_load_table = {
 	http = { "lib.http.client", http_mod_to_obj },
 	https = { "lib.https.client", http_mod_to_obj },
 	sqlite = { "dep.sqlite", "sqlite" },
+	epoch = { "lib.time", "time" },
 }
 
 sleep_ms = sleep_ms
@@ -379,6 +381,7 @@ local eval = function (data)
 	end
 end
 
+--[[FIXME: this does not work on windows, which needs a socket, not fd 0]]
 if is_cli then
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
 	epoll:add(0, eval, nil)

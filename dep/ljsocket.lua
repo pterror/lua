@@ -20,30 +20,20 @@ do
 
 	local generic_function = function (C_name, cdef, alias, size_error_handling)
 		ffi.cdef(cdef)
-
 		alias = alias or C_name
 		local func_name = alias
 		local func = ljsocket_ffi[C_name]
-
-		if size_error_handling == false then
-			socket[func_name] = func
+		if size_error_handling == false then socket[func_name] = func
 		elseif size_error_handling then
-			socket[func_name] = function(...)
+			socket[func_name] = function (...)
 				local len = func(...)
-				if len < 0 then
-					return nil, socket.lasterror()
-				end
-
+				if len < 0 then return nil, socket.lasterror() end
 				return len
 			end
 		else
 			socket[func_name] = function(...)
 				local ret = func(...)
-
-				if ret == 0 then
-					return true
-				end
-
+				if ret == 0 then return true end
 				return nil, socket.lasterror()
 			end
 		end
@@ -312,29 +302,24 @@ do
 			--[[@class ljsocket_ffi]]
 			--[[@field ioctlsocket fun(s: ffi.cdata*, cmd: integer, argp: ffi.cdata*): integer]]
 
-			local IOCPARM_MASK    = 0x7
-			local IOC_IN          = 0x80000000
+			local IOCPARM_MASK = 0x7
+			local IOC_IN = 0x80000000
 			local _IOW = function (x,y,t)
 				return bit.bor(IOC_IN, bit.lshift(bit.band(ffi.sizeof(t),IOCPARM_MASK),16), bit.lshift(x,8), y)
 			end
 
-			local FIONBIO = _IOW(string.byte("f"), 126, "uint32_t") -- -2147195266 -- 2147772030ULL
+			local FIONBIO = _IOW(string.byte("f"), 126, "uint32_t") --[[-2147195266 -- 2147772030ULL]]
 
 			socket.blocking = socket.blocking or function (fd, b)
 				local ret = ljsocket_ffi.ioctlsocket(fd, FIONBIO, ffi.new("int[1]", b and 0 or 1))
-				if ret == 0 then
-					return true
-				end
-
+				if ret == 0 then return true end
 				return nil, socket.lasterror()
 			end
 		end
 
 		socket.poll = socket.poll or function (fds, ndfs, timeout)
 			local ret = ljsocket_ffi.WSAPoll(fds, ndfs, timeout)
-			if ret < 0 then
-				return nil, socket.lasterror()
-			end
+			if ret < 0 then return nil, socket.lasterror() end
 			return ret
 		end
 	else
@@ -352,15 +337,12 @@ do
 
 		do
 			local cache = {}
-
 			socket.lasterror = function (num)
 				num = num or ffi.errno()
-
 				if not cache[num] then
 					local err = ffi.string(ffi.C.strerror(num))
 					cache[num] = err == "" and tostring(num) or err
 				end
-
 				return cache[num], num
 			end
 		end
@@ -376,38 +358,21 @@ do
 			local F_SETFL = 4
 			local O_NONBLOCK = 04000
 
-			if ffi.os == "OSX" then
-				O_NONBLOCK = 0x0004
-			end
+			if ffi.os == "OSX" then O_NONBLOCK = 0x0004 end
 			socket.blocking = function (fd, b)
 				local flags = ffi.C.fcntl(fd, F_GETFL, 0)
-
-				if flags < 0 then
-					-- error
-					return nil, socket.lasterror()
-				end
-
-				if b then
-					flags = bit.band(flags, bit.bnot(O_NONBLOCK))
-				else
-					flags = bit.bor(flags, O_NONBLOCK)
-				end
-
+				if flags < 0 then return nil, socket.lasterror() end
+				if b then flags = bit.band(flags, bit.bnot(O_NONBLOCK))
+				else flags = bit.bor(flags, O_NONBLOCK) end
 				local ret = ffi.C.fcntl(fd, F_SETFL, ffi.new("int", flags))
-
-				if ret < 0 then
-					return nil, socket.lasterror()
-				end
-
+				if ret < 0 then return nil, socket.lasterror() end
 				return true
 			end
 		end
 
 		socket.poll = socket.poll or function (fds, ndfs, timeout)
 			local ret = ljsocket_ffi.poll(fds, ndfs, timeout)
-			if ret < 0 then
-				return nil, socket.lasterror()
-			end
+			if ret < 0 then return nil, socket.lasterror() end
 			return ret
 		end
 	end
@@ -484,7 +449,7 @@ do
 	socket.inet_ntoa = socket.inet_ntoa or ljsocket_ffi.inet_ntoa
 	socket.ntohs = socket.ntohs or ljsocket_ffi.ntohs
 
-	-- FIXME
+	--[[FIXME]]
 	socket.poll = socket.poll or function (fd, events, revents) end
 
 	e = {
@@ -771,21 +736,13 @@ local capture_flags = function (what)
 		lookup = flags,
 		reverse = reverse,
 		strict_reverse = function(key)
-			if not key then
-				error("invalid " .. what:sub(0, -2) .. " flag: nil")
-			end
-			if not reverse[key] then
-				error("invalid "..what:sub(0, -2).." flag: " .. key, 2)
-			end
+			if not key then error("invalid " .. what:sub(0, -2) .. " flag: nil") end
+			if not reverse[key] then error("invalid "..what:sub(0, -2).." flag: " .. key, 2) end
 			return reverse[key]
 		end,
 		strict_lookup = function(key)
-			if not key then
-				error("invalid " .. what:sub(0, -2) .. " flag: nil")
-			end
-			if not flags[key] then
-				error("invalid "..what:sub(0, -2).." flag: " .. key, 2)
-			end
+			if not key then error("invalid " .. what:sub(0, -2) .. " flag: nil") end
+			if not flags[key] then error("invalid "..what:sub(0, -2).." flag: " .. key, 2) end
 			return flags[key]
 		end
 	}
@@ -1018,9 +975,7 @@ do
 	end
 
 	meta.close = function (self)
-		if self.on_close then
-			self:on_close()
-		end
+		if self.on_close then self:on_close() end
 		return socket.close(self.fd)
 	end
 
@@ -1104,7 +1059,6 @@ do
 	meta.accept = function (self)
 		local address = ffi.new("struct sockaddr_in[1]")
 		local fd, err = socket.accept(self.fd, ffi.cast("struct sockaddr *", address), ffi.new("unsigned int[1]", ffi.sizeof(address)))
-
 		if fd ~= socket.INVALID_SOCKET then
 			local client = setmetatable({
 				fd = fd,
@@ -1113,40 +1067,22 @@ do
 				protocol = "unknown",
 				blocking = true,
 			}, meta)
-
-			if self.debug then
-				print(tostring(self), ": accept client: ", tostring(client))
-			end
-
+			if self.debug then print(tostring(self), ": accept client: ", tostring(client)) end
 			return client
 		end
-
-		local err, num = socket.lasterror()
-
-		if not self.blocking and timeout_messages[num] then
-			return nil, "timeout", num
-		end
-
-		if self.debug then
-			print(tostring(self), ": accept error", num, ":", err)
-		end
-
+		local num
+		err, num = socket.lasterror()
+		if not self.blocking and timeout_messages[num] then return nil, "timeout", num end
+		if self.debug then print(tostring(self), ": accept error", num, ":", err) end
 		return nil, err, num
 	end
 
 	meta.is_connected = function (self)
 		local ip, service, num = self:get_peer_name()
 		local ip2, service2, num2 = self:get_name()
-
-		if not ip and (num == errno.ECONNRESET or num == errno.ENOTSOCK) then
-			return false, service, num
-		end
-
-		if ffi.os == "Windows" then
-			return ip ~= "0.0.0.0" and ip2 ~= "0.0.0.0" and service ~= 0 and service2 ~= 0
-		else
-			return ip and ip2 and service ~= 0 and service2 ~= 0
-		end
+		if not ip and (num == errno.ECONNRESET or num == errno.ENOTSOCK) then return false, service, num end
+		if ffi.os == "Windows" then return ip ~= "0.0.0.0" and ip2 ~= "0.0.0.0" and service ~= 0 and service2 ~= 0
+		else return ip and ip2 and service ~= 0 and service2 ~= 0 end
 	end
 
 	meta.get_peer_name = function (self)
@@ -1170,10 +1106,7 @@ do
 	end
 
 	local default_flags = 0
-
-	if ffi.os ~= "Windows" then
-		default_flags = e.MSG_NOSIGNAL
-	end
+	if ffi.os ~= "Windows" then default_flags = e.MSG_NOSIGNAL end
 
 	meta.send_to = function (self, addr, data, flags)
 		return self:send(data, flags, addr)
@@ -1181,32 +1114,17 @@ do
 
 	meta.send = function (self, data, flags, addr)
 		flags = flags or default_flags
-
-		if self.on_send then
-			return self:on_send(data, flags)
-		end
-
+		if self.on_send then return self:on_send(data, flags) end
 		local len, err, num
-
-		if addr then
-			len, err, num = socket.sendto(self.fd, data, #data, flags, addr.addrinfo.ai_addr, addr.addrinfo.ai_addrlen)
-		else
-			len, err, num = socket.send(self.fd, data, #data, flags)
-		end
-
-		if not len then
-			return len, err, num
-		end
-
-		if len > 0 then
-			return len
-		end
+		if addr then len, err, num = socket.sendto(self.fd, data, #data, flags, addr.addrinfo.ai_addr, addr.addrinfo.ai_addrlen)
+		else len, err, num = socket.send(self.fd, data, #data, flags) end
+		if not len then return len, err, num end
+		if len > 0 then return len end
 	end
 
 	meta.receive_from = function (self, address, size, flags)
 		local src_addr
 		local src_addr_size
-
 		if not address then
 			src_addr = ffi.new("struct sockaddr_in[1]")
 			src_addr_size = ffi.sizeof("struct sockaddr_in")
@@ -1214,55 +1132,34 @@ do
 			src_addr = address.addrinfo.ai_addr
 			src_addr_size = address.addrinfo.ai_addrlen
 		end
-
 		return self:receive(size, flags, src_addr, src_addr_size)
 	end
 
 	--[[@param size integer?]]
 	meta.receive = function (self, size, flags, src_address, address_len)
 		size = size or 65536
-		local buf = ffi.new("char[?]", size)
-
-		if self.on_receive then
-			return self:on_receive(buf, size, flags)
-		end
-
-		local len, err, num
-		local len_res
-
+		local buf = type(size) == "cdata" and size or ffi.new("char[?]", size)
+		if self.on_receive then return self:on_receive(buf, size, flags) end
+		local len, err, num, len_res
 		if src_address then
 			len_res = ffi.new("int[1]", address_len)
 			len, err, num = socket.recvfrom(self.fd, buf, ffi.sizeof(buf), flags or 0, ffi.cast("struct sockaddr *", src_address), len_res)
-		else
-			len, err, num = socket.recv(self.fd, buf, ffi.sizeof(buf), flags or 0)
-		end
+		else len, err, num = socket.recv(self.fd, buf, ffi.sizeof(buf), flags or 0) end
 
 		if num == errno.ECONNRESET then
 			self:close()
-			if self.debug then
-				print(tostring(self), ": closed")
-			end
-
+			if self.debug then print(tostring(self), ": closed") end
 			return nil, "closed", num
 		end
 
 		if not len then
-			if not self.blocking and timeout_messages[num] then
-				return nil, "timeout", num
-			end
-
-			if self.debug then
-				print(tostring(self), " error", num, ":", err)
-			end
-
+			if not self.blocking and timeout_messages[num] then return nil, "timeout", num end
+			if self.debug then print(tostring(self), " error", num, ":", err) end
 			return len, err, num
 		end
 
 		if len > 0 then
-			if self.debug then
-				print(tostring(self), ": received ", len, " bytes")
-			end
-
+			if self.debug then print(tostring(self), ": received ", len, " bytes") end
 			if src_address then
 				return ffi.string(buf, len), {
 					addrinfo = {
@@ -1274,10 +1171,8 @@ do
 					get_ip = addrinfo_get_ip,
 				}
 			end
-
 			return ffi.string(buf, len)
 		end
-
 		return nil, err, num
 	end
 end

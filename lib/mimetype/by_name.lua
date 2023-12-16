@@ -11,6 +11,7 @@ end
 -- TODO: .ts, .mts etc should be typescript
 -- from https://gist.github.com/AshHeskes/6038140
 mod.extension_to_mimetype = {
+	wasm = "application/wasm",
 	["123"] = "application/vnd.lotus-1-2-3",
 	["3dml"] = "text/vnd.in3d.3dml",
 	["3g2"] = "video/3gpp2",

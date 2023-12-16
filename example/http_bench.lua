@@ -3,10 +3,7 @@ local arg = arg --[[@type unknown[] ]]
 if pcall(debug.getlocal, 4, 1) then arg = { ... }
 else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
 
-local i = 0
 require("lib.http.server").server(function (_, res)
-	i = i + 1
-	if i % 1000 == 0 then print(i) end
 	res.headers["Content-Type"] = "text/html"
 	res.body = [[
 <!doctype html>

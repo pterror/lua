@@ -8,12 +8,9 @@ local epoll = require("dep.epoll").new()
 
 ffi.cdef [[int /*pid_t*/ fork(void);]]
 
---[[currently broken]]
+--[[currently broken?]]
 
-local i = 0
 require("lib.http.server").server(function (_, res)
-	i = i + 1
-	if i % 1000 == 0 then print(i) end
 	res.headers["Content-Type"] = "text/html"
 	res.body = [[
 <!doctype html>

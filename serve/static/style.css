@@ -30,6 +30,18 @@ body {
 	width: 1em;
 }
 
+.icon-button {
+	height: 100%;
+	width: 100%;
+	display: grid;
+	justify-content: center;
+	border: none;
+	background: none;
+	cursor: pointer;
+	padding: 0;
+	color: unset;
+}
+
 .semantic-ul {
 	margin-block-start: 0;
 	padding-inline-start: 0;

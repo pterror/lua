@@ -19,7 +19,7 @@ whiskr.text_to_id = function (self, s)
 	if not success then return nil, err else return self.db:last_insert_rowid() end
 end
 
---[[@param fact whiskr_fact]]
+--[[@return boolean success, string? error]] --[[@param fact whiskr_fact]]
 whiskr.add_fact = function (self, fact)
 	return self.db:execute(
 		"INSERT INTO facts (subject_id, predicate_id, object_id) VALUES (?, ?, ?);",

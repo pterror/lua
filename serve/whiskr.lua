@@ -3,12 +3,17 @@ local arg = arg --[[@type unknown[] ]]
 if pcall(debug.getlocal, 4, 1) then arg = { ... }
 else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
 
+--[[@diagnostic disable-next-line: param-type-mismatch]]
+local root = arg[1] or require("lib.path").resolve(os.getenv("HOME"), "whiskr.db")
+
 local here = debug.getinfo(1).source:match("@?(.*[/\\])")
 local sep = here:find("/") and "/" or "\\"
-local index_html = here .. "static" .. sep .. "dashboard.html"
+local index_html = here .. "static" .. sep .. "whiskr.html"
 
 --[[@type http_table_handler]]
 local routes = {
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
+	api = require("serve_api.whiskr").make_routes(root),
 	[""] = function (_, res)
 		local f = io.open(index_html)
 		if not f then res.status = 404; return end
