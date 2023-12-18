@@ -192,6 +192,7 @@ local encode = function (msg)
 	local opcode = mod.opcode[msg.type]
 	if not opcode then return end
 	local s = string.char(bit.bor(0x80, opcode))
+	msg.payload = msg.payload or ""
 	local len = #msg.payload
 	if len <= 125 then
 		s = s .. string.char(len)
