@@ -1,36 +1,36 @@
---
--- Each entry of "syntax" describe a node of the AST tree.
--- The "properties" field gives the specification for the properties
--- of each node.
---
--- Each "properties" entry is of the form:
---
--- <name> = <ast_element_type>
---
--- where <ast_element_type> is a recursive type defined as follow:
--- it can be:
---
--- "Expression",
--- "Statement",
--- ...
--- to indicate a specific kind of "node". Alternatively a node can be
--- specified as;
---
--- { type = "node", kind = "Statement" },
---
--- In addition an <ast_element_type> can be also:
---
--- { type = "literal", value = "string" },
---
--- { type = "enum", values = {"a", "b", "c"} },
---
--- { type = "list", kind = <ast_element_type> },
---
--- { type = "choice", values = {<ast_element_type>, <ast_element_type>, ...} },
---
--- The latter two are defined recursively. A "list" is Lua table of element of a
--- given type. The "choice" allow an element to be either of one type or another.
---
+--[[
+Each entry of "syntax" describe a node of the AST tree.
+The "properties" field gives the specification for the properties
+of each node.
+
+Each "properties" entry is of the form:
+
+<name> = <ast_element_type>
+
+where <ast_element_type> is a recursive type defined as follow:
+it can be:
+
+"Expression",
+"Statement",
+...
+to indicate a specific kind of "node". Alternatively a node can be
+specified as;
+
+{ type = "node", kind = "Statement" },
+
+In addition an <ast_element_type> can be also:
+
+{ type = "literal", value = "string" },
+
+{ type = "enum", values = {"a", "b", "c"} },
+
+{ type = "list", kind = <ast_element_type> },
+
+{ type = "choice", values = {<ast_element_type>, <ast_element_type>, ...} },
+
+The latter two are defined recursively. A "list" is Lua table of element of a
+given type. The "choice" allow an element to be either of one type or another.
+]]
 
 local mod = {}
 

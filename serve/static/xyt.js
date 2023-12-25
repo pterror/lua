@@ -1,336 +1,446 @@
-// TODO: fix `x-for`, and array reactivity
-const f = (() => {}).constructor,
-	af = (async () => {}).constructor,
-	S = Symbol(),
-	P = Symbol(),
-	T = Symbol(),
-	C = Symbol(),
-	M = Symbol(),
-	R = new WeakMap(),
-	E = console.error,
-	Z = Object.freeze({}),
-	H = Object.hasOwn,
-	X = {},
+// TODO: fix `x-for`, array reactivity, conditional reactivity, reactivity GC (stress test and check for leaks)
+"use strict";
+const Function = (() => {}).constructor,
+	AsyncFunction = (async () => {}).constructor,
+	DataSym = Symbol(),
+	PlaceholderSym = Symbol(),
+	TemplateSym = Symbol(),
+	ClassSym = Symbol(),
+	ChildMapSym = Symbol(),
+	ModelSym = Symbol(),
+	unreactiveValues = new WeakMap(),
+	reactiveMaps = new WeakMap(),
+	consoleError = console.error,
+	emptyObject = Object.freeze({}),
+	Xyt = {},
 	$ = {};
 //@ts-expect-error
 window.$ = $;
 $.parent = "parentElement";
-$.data = S;
-X.prefix =
+$.data = DataSym;
+Xyt.prefix =
 	new URLSearchParams(import.meta.url.match(/#(.+)/)?.[1]).get("prefix") ??
 	"x-";
-export default X;
-/**@type{(()=>void)|undefined}*/ X.currentEffect = undefined;
+export default Xyt;
+/**@type{(()=>void)|undefined}*/ Xyt.currentEffect = undefined;
 /**@type{(expression:string,args?:string)=>(element:XytElement,scope:unknown)=>unknown}*/
-X.evaluator = (e) =>
-	(/\bawait\b/.test(e) ? af : f)("$el,$data", "with($data)return " + e);
-X.defaultDirective = "bind";
-/**@typedef{HTMLElement&{[S]:any,[P]:Comment|undefined,[T]:Element|undefined,[C]:string|undefined,[M]:true|undefined}}XytElement*/
-/**@typedef{(this:typeof X,element:XytElement,value:any,name:string|undefined,originalAttributeName:string,queueTransform:(elements:Element[])=>void,stop:()=>void) => void}D*/
-/**@type Record<string,D>*/
-const d = (X.directives = {});
-/**@type{{}|undefined}*/ X.tick = undefined;
+Xyt.evaluator = (expression) =>
+	(/\bawait\b/.test(expression) ? AsyncFunction : Function)(
+		"$el,$data",
+		"with($data)return " + expression
+	);
+Xyt.defaultDirective = "bind";
+/**@typedef{HTMLElement&{[DataSym]:any,[PlaceholderSym]:Comment|undefined,[TemplateSym]:Element|undefined,[ClassSym]:string|undefined,[ModelSym]:true|undefined,[ChildMapSym]:Map<unknown,XytElement[]>|undefined}}XytElement*/
+/**@typedef{(this:typeof Xyt,element:XytElement,value:any,name:string|undefined,originalAttributeName:string,queueTransform:(elements:Element[])=>void,stop:()=>void) => void}XytDirective*/
+/**@type Record<string,XytDirective>*/
+const directives = (Xyt.directives = {});
+/**@type{{}|undefined}*/ Xyt.tick = undefined;
 /**@type{(element?:?XytElement|string)=>Promise<void>}*/
-X.mount = async function (e) {
-	const t = this;
-	if (typeof (e ??= /**@type{XytElement}*/ (document.body)) == "string")
-		e = /**@type{XytElement}*/ (document.querySelector(e));
-	const p = this.prefix;
+Xyt.mount = async function (element) {
+	const xyt = this;
+	if (typeof (element ??= /**@type{XytElement}*/ (document.body)) == "string")
+		element = /**@type{XytElement}*/ (document.querySelector(element));
+	const prefix = this.prefix;
 	// TODO: .modifiers?
-	const re = new RegExp("^(?:" + p + "([^:]+))?(?::(.*))?$");
-	/**@type{(c:XytElement)=>Promise<void>}*/
-	const x = async (c) => {
+	const attributeRegex = new RegExp("^(?:" + prefix + "([^:]+))?(?::(.*))?$");
+	/**@type{(child:XytElement)=>Promise<void>}*/
+	const processAttributes = async (child) => {
 		//@ts-expect-error
-		c[S] ??= c.parentElement?.[S] ?? Z;
-		let st = false;
-		for (const a_ of c.getAttributeNames()) {
-			let [, a, n] = a_.match(re) ?? [];
-			if (!a && !n) continue;
-			a ??= this.defaultDirective;
-			const d = this.directives[a];
-			if (!d) {
-				console.warn("xyt: Unknown directive:", a);
+		child[DataSym] ??= child.parentElement?.[DataSym] ?? emptyObject;
+		let stopped = false;
+		for (const rawAttribute of child.getAttributeNames()) {
+			let [, attribute, name] = rawAttribute.match(attributeRegex) ?? [];
+			if (!attribute && !name) continue;
+			attribute ??= this.defaultDirective;
+			const directive = this.directives[attribute];
+			if (!directive) {
+				console.warn("xyt: Unknown directive:", attribute);
 				continue;
 			}
 			try {
-				const f = this.evaluator(/**@type{string}*/ (c.getAttribute(a_)));
-				let v;
-				if (/**@type{any}*/ (d).raw) v = () => f(c, c[S]);
-				else if (/**@type{any}*/ (d).rw) {
-					let w = this.evaluator("$value=>" + c.getAttribute(a_) + "=$value");
-					// @ts-expect-error
-					const V = () => [f(c, c[S]), (v) => w(c, c[S])(v)];
-					t.currentEffect = async () =>
-						d.call(
+				const callback = this.evaluator(
+					/**@type{string}*/ (child.getAttribute(rawAttribute))
+				);
+				let value;
+				if (/**@type{any}*/ (directive).raw)
+					value = () => callback(child, child[DataSym]);
+				else if (/**@type{any}*/ (directive).rw) {
+					let write = this.evaluator(
+						"$value=>" + child.getAttribute(rawAttribute) + "=$value"
+					);
+					const rwCallbacks = () => [
+						callback(child, child[DataSym]),
+						// @ts-expect-error
+						(value) => write(child, child[DataSym])(value),
+					];
+					xyt.currentEffect = async () =>
+						directive.call(
 							this,
-							c,
-							await Promise.all(V()),
-							n,
-							a_,
+							child,
+							await Promise.all(rwCallbacks()),
+							name,
+							rawAttribute,
 							() => {},
 							() => {}
 						);
-					const p = V();
-					t.currentEffect = void 0;
-					v = p[0] instanceof Promise ? await Promise.all(p) : p;
-				} else if (/**@type{any}*/ (d).parent) {
+					const maybePromise = rwCallbacks();
+					xyt.currentEffect = undefined;
+					value =
+						maybePromise[0] instanceof Promise
+							? await Promise.all(maybePromise)
+							: maybePromise;
+				} else if (/**@type{any}*/ (directive).parent) {
 					// TODO: reactive x-for will be difficult.
-					t.currentEffect = async () =>
-						d.call(
+					xyt.currentEffect = async () =>
+						directive.call(
 							this,
-							c,
-							//@ts-expect-error
-							await f(c.parentElement?.[S] ?? Z),
-							n,
-							a_,
+							child,
+							await callback(
+								child,
+								//@ts-expect-error
+								child.parentElement?.[DataSym] ?? emptyObject
+							),
+							name,
+							rawAttribute,
 							() => {},
 							() => {}
 						);
-					const p = f(c, c[S]);
-					t.currentEffect = void 0;
-					v = p instanceof Promise ? await p : p;
+					const maybePromise = callback(child, child[DataSym]);
+					xyt.currentEffect = undefined;
+					value =
+						maybePromise instanceof Promise ? await maybePromise : maybePromise;
 				} else {
 					// TODO: reactive x-for will be difficult.
-					t.currentEffect = async () =>
-						d.call(
+					xyt.currentEffect = async () =>
+						directive.call(
 							this,
-							c,
-							await f(c, c[S]),
-							n,
-							a_,
+							child,
+							await callback(child, child[DataSym]),
+							name,
+							rawAttribute,
 							() => {},
 							() => {}
 						);
-					const p = f(c, c[S]);
-					t.currentEffect = void 0;
-					v = p instanceof Promise ? await p : p;
+					const maybePromise = callback(child, child[DataSym]);
+					xyt.currentEffect = undefined;
+					value =
+						maybePromise instanceof Promise ? await maybePromise : maybePromise;
 				}
-				/**@type{Element[]|undefined}*/ let q;
-				d.call(
+				/**@type{Element[]|undefined}*/ let queue;
+				directive.call(
 					this,
-					c,
-					v,
-					n,
-					a_,
+					child,
+					value,
+					name,
+					rawAttribute,
 					(e) => {
-						(q ??= []).push(...e);
+						(queue ??= []).push(...e);
 					},
 					() => {
-						st = true;
+						stopped = true;
 					}
 				);
-				if (q) for (const e of q) x(/**@type{XytElement}*/ (e));
-			} catch (e) {
-				E("xyt: Error processing element:", c, a_, c.getAttribute(a_));
-				E(e);
+				if (queue)
+					for (const element of queue)
+						processAttributes(/**@type{XytElement}*/ (element));
+			} catch (error) {
+				consoleError(
+					"xyt: Error processing element:",
+					child,
+					rawAttribute,
+					child.getAttribute(rawAttribute)
+				);
+				consoleError(error);
 			}
-			if (!c.isConnected || st) break;
+			if (!child.isConnected || stopped) break;
 		}
-		if (c.isConnected && !st)
-			for (const c2 of c.children) x(/**@type{XytElement}*/ (c2));
+		if (child.isConnected && !stopped)
+			for (const children of child.children)
+				processAttributes(/**@type{XytElement}*/ (children));
 	};
-	x(e);
+	processAttributes(element);
 };
-/**@template T @extends{Array<T>}*/
-class ReactiveArray extends Array {
-	// @ts-expect-error
-	/**@type{()=>void}*/ rx;
-	/**@param{T[]}items*/
-	push(...items) {
-		const r = super.push(...items);
-		this.rx();
-		return r;
-	}
-	pop() {
-		const r = super.pop();
-		this.rx();
-		return r;
-	}
-}
 /**@type{any}*/ const aH = Object.create(null);
 // see https://github.com/vuejs/core/blob/c568778ea3265d8e57f788b00864c9509bf88a4e/packages/reactivity/src/baseHandlers.ts#L53
-["includes", "indexOf", "lastIndexOf"].forEach((k) => {
+["includes", "indexOf", "lastIndexOf"].forEach((arrayMethod) => {
 	/**@type{(tr:(k:string)=>void,...a:any[])=>any}*/
-	aH[k] = function (tr, ...a) {
-		const A = R.get(this) ?? this;
-		for (let i = 0, l = this.length; i < l; i++) tr(i + "");
-		const res = A[k](...a);
-		if (res === -1 || res === false)
-			return A[k](...a.map((a) => R.get(a) ?? a));
-		else return res;
+	aH[arrayMethod] = function (track, ...args) {
+		const rawArray = unreactiveValues.get(this) ?? this;
+		for (let i = 0, l = this.length; i < l; i++) track(i + "");
+		const result = rawArray[arrayMethod](...args);
+		if (result === -1 || result === false)
+			return rawArray[arrayMethod](
+				...args.map((a) => unreactiveValues.get(a) ?? a)
+			);
+		else return result;
 	};
 });
-["push", "pop", "shift", "unshift", "splice"].forEach((k) => {
+["push", "pop", "shift", "unshift", "splice"].forEach((arrayMethod) => {
 	/**@type{(tr:(k:string)=>void,...a:any[])=>any}*/
-	aH[k] = function (tr, ...a) {
-		const e = X.currentEffect;
-		X.currentEffect = void 0;
-		const res = (R.get(this) ?? this)[k].apply(this, a);
-		X.currentEffect = e;
-		return res;
+	aH[arrayMethod] = function (_track, ...args) {
+		const effect = Xyt.currentEffect;
+		Xyt.currentEffect = undefined;
+		const result = (unreactiveValues.get(this) ?? this)[arrayMethod].apply(
+			this,
+			args
+		);
+		Xyt.currentEffect = effect;
+		return result;
 	};
 });
-/**@type{<T extends object>(this:typeof X,value:T,parent?:any,deep?:boolean,parentDependency?:never)=>T}*/
-X.reactive = function (v, p, d = true, P) {
-	if (typeof v !== "object" || v === null || R.has(v)) return v;
-	const s = this,
-		/**@type{Map<string|symbol,{}>}*/ u = new Map(),
-		/**@type{Map<string|symbol,Set<()=>void>>}*/ m = new Map(),
-		/**@type{Map<string|symbol,unknown>}*/ x = new Map();
+/**@type{<T extends object>(this:typeof Xyt,value:T,parent?:any,oldValue?:T,deep?:boolean,parentDependency?:never)=>T}*/
+Xyt.reactive = function (
+	value,
+	parent,
+	oldValue,
+	deep = true,
+	parentDependency
+) {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		unreactiveValues.has(value)
+	)
+		return value;
+	const xyt = this,
+		/**@type{{ticks:Map<string|symbol,{}>,dependencies:Map<string|symbol,Set<()=>void>>,reactiveValues:Map<string|symbol,unknown>}}*/ maps =
+			(oldValue && reactiveMaps.get(oldValue)) ?? {
+				ticks: new Map(),
+				dependencies: new Map(),
+				reactiveValues: new Map(),
+			},
+		{
+			ticks: keyTicks,
+			dependencies: keyDependencies,
+			reactiveValues: keyReactiveValues,
+		} = maps,
+		/**@type{Set<PropertyKey>}*/ trackedKeys = new Set();
+	console.log("rx", value, oldValue, maps);
+	/** @type {Set<()=>void>|undefined} */
+	let objectWideEffects;
+	if (Array.isArray(value)) {
+		const set = (objectWideEffects = new Set());
+		["filter", "map", "forEach"].forEach((key) =>
+			keyDependencies.set(key, set)
+		);
+	}
 	/**@type{(k:string|symbol)=>void}*/
-	const U = (k) => {
-		const D = m.get(k);
-		if (D) for (const d of D) d();
+	const runEffects = (key) => {
+		const effects = keyDependencies.get(key);
+		if (effects) for (const effect of effects) effect();
+		if (objectWideEffects && objectWideEffects !== effects)
+			for (const effect of objectWideEffects) effect();
 	};
-	/**@type{(k:string|symbol)=>void}*/
-	const tr = (k) => {
-		if (s.currentEffect && k !== Symbol.unscopables) {
-			let M = m.get(k);
-			if (!M) m.set(k, (M = P ? new Set([P]) : new Set()));
-			M.add(s.currentEffect);
+	/**@type{(key:string|symbol)=>void}*/
+	const track = (key) => {
+		if (xyt.currentEffect && key) {
+			let dependencies = keyDependencies.get(key);
+			if (!dependencies)
+				keyDependencies.set(
+					key,
+					(dependencies = new Set(
+						parentDependency ? [parentDependency] : undefined
+					))
+				);
+			dependencies.add(xyt.currentEffect);
 		}
 	};
 	/**@type{(k:string|symbol)=>void}*/
-	const ef = (k) => {
-		if (!s.tick) {
-			u.set(k, (s.tick = {}));
-			U(k);
-			s.tick = void 0;
-		} else if (u.get(k) !== s.tick) {
-			u.set(k, s.tick);
-			U(k);
+	const runTick = (k) => {
+		if (!xyt.tick) {
+			keyTicks.set(k, (xyt.tick = {}));
+			runEffects(k);
+			xyt.tick = undefined;
+		} else if (keyTicks.get(k) !== xyt.tick) {
+			keyTicks.set(k, xyt.tick);
+			runEffects(k);
 		}
 	};
-	const r = new Proxy(v, {
-		get: (t, k) => {
-			if (!(k in t)) return p?.[k];
-			tr(k);
-			const R = Reflect.get(t, k);
-			if (d && typeof R === "object" && R) {
-				if (Array.isArray(v)) {
+	const reactiveProxy = new Proxy(value, {
+		get: (target, key) => {
+			if (!(key in target)) return parent?.[key];
+			// @ts-expect-error
+			if (key === Symbol.unscopables) return target[key];
+			track(key);
+			const keyValue = Reflect.get(target, key);
+			if (deep && typeof keyValue === "object" && keyValue) {
+				let reactiveKeyValue = keyReactiveValues.get(key);
+				console.log("bruh", key, keyValue, trackedKeys.has(key));
+				if (!trackedKeys.has(key)) {
+					trackedKeys.add(key);
+					keyReactiveValues.set(
+						key,
+						(reactiveKeyValue = xyt.reactive(
+							keyValue,
+							parent,
+							// @ts-expect-error
+							reactiveKeyValue,
+							deep,
+							/**@type{never}*/ (() => runEffects(key))
+						))
+					);
 				}
-				let r2 = x.get(k);
-				if (!r2)
-					x.set(k, (r2 = s.reactive(R, p, d, /**@type{never}*/ (() => U(k)))));
-				return r2;
-			} else return R;
+				return reactiveKeyValue;
+			} else return keyValue;
 		},
-		set: (t, k, v) => {
-			if (!(k in t)) {
-				if (p && k in p) p[k] = v;
-				return !!p;
+		set: (target, key, value) => {
+			if (!(key in target)) {
+				if (parent && key in parent) parent[key] = value;
+				return !!parent;
 			}
-			if (!Object.is(Reflect.get(t, k), v)) {
-				const R = Reflect.set(t, k, v);
-				ef(k);
+			if (!Object.is(Reflect.get(target, key), value)) {
+				const R = Reflect.set(target, key, value);
+				runTick(key);
 				return R;
 			}
 			return true;
 		},
-		deleteProperty: (t, k) => {
-			if (!(k in t)) {
-				delete p?.[k];
-				return p != null;
+		deleteProperty: (target, key) => {
+			if (!(key in target)) {
+				delete parent?.[key];
+				return parent != null;
 			}
-			ef(k);
-			u.delete(k);
-			m.delete(k);
-			x.delete(k);
-			return Reflect.deleteProperty(t, k);
+			runTick(key);
+			keyTicks.delete(key);
+			keyDependencies.delete(key);
+			keyReactiveValues.delete(key);
+			return Reflect.deleteProperty(target, key);
 		},
-		has(t, k) {
-			return Reflect.has(t, k) || (p != null && k in p);
+		has(target, key) {
+			return Reflect.has(target, key) || (parent != null && key in parent);
 		},
 	});
-	R.set(r, v);
-	return r;
+	unreactiveValues.set(reactiveProxy, value);
+	reactiveMaps.set(reactiveProxy, maps);
+	return reactiveProxy;
 };
-d.app = () => {};
-d.init = /**@type{D}*/ (e, v) => {
-	v();
+directives.app = () => {};
+directives.init = /**@type{XytDirective}*/ (element, value) => {
+	value();
 };
-d.effect = () => {}; // Only run the effect
-d.text = /**@type{D}*/ (e, v) => {
-	e.innerText = v;
+directives.effect = () => {}; // only run the effect
+directives.text = /**@type{XytDirective}*/ (element, value) => {
+	element.innerText = value;
 };
-d.html = /**@type{D}*/ (e, v) => {
-	e.innerHTML = v;
+directives.html = /**@type{XytDirective}*/ (element, value) => {
+	element.innerHTML = value;
 };
-d.class = /**@type{D}*/ (e, v) => {
-	e[C] ??= e.classList.value;
-	if (Array.isArray(v)) v = v.join(" ");
-	if (typeof v === "string") e.classList.value = e[C] + (v ? " " + v : "");
+directives.class = /**@type{XytDirective}*/ (element, value) => {
+	element[ClassSym] ??= element.classList.value;
+	if (Array.isArray(value)) value = value.join(" ");
+	if (typeof value === "string")
+		element.classList.value = element[ClassSym] + (value ? " " + value : "");
 	else
-		for (const k in v)
-			if (v[k]) e.classList.add(k);
-			else e.classList.remove(k);
+		for (const k in value)
+			if (value[k]) element.classList.add(k);
+			else element.classList.remove(k);
 };
-d.style = /**@type{D}*/ (e, v) => {
-	Object.assign(e.style, v);
+directives.style = /**@type{XytDirective}*/ (element, value) => {
+	Object.assign(element.style, value);
 };
-d.bind = /**@type{D}*/ (e, v, n) => {
-	if (n != null) e.setAttribute(n, v);
-	else for (const k in v) e.setAttribute(k, v[k]);
+directives.bind = /**@type{XytDirective}*/ (element, value, name) => {
+	if (name != null) element.setAttribute(name, value);
+	else for (const k in value) element.setAttribute(k, value[k]);
 };
-d.on = /**@type{D}*/ (e, v, n) => {
-	if (n != null) e.addEventListener(n, v);
-	else for (const k in v) e.addEventListener(k, v[k]);
+directives.on = /**@type{XytDirective}*/ (element, value, name) => {
+	if (name != null) element.addEventListener(name, value);
+	else for (const k in value) element.addEventListener(k, value[k]);
 };
-d.show = /**@type{D}*/ (e, v) => {
-	e.style.display = v ? "" : "none";
+directives.show = /**@type{XytDirective}*/ (element, value) => {
+	element.style.display = value ? "" : "none";
 };
-d.ref = /**@type{D}*/ (e, { 1: w }) => {
-	w(e);
+directives.ref = /**@type{XytDirective}*/ (element, { 1: write }) => {
+	write(element);
 };
-d.data = /**@type{D}*/ function (e, v) {
-	//@ts-expect-error
-	e[S] = this.reactive(v, e.parentElement?.[S]);
+directives.data = /**@type{XytDirective}*/ function (element, value) {
+	element[DataSym] = this.reactive(
+		value,
+		//@ts-expect-error
+		element.parentElement?.[DataSym],
+		element[DataSym]
+	);
 };
-d.model = /**@type{D}*/ function (e, { 0: r, 1: w }) {
-	/**@type{any}*/ (e).value = r;
-	if (!e[M]) {
-		e[M] = true;
-		e.addEventListener("change", () => w(/**@type{any}*/ (e).value));
+directives.model = /**@type{XytDirective}*/ (
+	element,
+	{ 0: read, 1: write }
+) => {
+	/**@type{any}*/ (element).value = read;
+	if (!element[ModelSym]) {
+		element[ModelSym] = true;
+		element.addEventListener("change", () =>
+			write(/**@type{any}*/ (element).value)
+		);
 	}
 };
 //TODO:
-d.component = /**@type{D}*/ function (e, v, n, a, q, s) {
-	s();
+directives.component = /**@type{XytDirective}*/ function (
+	_element,
+	value,
+	_name,
+	_attribute,
+	_enqueue,
+	stopProcessing
+) {
+	stopProcessing();
 	customElements.define(
-		this.prefix + v,
-		{ [v]: class extends HTMLElement {} }[v]
+		this.prefix + value,
+		{ [value]: class extends HTMLElement {} }[value]
 	);
 };
-d.if = /**@type{D}*/ (e, v) => {
-	if (!v && e.isConnected)
-		e.replaceWith((e[P] ??= document.createComment("if")));
-	if (v && e[P]?.isConnected) e[P].replaceWith(e);
+directives.if = /**@type{XytDirective}*/ (element, value) => {
+	if (!value && element.isConnected)
+		element.replaceWith(
+			(element[PlaceholderSym] ??= document.createComment("if"))
+		);
+	if (value && element[PlaceholderSym]?.isConnected)
+		element[PlaceholderSym].replaceWith(element);
 };
-d.for = /**@type{D}*/ function (e, v, n, a, q) {
-	let t = (e[T] ??= (() => {
-		const t = /**@type{Element}*/ (e.cloneNode(true));
-		t.removeAttribute(a);
-		return t;
+directives.for = /**@type{XytDirective}*/ function (
+	element,
+	values,
+	_name,
+	attribute,
+	enqueue
+) {
+	console.log("for", values);
+	const template = (element[TemplateSym] ??= (() => {
+		const template = /**@type{Element}*/ (element.cloneNode(true));
+		template.removeAttribute(attribute);
+		return template;
 	})());
-	//@ts-expect-error
-	/**@type{XytElement[]}*/ const c = Array.from(v, (v) =>
-		Object.assign(t.cloneNode(true), {
-			//@ts-expect-error
-			[S]: this.reactive(v, e.parentElement?.[S]),
-		})
-	);
-	e.replaceWith(...c);
-	q(c);
+	const oldChildMap = element[ChildMapSym];
+	/**@type{Map<unknown,XytElement[]>}*/ const newChildMap = new Map();
+	/**@type{XytElement[]}*/ const newChildren = [];
+	for (const value of values) {
+		let childrenForValue = newChildMap.get(value);
+		if (!childrenForValue) newChildMap.set(value, (childrenForValue = []));
+		let child = oldChildMap?.get(value)?.[childrenForValue.length];
+		if (!child) {
+			newChildren.push(
+				(child = /**@type{XytElement}*/ (
+					/**@type{any}*/ (
+						Object.assign(template.cloneNode(true), {
+							//@ts-expect-error
+							[DataSym]: this.reactive(value, element.parentElement?.[DataSym]),
+						})
+					)
+				))
+			);
+		}
+		childrenForValue.push(child);
+	}
+	element.replaceWith(...newChildren);
+	enqueue(newChildren);
 };
 // FIXME: make less ad-hoc; pass event to event handler
-/**@type{any}*/ (d.app).raw =
-	/**@type{any}*/ (d.on).raw =
-	/**@type{any}*/ (d.init).raw =
-	/**@type{any}*/ (d.data).parent =
-	/**@type{any}*/ (d.ref).rw =
-	/**@type{any}*/ (d.model).rw =
+/**@type{any}*/ (directives.app).raw =
+	/**@type{any}*/ (directives.on).raw =
+	/**@type{any}*/ (directives.init).raw =
+	/**@type{any}*/ (directives.data).parent =
+	/**@type{any}*/ (directives.ref).rw =
+	/**@type{any}*/ (directives.model).rw =
 		true;
 const root = /**@type{XytElement?}*/ (
-	document.querySelector("[" + X.prefix + "app]")
+	document.querySelector("[" + Xyt.prefix + "app]")
 );
-root && X.mount(root);
+root && Xyt.mount(root);

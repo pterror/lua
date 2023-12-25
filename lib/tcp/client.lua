@@ -10,7 +10,12 @@ mod.client = function (host, port, cb, epoll)
 	epoll = epoll or epoll_.new()
 	local client = assert(socket.create(host:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$") and "inet" or "inet6", "stream", "tcp"))
 	assert(client:set_blocking(false))
-	assert(client:connect(host, port))
+	local success, err = client:connect(host, port)
+	if not success then
+		client = assert(socket.create("inet", "stream", "tcp"))
+		assert(client:set_blocking(false))
+		assert(client:connect(host, port))
+	end
 	while not client:is_connected() do client:poll_connect() end
 	--[[TODO: receive all at once?]]
 	local _, remove = epoll:add(client.fd, cb, function () client:close() end)

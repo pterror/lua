@@ -398,8 +398,8 @@ do
 	socket.getaddrinfo = function (node_name, service_name, hints, result)
 		local ret = ljsocket_ffi.getaddrinfo(node_name, service_name, hints, result)
 		if ret == 0 then return true end
-		local err = socket.lasterror(ret) --[[string length overflow when you don't pass #err for some reason]]
-		return nil, ffi.string(err, #err)
+		local err = ljsocket_ffi.gai_strerror(ret)
+		return nil, ffi.string(err)
 	end
 
 	socket.getnameinfo = function (address, length, host, hostlen, serv, servlen, flags)
@@ -854,7 +854,6 @@ end
 
 mod.get_address_info = function (data)
 	local hints
-
 	if data.socket_type or data.protocol or data.flags or data.family then
 		hints = ffi.new("struct addrinfo", {
 			ai_family = data.family and AF.strict_lookup(data.family) or nil,
@@ -863,30 +862,21 @@ mod.get_address_info = function (data)
 			ai_flags = data.flags and table_to_flags(data.flags, AI.lookup, bit.bor) or nil,
 		})
 	end
-
 	local out = ffi.new("struct addrinfo*[1]")
-
 	local ok, err = socket.getaddrinfo(
 		data.host ~= "*" and data.host or nil,
 		data.service and tostring(data.service) or nil,
 		hints,
 		out
 	)
-
-	if not ok then return ok, err end
-
+	if not ok then return ok, "ljsocket.get_address_info: " .. err end
 	local tbl = {}
-
 	local res = out[0]
-
 	while res ~= nil do
 		table.insert(tbl, addrinfo_to_table(res, data.host, data.service))
-
 		res = res.ai_next
 	end
-
-	--ffi.C.freeaddrinfo(out[0])
-
+	--[[ffi.C.freeaddrinfo(out[0])]]
 	return tbl
 end
 
@@ -899,37 +889,25 @@ end
 --[[@param host "*"|string]] --[[@param service "http"|"https"|"ftp"|"ssh"|string|integer]] --[[@param options luajitsocket_ffa_options]]
 mod.find_first_address = function (host, service, options)
 	options = options or {}
-
 	local info = {}
 	info.host = host
 	info.service = service
-
 	info.family = options.family or "inet"
 	info.socket_type = options.socket_type or "stream"
 	info.protocol = options.protocol or "tcp"
 	info.flags = options.flags
-
 	if host == "*" then
 		info.flags = info.flags or {}
 		table.insert(info.flags, "passive")
 	end
-
 	local addrinfo, err = mod.get_address_info(info)
-
-	if not addrinfo then
-		return nil, err
-	end
-
-	if not addrinfo[1] then
-		return nil, "no addresses found (empty address info table)"
-	end
-
+	if not addrinfo then return nil, err end
+	if not addrinfo[1] then return nil, "ljsocket.find_first_address: no addresses found (empty address info table)" end
 	for _, v in ipairs(addrinfo) do
 		if v.family == info.family and v.socket_type == info.socket_type and v.protocol == info.protocol then
 			return v
 		end
 	end
-
 	return addrinfo[1]
 end
 
@@ -1007,7 +985,7 @@ do
 				socket_type = self.socket_type,
 				protocol = self.protocol
 			})
-			if not res_ then return res_, err end
+			if not res_ then return res_, "ljsocket.find_first_address: " .. err end
 			res = res_
 		end
 		local ok, err, num = socket.connect(self.fd, res.addrinfo.ai_addr, res.addrinfo.ai_addrlen)

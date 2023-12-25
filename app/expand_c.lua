@@ -31,6 +31,9 @@ cat <<'END' | cc -E -
 #include <fcntl.h>
 #include <sys/syscall.h>
 #include <sys/epoll.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #endif
 #define __STR___(a) #a
 #define __STR__(a) __STR___(a)

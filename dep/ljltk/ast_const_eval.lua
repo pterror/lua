@@ -1,8 +1,8 @@
 local ConstRule = { }
 
--- A function that return a numeric constant if an AST node evaluate to an
--- arithmetic constant or "nil" otherwise.
--- The implementation of the function is given below.
+--[[A function that return a numeric constant if an AST node evaluate to an]]
+--[[arithmetic constant or "nil" otherwise.]]
+--[[The implementation of the function is given below.]]
 local const_eval
 
 local dirop_compute = function (o, a, b)
@@ -25,9 +25,7 @@ ConstRule.BinaryExpression = function (node)
 	local a = const_eval(node.left)
 	if a then
 		local b = const_eval(node.right)
-		if b then
-			return dirop_compute(o, a, b)
-		end
+		if b then return dirop_compute(o, a, b) end
 	end
 end
 
@@ -41,9 +39,7 @@ end
 
 const_eval = function (node)
 	local rule = ConstRule[node.kind]
-	if rule then
-		return rule(node)
-	end
+	if rule then return rule(node) end
 end
 
 return const_eval

@@ -50,7 +50,7 @@ local is_text = {
 	sln = true,
 	sh = true, fish = true, zsh = true, ps = true, nu = true,
 	xbm = true, xpm = true,
-	coq = true, agda = true, am = true, ml = true, mli = true, vb = true, bas = true,
+	coq = true, agda = true, am = true, ml = true, mli = true, vb = true, bas = true, tal = true,
 }
 -- proper parsing is a non-goal
 -- certain languages support nested block comments; but this tool doesn't:
@@ -97,7 +97,7 @@ local csp = {
 	xml = "<!%-%-", xaml = "<!%-%-", json = "/%*", jsonc = "/%*", hxproj = "<!%-%-", csproj = "<!%-%-",
 	editorconfig = "[;#]",
 	ps = "<#",
-	coq = "%(%*", agda = "{%-", ml = "%(%*", mli = "%(%*",
+	coq = "%(%*", agda = "{%-", ml = "%(%*", mli = "%(%*", tal = "%( ",
 }
 local cep = {
 	c = "%*/", cs = "%*/", csx = "%*/", cpp = "%*/", cc = "%*/", h = "%*/", hpp = "%*/", hh = "%*/", hxx = "%*/", ixx = "%*/", java = "%*/",
@@ -111,7 +111,7 @@ local cep = {
 	md = "%-%->", tex = "\\end{comment}",
 	xml = "%-%->", xaml = "%-%->", json = "%*/", jsonc = "%*/", hxproj = "%-%->", csproj = "%-%->", editorconfig = "[;#]",
 	ps = "#>",
-	coq = "%*%)", agda = "%-}", ml = "%*%)", mli = "%*%)",
+	coq = "%*%)", agda = "%-}", ml = "%*%)", mli = "%*%)", tal = " %)"
 }
 
 local handle_file = function (path) --[[@param path string]]

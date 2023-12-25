@@ -1,8 +1,8 @@
 local BoolConstRule = { }
 
--- A function that return a numeric constant if an AST node evaluate to an
--- arithmetic constant or "nil" otherwise.
--- The implementation of the function is given below.
+--[[A function that return a numeric constant if an AST node evaluate to an]]
+--[[arithmetic constant or "nil" otherwise.]]
+--[[The implementation of the function is given below.]]
 local const_eval
 
 local dirop_compute = function (o, a, b)

@@ -11,4 +11,8 @@ local epoll = epoll_.new()
 local write = client(arg[1], tonumber(arg[2]), io.write, epoll)
 --[[@diagnostic disable-next-line: param-type-mismatch]]
 epoll:add(0, write, nil, true)
-epoll:loop()
+local success, err = xpcall(epoll.loop, debug.traceback, epoll)
+if not success and err then
+  if err:match("^.+: interrupted!") then return end
+  io.stderr:write(err, "\n")
+end

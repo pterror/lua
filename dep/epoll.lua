@@ -92,7 +92,8 @@ epoll.new = function (self)
 	read_cbs = {}, --[[@type (fun()?)[] ]]
 	write_cbs = {}, --[[@type (fun()?)[] ]]
 	close_cbs = {}, --[[@type (fun()?)[] ]]
-	rets = {}, --[[@type { [1]: epoll_write; [2]: epoll_remove; }? }[] ]]
+	rets = {}, --[[@type ({write:epoll_write;remove:epoll_remove;}?)[] ]]
+	weak = {}, --[[@type boolean[] ]]
 	count = 0,
 }
 	return setmetatable(obj, self)
@@ -115,7 +116,8 @@ local remove_fd = function (self, fd)
 		self.write_cbs[fd] = nil
 		self.close_cbs[fd] = nil
 		self.rets[fd] = nil
-		self.count = self.count - 1
+		if not self.weak[fd] then self.count = self.count - 1 end
+		self.weak[fd] = nil
 		--[[do i need to close?]]
 	end
 end
@@ -148,8 +150,9 @@ epoll.add = function (self, fd, read, close, weak)
 		epoll_ffi.epoll_ctl(self.fd, --[[EPOLL_CTL_DEL]] 2, fd, events)
 	end
 	assert(epoll_ffi.epoll_ctl(self.fd, --[[EPOLL_CTL_ADD]] 1, fd, events) == 0, "epoll: add failed")
-	self.rets[fd] = { write, remove }
-	if not weak then self.count = self.count + 1 end
+	self.rets[fd] = { write = write, remove = remove }
+	if weak then self.weak[fd] = true
+	else self.count = self.count + 1 end
 	return write, remove
 end
 mod.add = epoll.add
@@ -163,7 +166,7 @@ epoll.modify = function (self, fd, read, close)
 	self.close_cbs[fd] = close
 	local rets = self.rets[fd]
 	--[[@diagnostic disable-next-line: need-check-nil]]
-	return rets[1], rets[2]
+	return rets.write, rets.remove
 end
 
 epoll.wait = function (self)
@@ -184,13 +187,12 @@ epoll.wait = function (self)
 	if bit.band(event.events, --[[EPOLLHUP]] 0x10) ~= 0 then
 		local cb = self.close_cbs[fd]
 		if cb then cb() end
-		remove_fd(self, fd)
+		if self.rets[fd] then remove_fd(self, fd) end
 	end
 	if bit.band(event.events, --[[EPOLLRDHUP]] 0x2000) ~= 0 then
-		print("rdhup")
 		local cb = self.close_cbs[fd]
 		if cb then cb() end
-		remove_fd(self, fd)
+		if self.rets[fd] then remove_fd(self, fd) end
 	end
 end
 mod.wait = epoll.wait
