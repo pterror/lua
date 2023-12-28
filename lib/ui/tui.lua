@@ -1,0 +1,1 @@
+--[[note: mouse support is *in scope* for this backend]]

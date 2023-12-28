@@ -6,12 +6,15 @@ else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.pat
 --[[@diagnostic disable: param-type-mismatch]]
 
 local ffi = require("ffi")
-local json = require("dep.lunajson")
 local git = require("dep.git")
 git.git_libgit2_init()
-local version_str
-local prerelease_str
-local features_str
+local version_obj
+local prerelease_obj
+local features_obj
+
+local mod = {}
+
+mod.null = {}
 
 local git_error_names = {
 	[git.GIT_OK] = "ok",
@@ -47,6 +50,7 @@ local git_error_names = {
 	[git.GIT_EOWNER] = "eowner",
 	[git.GIT_TIMEOUT] = "timeout",
 }
+mod.error_names = git_error_names
 
 local git_status_names = {
 	[git.GIT_STATUS_CURRENT] = "current",
@@ -64,6 +68,7 @@ local git_status_names = {
 	[git.GIT_STATUS_IGNORED] = "ignored",
 	[git.GIT_STATUS_CONFLICTED] = "conflicted",
 }
+mod.status_names = git_status_names
 
 local git_delta_names = {
 	[git.GIT_DELTA_UNMODIFIED] = "unmodified",
@@ -78,6 +83,7 @@ local git_delta_names = {
 	[git.GIT_DELTA_UNREADABLE] = "unreadable",
 	[git.GIT_DELTA_CONFLICTED] = "conflicted",
 }
+mod.delta_names = git_delta_names
 
 local git_filemode_names = {
 	[git.GIT_FILEMODE_UNREADABLE] = "unreadable",
@@ -87,6 +93,7 @@ local git_filemode_names = {
 	[git.GIT_FILEMODE_LINK] = "link",
 	[git.GIT_FILEMODE_COMMIT] = "commit",
 }
+mod.filemode_names = git_filemode_names
 
 local git_diff_flag_names = {
 	[git.GIT_DIFF_FLAG_BINARY] = "binary",
@@ -95,12 +102,13 @@ local git_diff_flag_names = {
 	[git.GIT_DIFF_FLAG_EXISTS] = "exists",
 	[git.GIT_DIFF_FLAG_VALID_SIZE] = "valid_size",
 }
+mod.diff_flag_names = git_diff_flag_names
 
 local repo_head = function (repo)
 	local head_ptr = ffi.new("git_reference *[1]")
 	local err = git.git_repository_head(head_ptr, repo)
 	if err >= 0 then return ffi.gc(head_ptr[0], git.git_reference_free)
-	else return nil, git_error_names[err] .. [[in `git_repository_head`]] end
+	else return nil, git_error_names[err] .. "in `git_repository_head`" end
 end
 
 local ref_name = function (ref)
@@ -144,73 +152,64 @@ local diff_delta = function (delta)
 end
 
 --[[@param root string]]
-local make_routes = function (root)
+mod.make_api = function (root)
 	local repo do
 		local repo_ptr = ffi.new("git_repository *[1]")
 		local err = git.git_repository_open(repo_ptr, root)
 		if err < 0 then
-			return function (_, res)
-				res.headers["Content-Type"] = "application/json"
-				res.status = 404
-				res.body = [[{"error":"]] .. git_error_names[err] .. [[ in `git_repository_open`"}]]
+			return function (_)
+				return nil, git_error_names[err] .. " in `git_repository_open`"
 			end
 		end
 		repo = ffi.gc(repo_ptr[0], git.git_repository_free)
 	end
-	--[[@type http_table_handler]]
 	local routes = {
 		meta = {
-			version = function (_, res)
-				if not version_str then
+			version = function ()
+				if not version_obj then
 					local version_c = ffi.new("int[3]")
 					git.git_libgit2_version(version_c, version_c + 1, version_c + 2)
-					version_str = "[" .. version_c[0] .. "," .. version_c[1] .. "," .. version_c[2] .. "]"
+					version_obj = { version_c[0], version_c[1], version_c[2] }
 				end
-				res.headers["Content-Type"] = "application/json"
-				res.body = version_str
+				return version_obj
 			end,
-			prerelease = function (_, res)
-				if not prerelease_str then
+			prerelease = function ()
+				if not prerelease_obj then
 					local prerelease_c = git.git_libgit2_prerelease()
-					prerelease_str = prerelease_c ~= nil and ("\"" .. ffi.string(prerelease_c) .. "\"") or "null"
+					prerelease_obj = prerelease_c ~= nil and ffi.string(prerelease_c) or mod.null
 				end
-				res.headers["Content-Type"] = "application/json"
-				res.body = prerelease_str
+				return prerelease_obj
 			end,
-			features = function (_, res)
-				if not features_str then
-					local features = {}
+			features = function ()
+				if not features_obj then
+					features_obj = {}
 					local feature_flags = git.git_libgit2_features()
-					if bit.band(feature_flags, git.GIT_FEATURE_THREADS) then features[#features+1] = [["threads"]]
-					elseif bit.band(feature_flags, git.GIT_FEATURE_HTTPS) then features[#features+1] = [["https"]]
-					elseif bit.band(feature_flags, git.GIT_FEATURE_SSH) then features[#features+1] = [["ssh"]]
-					elseif bit.band(feature_flags, git.GIT_FEATURE_NSEC) then features[#features+1] = [["nsec"]] end
-					features_str = "[" .. table.concat(features, ",") .. "]"
+					if bit.band(feature_flags, git.GIT_FEATURE_THREADS) then features_obj[#features_obj+1] = [["threads"]]
+					elseif bit.band(feature_flags, git.GIT_FEATURE_HTTPS) then features_obj[#features_obj+1] = [["https"]]
+					elseif bit.band(feature_flags, git.GIT_FEATURE_SSH) then features_obj[#features_obj+1] = [["ssh"]]
+					elseif bit.band(feature_flags, git.GIT_FEATURE_NSEC) then features_obj[#features_obj+1] = [["nsec"]] end
 				end
-				res.headers["Content-Type"] = "application/json"
-				res.body = features_str
+				return features_obj
 			end,
 			--[[omitted: options (git_libgit2_opts, both setting and getting)]]
 		},
 		repository = {
-			is_empty = function (_,  res)
+			is_empty = function ()
 				local is_empty = git.git_repository_is_empty(repo)
-				res.headers["Content-Type"] = "application/json"
-				if is_empty < 0 then res.status = 404; res.body = [[{"error":"]] .. git_error_names[is_empty] .. [[ in `git_repository_is_empty`"}]]; return end
-				res.body = is_empty == 0 and "false" or "true"
+				if is_empty < 0 then return nil, git_error_names[is_empty] .. " in `git_repository_is_empty`" end
+				return is_empty ~= 0
 			end,
 			head = {
-				name = function (_, res)
+				name = function ()
 					local head, err = repo_head(repo)
 					local name = head and ref_name(head)
 					if name == "HEAD" then
 						local obj_ptr = ffi.new("git_object*[1]")
 						err = git.git_reference_peel(obj_ptr, head, git.GIT_OBJECT_COMMIT)
-						if err < 0 then res.status = 404; res.body = [[{"error":"]] .. git_error_names[err] .. [[ in `git_reference_peel`"}]]; return end
+						if err < 0 then return nil, git_error_names[err] .. " in `git_reference_peel`" end
 					end
-					res.headers["Content-Type"] = "application/json"
-					if err then res.status = 404; res.body =  [[{"error":"]] .. err .. [["}]]; return end
-					res.body = json.value_to_json(name)
+					if not head then return nil, err end
+					return name
 				end,
 			},
 			--[[
@@ -219,33 +218,31 @@ local make_routes = function (root)
 			]]
 		},
 		reference = {
-			list = function (_, res)
+			list = function ()
 				local strarray_ptr = ffi.new("git_strarray[1]")
 				local err = git.git_reference_list(strarray_ptr, repo)
-				if err < 0 then res.status = 404; res.body = [[{"error":"]] .. git_error_names[err] .. [[ in `git_reference_list`"}]]; return end
+				if err < 0 then return nil, git_error_names[err] .. " in `git_reference_list`" end
 				local strarray = strarray_ptr[0]
-				local refs = {} --[[@type string]]
-				for i = 0, tonumber(strarray.count) - 1 do
-					refs[i + 1] = ffi.string(strarray.strings[i])
-				end
+				local refs = {} --[[@type string[] ]]
+				for i = 0, tonumber(strarray.count) - 1 do refs[i + 1] = ffi.string(strarray.strings[i]) end
 				git.git_strarray_free(strarray_ptr[0])
-				res.headers["Content-Type"] = "application/json"
-				res.body = json.value_to_json(refs)
+				return refs
 			end,
 		},
 		file = {
 			["*"] = {
-				blame = function (req, res)
+				blame = function (input)
 					local blame_ptr = ffi.new("git_blame*[1]")
-					local err = git.git_blame_file(blame_ptr, repo, req.globs[1], nil)
-					if err < 0 then res.status = 404; res.body = [[{"error":"]] .. git_error_names[err] .. [[ in `git_blame_file`"}]]; return end
+					local err = git.git_blame_file(blame_ptr, repo, input.globs[1], nil)
+					if err < 0 then return nil, git_error_names[err] .. " in `git_blame_file`" end
+					--[[FIXME: return value?]]
 				end,
 			},
 		},
-		status = function (_, res)
+		status = function ()
 			local status_list_ptr = ffi.new("git_status_list*[1]")
 			local err = git.git_status_list_new(status_list_ptr, repo, nil)
-			if err < 0 then res.status = 404; res.body = [[{"error":"]] .. git_error_names[err] .. [[ in `git_status_list_new`"}]]; return end
+			if err < 0 then return nil, git_error_names[err] .. " in `git_status_list_new`" end
 			local status_list = status_list_ptr[0]
 			local statuses = {}
 			for i = 1, tonumber(git.git_status_list_entrycount(status_list)) do
@@ -254,13 +251,12 @@ local make_routes = function (root)
 				else
 					statuses[#statuses+1] = {
 						type = git_status_names[tonumber(entry.status)],
-						head_to_index = entry.head_to_index ~= nil and diff_delta(entry.head_to_index[0]) or json.null,
-						index_to_workdir = entry.index_to_workdir ~= nil and diff_delta(entry.index_to_workdir[0]) or json.null,
+						head_to_index = entry.head_to_index ~= nil and diff_delta(entry.head_to_index[0]) or mod.null,
+						index_to_workdir = entry.index_to_workdir ~= nil and diff_delta(entry.index_to_workdir[0]) or mod.null,
 					}
 				end
 			end
-			res.headers["Content-Type"] = "application/json"
-			res.body = json.value_to_json(statuses)
+			return statuses
 		end,
 		-- ref = { --[[branches, commits and tags are all refs]]
 		-- 	["*"] = {
@@ -283,12 +279,4 @@ local make_routes = function (root)
 	return routes
 end
 
-if pcall(debug.getlocal, 4, 1) then return { make_routes = make_routes }
-else
-	local root = arg[1] or "."
-	require("lib.http.server").server(
-		require("lib.http.router.tablex").table_router(make_routes(root)),
-		--[[@diagnostic disable-next-line: param-type-mismatch]]
-		tonumber(os.getenv("PORT") or os.getenv("port") or 8080)
-	)
-end
+return mod

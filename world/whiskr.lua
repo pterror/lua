@@ -19,7 +19,7 @@ whiskr.text_to_id = function (self, s)
 	if not success then return nil, err else return self.db:last_insert_rowid() end
 end
 
---[[@return boolean success, string? error]] --[[@param fact whiskr_fact]]
+--[[@return true? success, string? error]] --[[@param fact whiskr_fact]]
 whiskr.add_fact = function (self, fact)
 	return self.db:execute(
 		"INSERT INTO facts (subject_id, predicate_id, object_id) VALUES (?, ?, ?);",
@@ -103,9 +103,9 @@ mod.open = function (path)
 			UNIQUE (subject_id, predicate_id, object_id)
 		);
 	]]))
-	return (setmetatable({ --[[@class whiskr]]
-		db = db,
-	}, whiskr))
+	--[[@class whiskr]]
+	local ret = { db = db }
+	return (setmetatable(ret, whiskr))
 end
 
 return mod

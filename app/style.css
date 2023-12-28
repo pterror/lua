@@ -1,5 +1,14 @@
 :root {
-	/* TODO: light theme colors */
+	--color-primary: #253046;
+	--color-primary-bg: #cad2e2;
+	--color: var(--color-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-primary: #cad2e2;
+		--color-primary-bg: #253046;
+	}
 }
 
 @media (prefers-color-scheme: dark) {

@@ -20,7 +20,7 @@ local here = debug.getinfo(1).source:match("@?(.*[/\\])")
 local sep = here:find("/") and "/" or "\\"
 for k in pairs(package.loaded) do package_whitelist[k] = true end
 --[[@diagnostic disable-next-line: param-type-mismatch]]
-inotify:add(here .. ".." .. sep .. "serve", bit.bor(
+inotify:add(here .. ".." .. sep .. "serve_api", bit.bor(
 	inotify_mod.event_mask.IN_ATTRIB,
 	inotify_mod.event_mask.IN_CREATE,
 	inotify_mod.event_mask.IN_MODIFY,
@@ -32,29 +32,28 @@ inotify:add(here .. ".." .. sep .. "serve", bit.bor(
 ), function ()
 	for k in pairs(package.loaded) do if not package_whitelist[k] then package.loaded[k] = nil end end
 	if sock and type(sock.close) == "function" then sock:close() end
-	ok, mod = pcall(package.loaders[2], "serve." .. arg[1])
+	ok, mod = pcall(package.loaders[2], "serve_api." .. arg[1])
 	if not ok then print("error reloading server:"); io.stdout:write(mod, "\n"); return end
 	ok, sock = pcall(mod, rest(unpack(arg)))
 	if ok then print("server reloaded.")
-	else print("error reloading server"); io.stdout:write(sock, "\n") end
+	else print("error reloading server:"); io.stdout:write(sock, "\n") end
 end)
 print("server loading...")
-ok, mod = pcall(package.loaders[2], "serve." .. arg[1])
+ok, mod = pcall(package.loaders[2], "serve_api." .. arg[1])
 if not ok then print("error loading server:"); io.stdout:write(mod, "\n")
 else
 	ok, sock = pcall(mod, rest(unpack(arg)))
 	if ok then print("server loaded.")
 	else print("error loading server:"); io.stdout:write(sock, "\n") end
 end
---[[FIXME: recrsive watch]]
+local err
 --[[@diagnostic disable-next-line: undefined-field]]
 while epoll.count > 0 do
-	local err
 	ok, err = pcall(epoll.wait, epoll)
-	if err and err:match("^.+: interrupted!") then return end
 	if not ok then
 		if err and err:match("^.+: interrupted!") then return end
 		print("server encountered an error:")
 		io.stdout:write(err, "\n")
 	end
 end
+if err then os.exit(1) end
