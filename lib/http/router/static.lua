@@ -5,7 +5,7 @@ local mimetype_by_contents
 local mod = {}
 
 --[[@param base? string]]
-mod.static_router = function (base)
+mod.router = function (base)
 	if base ~= nil and type(base) ~= "string" then
 		return nil, "static_router() expects string as base path, got " .. tostring(base)
 	end

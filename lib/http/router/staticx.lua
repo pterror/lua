@@ -54,7 +54,7 @@ local html_escape = function (string)
 end
 
 --[[@param base? string]]
-mod.static_router = function (base)
+mod.router = function (base)
 	if base ~= nil and type(base) ~= "string" then
 		return nil, "static() expects string as base path, got " .. tostring(base)
 	end

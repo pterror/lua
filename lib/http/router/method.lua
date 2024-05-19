@@ -3,7 +3,7 @@
 local mod = {}
 
 --[[@param cbs http_method_handler]]
-mod.method_router = function (cbs)
+mod.router = function (cbs)
 	--[[@type http_callback]]
 	return function (req, res, sock)
 		local cb = cbs[req.method]

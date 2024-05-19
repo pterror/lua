@@ -6,7 +6,8 @@
 
 local mod = {}
 
-mod.null = {}
+local _, null_mod = pcall(require, "lib.null")
+mod.null = null_mod and null_mod.null or {}
 
 local f_string_esc_pat = "[^ -!#-[%]^-\255]"
 local f_str_ctrl_pat = "[^\32-\255]"

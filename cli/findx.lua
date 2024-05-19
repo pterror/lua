@@ -5,6 +5,8 @@ else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.pat
 
 --[[@diagnostic disable: lowercase-global]]
 
+--[[@alias find_callback fun(info:file_info):boolean,("stop"|"skip")?]]
+
 b = function (n) return n end
 local kib_1 = 2 ^ 10
 kib = function (n) return n * kib_1 end
@@ -39,21 +41,22 @@ month = function (n) return n * month_1 end
 local year_1 = 365.25 * day_1
 year = function (n) return n * year_1 end
 
-if not arg[1] then io.stderr:write("find: root directory needs to be given as first argument") end
-local callback = assert(loadstring("return function (it) " .. (arg[2] and arg[2]:find("return") and "" or "return ") .. (arg[2] or "true") .. " end"))()
-
 local dir_list = require("lib.fs.dir_list").dir_list
 
-local handle_file = function (info) --[[@param info file_info]]
+--[[@param info file_info]] --[[@param callback find_callback]] --[[@param write fun(info:file_info)]]
+local handle_file = function (info, callback, write)
 	local ret, action = callback(info)
-	if ret then print(info.path) end
+	if ret then write(info) end
 	if action == "stop" then os.exit(0) end
 end
 
+local next = function (_, ...) return ... end
+
 local handle_dir
-handle_dir = function (info) --[[@param info file_info]]
+--[[@param info file_info]] --[[@param callback find_callback]] --[[@param write fun(info:file_info)]]
+handle_dir = function (info, callback, write)
 	local ret, action = callback(info)
-	if ret then print(info.path) end
+	if ret then write(info) end
 	if action == "skip" then return
 	elseif action == "stop" then os.exit(0) end
 	local iter, state = dir_list(info.path)
@@ -65,16 +68,38 @@ handle_dir = function (info) --[[@param info file_info]]
 		f.age = os.time() - f.created
 		f.modified_age = os.time() - f.modified
 		f.is_file = not f.is_dir
-		if f.is_dir then f.type = "directory"; handle_dir(f)
-		else f.type = "file"; handle_file(f) end
+		if f.is_dir then f.type = "directory"; handle_dir(f, callback, write)
+		else f.type = "file"; handle_file(f, callback, write) end
 	end
 end
 
-local info = assert(require("lib.fs.dir_list").dir_info(arg[1]))
-info.type = "directory"
-info.name = arg[1]:match("[\\/](.-)[\\/]?$") or arg[1]
-info.age = os.time() - info.created
-info.modified_age = os.time() - info.modified
-info.is_file = not info.is_dir
+if pcall(debug.getlocal, 4, 1) then
+	--[[@param path string]] --[[@param callback find_callback]]
+	return function (path, callback)
+		local info = assert(require("lib.fs.dir_list").dir_info(path))
+		info.type = "directory"
+		info.name = arg[1]:match("[\\/](.-)[\\/]?$") or arg[1]
+		info.age = os.time() - info.created
+		info.modified_age = os.time() - info.modified
+		info.is_file = not info.is_dir
+		local co = coroutine.create(function ()
+			handle_dir(info, callback, coroutine.yield)
+		end)
+		return function ()
+			if coroutine.status(co) == "dead" then return end
+			return next(coroutine.resume(co))
+		end
+	end
+else
+	if not arg[1] then io.stderr:write("find: root directory needs to be given as first argument") end
+	local callback = assert(loadstring("return function (it) " .. (arg[2] and arg[2]:find("return") and "" or "return ") .. (arg[2] or "true") .. " end"))()
 
-handle_dir(info)
+	local info = assert(require("lib.fs.dir_list").dir_info(arg[1]))
+	info.type = "directory"
+	info.name = arg[1]:match("[\\/](.-)[\\/]?$") or arg[1]
+	info.age = os.time() - info.created
+	info.modified_age = os.time() - info.modified
+	info.is_file = not info.is_dir
+
+	handle_dir(info, callback, function (file_info) print(file_info.path) end)
+end

@@ -6,8 +6,8 @@ else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.pat
 local root = arg[1] or "."
 local ext_mimetype = require("lib.mimetype.by_name").mimetype
 local static, err
-if os.getenv("404") == "1" then static, err = require("lib.http.router.staticx_404").static_router(root)
-else static, err = require("lib.http.router.staticx").static_router(root) end
+if os.getenv("404") == "1" then static, err = require("lib.http.router.staticx_404").router(root)
+else static, err = require("lib.http.router.staticx").router(root) end
 assert(static, err)
 local prefix = os.getenv("prefix")
 if prefix then prefix = "/" .. prefix end
@@ -17,6 +17,9 @@ local run = function ()
 		if req.path:sub(1, #prefix) ~= prefix then res.status = 404; return end
 		req.path = req.path:sub(#prefix + 1)
 		static(req, res)
+		res.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+		res.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+		res.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
 		if req.path:find(".gz$") then
 			res.headers["Content-Encoding"] = "gzip"
 			res.headers["Content-Length"] = ""
@@ -25,6 +28,9 @@ local run = function ()
 		--[[@diagnostic disable-next-line: param-type-mismatch]]
 	end or function (req, res)
 		static(req, res)
+		res.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+		res.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+		res.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
 		res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path)
 		if req.path:find(".gz$") then
 			res.headers["Content-Encoding"] = "gzip"

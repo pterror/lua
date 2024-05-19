@@ -1,14 +1,9 @@
-#!/usr/bin/env luajit
-local arg = arg --[[@type unknown[] ]]
-if pcall(debug.getlocal, 4, 1) then arg = { ... }
-else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
-
 local whiskr = require("world.whiskr")
 
 local mod = {}
 
 --[[@param root string]]
-mod.make_api = function (root)
+mod.api = function (root)
 	local db = assert(whiskr.open(root))
 	local routes = {
 		list = function ()
@@ -28,6 +23,7 @@ mod.make_api = function (root)
 			if not success then return nil, err end
 			return true
 		end,
+		--[[@param input {subject:string;predicate:string;object:string}]]
 		delete = function (input)
 			if type(input) ~= "table" or type(input.subject) ~= "string" or type(input.predicate) ~= "string" or type(input.object) ~= "string" then
 				return nil, "expected `{ subject: string; predicate: string; object: string; }`"

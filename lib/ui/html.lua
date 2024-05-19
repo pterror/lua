@@ -1,11 +1,16 @@
 local mod = {}
 
+--[[@type table<string,fun(node:ui_element,write:fun(text:string))>]]
 local renderers = {}
+--[[@param node ui_element]] --[[@param write fun(text: string)]]
 local render = function (node, write)
+	if type(node) ~= "table" then io.stderr:write("node must be table: ", tostring(node), "\n"); return end
 	local renderer = renderers[node.type]
-	if not renderer then io.stderr:write("unknown node type: ", node.type) return end
+	if not renderer then io.stderr:write("unknown node type: ", node.type, "\n") return end
 	renderer(node, write)
 end
+mod.render = render
+--[[@param node ui_list_element]]
 renderers.list = function (node, write)
 	write("<ul>")
 	for _, item in ipairs(node.items) do
@@ -15,6 +20,7 @@ renderers.list = function (node, write)
 	end
 	write("</ul>")
 end
+--[[@param node ui_ordered_list_element]]
 renderers.ordered_list = function (node, write)
 	write("<ol>")
 	for _, item in ipairs(node.items) do
@@ -24,13 +30,26 @@ renderers.ordered_list = function (node, write)
 	end
 	write("</ol>")
 end
+--[[@param node ui_hstack_element]]
+renderers.hstack = function (node, write)
+	write("<div style=\"display:flex;flex-flow:row nowrap;align-items:center;\">")
+	for _, item in ipairs(node.items) do render(item, write) end
+	write("</div>")
+end
+--[[@param node ui_vstack_element]]
+renderers.vstack = function (node, write)
+	write("<div style=\"display:flex;flex-flow:column nowrap;align-items:center;\">")
+	for _, item in ipairs(node.items) do render(item, write) end
+	write("</div>")
+end
+--[[@param node ui_table_element]]
 renderers.table = function (node, write)
 	write("<table>")
 	if node.header then
 		write("<thead><tr>")
 		for _, header in ipairs(node.header) do
 			write("<th>")
-			write(header)
+			render(header, write)
 			write("</th>")
 		end
 		write("</tr></thead>")
@@ -50,7 +69,7 @@ renderers.table = function (node, write)
 		write("<tfoot><tr>")
 		for _, footer in ipairs(node.footer) do
 			write("<th>")
-			write(footer)
+			render(footer, write)
 			write("</th>")
 		end
 		write("</tr></tfoot>")

@@ -805,6 +805,19 @@ ffi.cdef [[
 		XRecordClientInfo **client_info;
 	} XRecordState;
 
+	typedef struct {
+		Visual *visual;
+		VisualID visualid;
+		int screen;
+		int depth;
+		int class;
+		unsigned long red_mask;
+		unsigned long green_mask;
+		unsigned long blue_mask;
+		int colormap_size;
+		int bits_per_rgb;
+	} XVisualInfo;
+
 	struct _XRecordInterceptData {
 		XID id_base;
 		Time server_time;
@@ -990,6 +1003,9 @@ ffi.cdef [[
 	char *XmbResetIC(XIC ic);
 	wchar_t *XwcResetIC(XIC ic);
 	char *Xutf8ResetIC(XIC ic);
+
+	Colormap XCreateColormap(Display *display, Window w, Visual *visual, int alloc);
+	Status XMatchVisualInfo(Display *display, int screen, int depth, int class, XVisualInfo *vinfo_return);
 
 	Status XRecordQueryVersion(Display *display, int cmajor_return, int cminor_return);
 	XRecordContext XRecordCreateContext(Display *display, int datum_flags, XRecordClientSpec *clients, int nclients, XRecordRange **ranges, int nranges);
@@ -1662,6 +1678,18 @@ ffi.cdef [[
 --[[@field data string]]
 --[[@field data_len integer in 4-byte units]]
 
+--[[@class xlib_visual_info_c]]
+--[[@field visual ptr_c<xlib_visual_c>]]
+--[[@field visualid xlib_visualid_c]]
+--[[@field screen integer]]
+--[[@field depth integer]]
+--[[@field class integer]]
+--[[@field red_mask integer]]
+--[[@field green_mask integer]]
+--[[@field blue_mask integer]]
+--[[@field colormap_size integer]]
+--[[@field bits_per_rgb integer]]
+
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
 mod.none_window = 0 --[[@type xlib_window_c]]
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
@@ -2327,6 +2355,8 @@ mod.record_num_events = 0
 --[[@field XmbResetIC fun(ic: xlib_ic_c): ptr_c<ffi.cdata*>]]
 --[[@field XwcResetIC fun(ic: xlib_ic_c): ptr_c<ffi.cdata*>]]
 --[[@field Xutf8ResetIC fun(ic: xlib_ic_c): ptr_c<ffi.cdata*>]]
+--[[@field XCreateColormap fun(display: ptr_c<xlib_display_c>, window: xlib_window_c, visual: ptr_c<xlib_visual_c>, alloc: integer): xlib_colormap_c]]
+--[[@field XMatchVisualInfo fun(display: ptr_c<xlib_display_c>, screen: integer, depth: integer, class: xlib_display_class, vinfo_return: ptr_c<xlib_visual_info_c>): xlib_status_c]]
 
 --[[@class xlib_tst_ffi]]
 --[[@field XRecordQueryVersion fun(display: ptr_c<xlib_display_c>, cmajor_return: ptr_c<integer>, cminor_return: ptr_c<integer>): xlib_status_c]]
@@ -2479,11 +2509,11 @@ end
 --[[@param code integer]] --[[@param buffer_return string_c]] --[[@param length integer]]
 display.get_error_text = function (self, code, buffer_return, length) return mod.get_error_text(self.c, code) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param depth integer]] --[[@param class integer]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param valuemask integer]] --[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
+--[[@param display_ ptr_c<xlib_display_c>]] --[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param depth integer]] --[[@param class xlib_window_class]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param valuemask integer]] --[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
 mod.create_window = function (display_, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
 	return xlib_ffi.XCreateWindow(display_, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
 end
---[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param depth integer]] --[[@param class integer]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param valuemask integer]] --[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
+--[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param depth integer]] --[[@param class xlib_window_class]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param valuemask integer]] --[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
 display.create_window = function (self, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
 	return mod.create_window(self.c, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
 end
@@ -3635,6 +3665,26 @@ mod.utf8_reset_ic = function (ic)
 	local s = ffi.string(ret)
 	mod.free(ret)
 	return s
+end
+
+--[[@return xlib_colormap_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param window xlib_window_c]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param alloc integer]]
+mod.create_colormap = function (display_, window, visual, alloc)
+	return xlib_ffi.XCreateColormap(display_, window, visual, alloc)
+end
+--[[@return xlib_colormap_c]] --[[@param window xlib_window_c]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param alloc integer]]
+display.create_colormap = function (self, window, visual, alloc)
+	return mod.create_colormap(self.c, window, visual, alloc)
+end
+
+--[[@return xlib_visual_info_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param screen integer]] --[[@param depth integer]]  --[[@param class xlib_display_class]]
+mod.match_visual_info = function (display_, screen, depth, class)
+	local vinfo = ffi.new("XVisualInfo[1]")
+	xlib_ffi.XMatchVisualInfo(display_, screen, depth, class, vinfo)
+	return vinfo[0]
+end
+--[[@return xlib_visual_info_c]] --[[@param screen integer]] --[[@param depth integer]]  --[[@param class xlib_display_class]]
+display.match_visual_info = function (self, screen, depth, class)
+	return mod.match_visual_info(self.c, screen, depth, class)
 end
 
 local cmajor = ffi.new("int[1]") --[[@type ptr_c<integer>]]

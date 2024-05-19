@@ -7,7 +7,7 @@ local ext_mimetype = require("lib.mimetype.by_name").mimetype
 local path = require("lib.path")
 
 local base_path = arg[1] or "."
-local static, err = require("lib.http.router.static").static_router(base_path)
+local static, err = require("lib.http.router.static").router(base_path)
 assert(static, err)
 
 require("lib.http.server").server(function (req, res)

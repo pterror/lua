@@ -1,9 +1,9 @@
-local static_router = require("lib.http.router.staticx").static_router
+local static_router = require("lib.http.router.staticx").router
 
 local mod = {}
 
 --[[@param base? string]]
-mod.static_router = function (base)
+mod.router = function (base)
 	local router, err = static_router(base)
 	if not router then return nil, err end
 	return function (req, res)

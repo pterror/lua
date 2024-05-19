@@ -18,10 +18,15 @@
 -- - `async()`, `await()` -> `async`, `await`
 -- - `error(msg)` -> `throw new Error(msg)`
 -- - rewrite `#foo` to `foo.length`
+-- - rewrite `for i = 1, #foo` to decrement start index
+-- - ignore `local` declaration on functions
+-- - rewrite `function a.b` and `function a:b` to `a.b = function`
 -- todo:
 -- - transpile `bit.band` to `&` etc. alternatively (easier) declare js-exclusive functions
 -- - actually implementing the destructuring
 -- - polyfills for e.g. `assert`
+-- - truthiness is different in js vs lua
+-- - consider turning `{ a = 1, 2, 3, 4 }` into `Object.assign([2, 3, 4], { a: 1 })`
 local mod = {}
 
 local operator = require("dep.ljltk.operator")
@@ -69,7 +74,8 @@ local StatementRule = {}
 local ExpressionRule = {}
 
 local is_string = function (node) return node.kind == "Literal" and type(node.value) == "string" end
-local is_const = function (node, val) return node.kind == "Literal" and node.value == val end
+local is_number = function (node) return node.kind == "Literal" and type(node.value) == "number" end
+local is_nil = function (node) return node.kind == "Literal" and node.value == nil end
 local is_literal = function (node) return node.kind == "Literal" or node.kind == "Table" end
 
 local string_is_ident = function (str)
@@ -152,7 +158,11 @@ ExpressionRule.BinaryExpression = function (self, node)
 	if not brprio then brprio = blprio end
 	local ap = arprio < lprio and string.format("(%s)", a) or a
 	local bp = blprio <= rprio and string.format("(%s)", b) or b
-	return string.format("%s %s %s", ap, js_operator(oper), bp), lprio, rprio
+	local op = js_operator(oper)
+	if is_nil(node.left) or is_nil(node.right) then
+		if op == "===" then op = "==" elseif op == "!==" then op = "!=" end
+	end
+	return string.format("%s %s %s", ap, op, bp), lprio, rprio
 end
 
 ExpressionRule.UnaryExpression = function (self, node)
@@ -230,10 +240,10 @@ ExpressionRule.CallExpression = function (self, node)
 		local exp = string.format("%s %s", callee, self:expr_list(node.arguments))
 		return exp, operator.ident_priority --[[FIXME: correct priority]]
 	elseif callee == "unpack" then
-		local exp = string.format("...%s", node.arguments[1])
+		local exp = string.format("...(%s)", self:expr_emit(node.arguments[1]))
 		return exp, operator.ident_priority
 	elseif callee == "instanceof" then
-		local exp = string.format("%s instanceof %s", node.arguments[1], node.arguments[2])
+		local exp = string.format("(%s) instanceof (%s)", self:expr_emit(node.arguments[1]), self:expr_emit(node.arguments[2]))
 		return exp, operator.ident_priority
 	end
 	if callee == "error" then callee = "throw new Error" end
@@ -260,11 +270,10 @@ end
 StatementRule.FunctionDeclaration = function (self, node)
 	self:proto_enter(0)
 	local name = self:expr_emit(node.id)
-	local header = string.format("function %s(%s) {", name, comma_sep_list(node.params, as_parameter))
-	if node.locald then
-		header = "local " .. header
-	end
-	self:add_section(header, node.body)
+	local is_method = node.id.kind == "MemberExpression"
+	local format = is_method and "%s = function (%s) {" or "function %s(%s) {"
+	local header = string.format(format, name, comma_sep_list(node.params, as_parameter))
+	self:add_section(header, node.body, false, is_method)
 	local child_proto = self:proto_leave()
 	self.proto:merge(child_proto)
 end
@@ -282,16 +291,30 @@ StatementRule.CallExpression = function (self, node)
 	self:add_line(line)
 end
 
--- -TODO
 StatementRule.ForStatement = function (self, node)
 	local init = node.init
-	local istart = self:expr_emit(init.value)
-	local iend = self:expr_emit(node.last)
 	local header
-	if node.step and not is_const(node.step, 1) then
-		header = string.format("for (let %s = %s; %s <= %s; %s += %s) {", init.id.name, istart, init.id.name, iend, init.id.name, self:expr_emit(node.step))
+	--[[heuristic for detecting array iteration]]
+	if node.last.operator == "#" then
+		if is_number(init.value) then
+			local value = init.value.value
+			init.value.value = init.value.value - 1
+			header = string.format(
+				"for (let %s = %s; %s < %s; %s += %s) {",
+				init.id.name, self:expr_emit(init.value), init.id.name, self:expr_emit(node.last), init.id.name, self:expr_emit(node.step)
+			)
+			init.value.value = value
+		else
+			header = string.format(
+				"for (let %s = (%s) - 1; %s < %s; %s += %s) {",
+				init.id.name, self:expr_emit(init.value), init.id.name, self:expr_emit(node.last), init.id.name, self:expr_emit(node.step)
+			)
+		end
 	else
-		header = string.format("for (let %s = %s; %s <= %s; ++%s) {", init.id.name, istart, init.id.name, iend, init.id.name)
+		header = string.format(
+			"for (let %s = %s; %s <= %s; %s += %s) {",
+			init.id.name, self:expr_emit(init.value), init.id.name, self:expr_emit(node.last), init.id.name, self:expr_emit(node.step)
+		)
 	end
 	self:add_section(header, node.body)
 end
@@ -415,14 +438,13 @@ mod.lua2js = function (tree, _)
 		proto.code[#proto.code + 1] = indent .. line
 	end
 
-	self_.add_section = function (self, header, body, omit_end)
+	--[[@param omit_end? boolean]] --[[@param semicolon? boolean]]
+	self_.add_section = function (self, header, body, omit_end, semicolon)
 		self:add_line(header)
 		self:indent_more()
 		self:list_emit(body)
 		self:indent_less()
-		if not omit_end then
-			self:add_line("}")
-		end
+		if not omit_end then self:add_line(semicolon and "};" or "}") end
 	end
 
 	self_.expr_emit = function (self, node)

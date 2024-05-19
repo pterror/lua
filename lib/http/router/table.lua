@@ -3,7 +3,7 @@
 local mod = {}
 
 --[[@param routes http_table_handler]]
-mod.table_router = function (routes)
+mod.router = function (routes)
 	--[[@type http_callback]]
 	return function (req, res, sock)
 		local route = routes

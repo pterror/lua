@@ -1,6 +1,6 @@
 -- ideally: path based but with $seg -> param.seg
 -- currently: path based copy of staticx_router
-local table_router = require("lib.http.router.tablex").table_router
+local table_router = require("lib.http.router.tablex").router
 local dir_list = require("lib.fs.dir_list").dir_list
 local mimetype_by_name = require("lib.mimetype.by_name").mimetype
 local mimetype_by_contents
@@ -9,7 +9,7 @@ local mod = {}
 
 --[[@return http_callback]]
 --[[@param path? string]]
-mod.fs_router = function (path)
+mod.router = function (path)
 	local handle_file = function (path2) --[[@param path2 string]]
 		if path2:find("%.lua$") then
 			local success, cb = pcall(dofile, path2)

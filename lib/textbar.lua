@@ -28,24 +28,39 @@ end
 
 -- TODO: consider foreground parameter
 
---[[@param display? xlib_display]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param background? integer 0xrrggbb]] --[[@param font? string]] --[[@param dock_side? textbar_dock_side]]
-textbar.new = function (self, display, x, y, width, height, background, font, dock_side)
+--[[@param display? xlib_display]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param background? integer 0xrrggbb]] --[[@param font? string]] --[[@param dock_side? textbar_dock_side]] --[[@param win_name? string]] --[[@param win_class_name? string]]
+textbar.new = function (self, display, x, y, width, height, background, font, dock_side, win_name, win_class_name)
 	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	display = display or xlib.display:new() --[[@type xlib_display]]
 	local screen = display.c[0].screens[display.c[0].default_screen]
-	local window = display:create_simple_window(
-		screen.root, x, y, width, height, 0, 0, 0
+	--[[FIXME: let transparency be an option]]
+	-- local window = display:create_simple_window(
+	-- 	screen.root, x, y, width, height, 0, 0, 0
+	-- )
+	local vinfo = display:match_visual_info(display.c[0].default_screen, 32, xlib.display_class.true_color)
+	local colormap = display:create_colormap(screen.root, vinfo.visual, xlib.colormap_allocate_mode.none)
+	local attrs = ffi.new("XSetWindowAttributes [1]", { {
+		border_pixel = 0,
+		background_pixel = 0,
+		colormap = colormap,
+	} })
+	local window = display:create_window(
+		screen.root, x, y, width, height, 0, vinfo.depth, xlib.window_class.input_output, vinfo.visual, bit.bor(
+			xlib.window_attribute.colormap,
+			xlib.window_attribute.border_pixel,
+			xlib.window_attribute.back_pixel
+		), attrs
 	)
 	local gc = display:create_gc(window, 0, nil)
-	display:copy_gc(screen.default_gc, bit.bnot(0ULL), gc)
+	-- display:copy_gc(screen.default_gc, bit.bnot(0ULL), gc)
 	local background_pixel = display:alloc_color_x(screen.cmap, background or 0) or 0
 	display:set_background(gc, background_pixel)
 	--[[@diagnostic disable-next-line: return-type-mismatch]]
 	local atom = function (atom) return display:intern_atom(atom) end --[[@return xlib_atom_c]]
 	do
 		local class_hints = xlib.alloc_class_hint()
-		class_hints.res_name = "textbar"
-		class_hints.res_class = "textbar"
+		class_hints.res_name = win_name or "textbar"
+		class_hints.res_class = win_class_name or "textbar"
 		display:set_class_hint(window, class_hints)
 		xlib.free(class_hints)
 		local hints = xlib.alloc_size_hints()
@@ -115,7 +130,7 @@ textbar.new = function (self, display, x, y, width, height, background, font, do
 		xft_ = { --[[@class textbar_xft]]
 			color = nil, --[[@type ptr_c<xft_color_c>]]
 			font = font_,
-			draw = xft.draw_create(display.c, window, screen.root_visual, screen.cmap),
+			draw = xft.draw_create(display.c, window, vinfo.visual, colormap),
 			y_offset = bit.rshift(line_height + xft.text_extents_utf8(display.c, font_, "X").y, 1),
 		}
 	else
@@ -155,9 +170,9 @@ textbar.new = function (self, display, x, y, width, height, background, font, do
 	}
 	return setmetatable(ret, self)
 end
---[[@param display xlib_display]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param background? integer 0xrrggbb]] --[[@param font? string]] --[[@param dock_side? textbar_dock_side]]
-mod.new = function (display, x, y, width, height, background, font, dock_side)
-	return textbar:new(display, x, y, width, height, background, font, dock_side)
+--[[@param display xlib_display]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param background? integer 0xrrggbb]] --[[@param font? string]] --[[@param dock_side? textbar_dock_side]] --[[@param win_name? string]] --[[@param win_class_name? string]]
+mod.new = function (display, x, y, width, height, background, font, dock_side, win_name, win_class_name)
+	return textbar:new(display, x, y, width, height, background, font, dock_side, win_name, win_class_name)
 end
 
 local xft_set_color
@@ -216,9 +231,20 @@ else
 end
 
 --[[@param text string]]
-textbar.write = function (self, text)
+textbar.write_simple = function (self, text)
 	draw_string(self, text)
 	self.cx = self.cx + text_width(self, text)
+end
+
+--[[@param text string]] --[[@param width? integer]] --[[@param align? "left"|"center"|"right"]]
+textbar.write = function (self, text, width, align)
+	local cx = self.cx
+	local measured_width = text_width(self, text)
+	width = width or measured_width
+	local gap = width - measured_width
+	if not align or align == "center" then self.cx = cx + gap / 2 elseif align == "right" then self.cx = cx + gap end
+	draw_string(self, text)
+	self.cx = cx + width
 end
 
 textbar.read_xbm = function (self, path)

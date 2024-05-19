@@ -224,6 +224,22 @@ end
 --[[@type fun(arr: (string|number)[]): string]]
 mod.sjoin = table.concat
 
+--[[@return number]]
+--[[@param arr number[] ]]
+mod.sum = function (arr)
+	local result = 0
+	for _, i in pairs(arr) do result = result + i end
+	return result
+end
+
+--[[@return number]]
+--[[@param arr number[] ]]
+mod.product = function (arr)
+	local result = 1
+	for _, i in pairs(arr) do result = result * i end
+	return result
+end
+
 local func_iter
 
 --[[@generic t]]

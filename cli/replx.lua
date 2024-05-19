@@ -25,6 +25,8 @@ local resume = function (...)
 	return unpack(rets)
 end
 
+exit = os.exit
+
 input = function (prompt)
 	io.stdout:write(prompt or "> ")
 	io.stdout:flush()
@@ -101,7 +103,18 @@ lazy_load_table = {
 			return coroutine.yield()
 		end
 	end },
-	ls = { "lib.fs.dir_list", "dir_list", wrap_in_iter },
+	ls = { "lib.fs.dir_list", "dir_list", wrap_in_iter, function (f)
+		return function (...)
+			return f(...):map(function (info)
+				info.type = info.is_dir and "directory" or "file"
+				info.age = os.time() - info.created
+				info.modified_age = os.time() - info.modified
+				info.is_file = not info.is_dir
+				return info
+			end)
+		end
+	end },
+	find = { "cli.findx", wrap_in_iter },
 	to_base = { "lib.base", "integer_to_base" },
 	from_base = { "lib.base", "base_to_integer" },
 	to_json = { "dep.lunajson", "value_to_json", function (to_json)
@@ -122,6 +135,8 @@ lazy_load_table = {
 	luptime = { "lib.linux.proc", "uptime" },
 	lversion = { "lib.linux.proc", "version" },
 	lvmstat = { "lib.linux.proc", "vmstat" },
+	--[[@diagnostic disable-next-line: param-type-mismatch]]
+	mock = { "dep.mock", function (mock) math.randomseed(require("lib.time").time()); return mock end },
 	sleep_ms = { "dep.timerfd", "set_timeout", function (set_timeout)
 		return function (ms) set_timeout(epoll, ms, resume_true); return coroutine.yield() end
 	end },
@@ -147,11 +162,11 @@ mv = os.rename
 move = os.rename
 rename = os.rename
 
-slines = function (s) return string.gmatch(s, "%S+") end --[[@param s string]]
+slines = function (s) return iter(string.gmatch(s, "[^\n]*")) end --[[@param s string]]
 
 lines = function (path)
 	local file = assert(io.open(path, "r"), "file_lines: could not open file '" .. path .. "'")
-	return function () return file:read("*line") end
+	return iter(function () return file:read("*line") end)
 end
 
 read = function (path)
@@ -348,7 +363,7 @@ local smart_print = function (...)
 		local obj = select(1, ...)
 		if iter_fn.is_iter(obj) then
 			local rets = { obj() }
-			while rets[1] do
+			while rets[1] ~= nil do
 				print(unpack(rets))
 				rets = { obj() }
 			end

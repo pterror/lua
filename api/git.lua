@@ -1,8 +1,3 @@
-#!/usr/bin/env luajit
-local arg = arg --[[@type unknown[] ]]
-if pcall(debug.getlocal, 4, 1) then arg = { ... }
-else package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path end
-
 --[[@diagnostic disable: param-type-mismatch]]
 
 local ffi = require("ffi")
@@ -14,7 +9,8 @@ local features_obj
 
 local mod = {}
 
-mod.null = {}
+local _, null_mod = pcall(require, "lib.null")
+mod.null = null_mod and null_mod.null or {}
 
 local git_error_names = {
 	[git.GIT_OK] = "ok",
@@ -152,18 +148,16 @@ local diff_delta = function (delta)
 end
 
 --[[@param root string]]
-mod.make_api = function (root)
+mod.api = function (root)
 	local repo do
 		local repo_ptr = ffi.new("git_repository *[1]")
 		local err = git.git_repository_open(repo_ptr, root)
 		if err < 0 then
-			return function (_)
-				return nil, git_error_names[err] .. " in `git_repository_open`"
-			end
+			return nil, git_error_names[err] .. " in `git_repository_open`"
 		end
 		repo = ffi.gc(repo_ptr[0], git.git_repository_free)
 	end
-	local routes = {
+	return {
 		meta = {
 			version = function ()
 				if not version_obj then
@@ -276,7 +270,6 @@ mod.make_api = function (root)
 		-- 	},
 		-- },
 	}
-	return routes
 end
 
 return mod

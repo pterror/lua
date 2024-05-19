@@ -29,6 +29,7 @@ cat <<'END' | cc -E -
 #include <unistd.h>
 
 #include <fcntl.h>
+#include <dlfcn.h>
 #include <sys/syscall.h>
 #include <sys/epoll.h>
 #include <sys/types.h>

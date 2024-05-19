@@ -9,19 +9,21 @@ soloud_mod.Soloud_init(soloud)
 
 local sound_path = arg[1]
 if not sound_path then
-	io.stderr:write("keysounds: usage: `keysounds.lua ~/path/to/sounds/`")
+	io.stderr:write("x11_keysounds: usage: `x11_keysounds.lua ~/path/to/sounds/`")
 	return os.exit(1)
 end
 
+--[[@param path string]]
 local read_all = function (path)
 	local f = io.open(path)
 	if not f then return end
+	--[[@type string]]
 	local ret = f:read("*all")
 	f:close()
 	return ret
 end
 
-local config = assert(require("dep.lunajson").json_to_value(read_all(sound_path .. "/config.json")))
+local config = assert(require("dep.lunajson").json_to_value(assert(read_all(sound_path .. "/config.json"))))
 package.loaded["dep.lunajson"] = nil
 
 local ffi = require("ffi")

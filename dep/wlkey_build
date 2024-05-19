@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+cc -O2 wlkey.c -linput -ludev -o wlkey

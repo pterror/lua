@@ -58,7 +58,8 @@ end
 mod.map = function (iter, fn)
 	return mod.iter(function ()
 		local val = iter()
-		return val ~= nil and fn(val) or val
+		if val == nil then return val end
+		return fn(val)
 	end)
 end
 
@@ -177,6 +178,22 @@ mod.range = function (start, stop, step)
 		current = current + step
 		if current >= stop then return current end
 	end)
+end
+
+--[[@return number]]
+--[[@param iter fun(): number]]
+mod.sum = function (iter)
+	local result = 0
+	for i in iter do result = result + i end
+	return result
+end
+
+--[[@return number]]
+--[[@param iter fun(): number]]
+mod.product = function (iter)
+	local result = 1
+	for i in iter do result = result * i end
+	return result
 end
 
 local func_arr
