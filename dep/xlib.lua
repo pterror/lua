@@ -1023,673 +1023,6 @@ ffi.cdef [[
 	Status XRecordFreeContext(Display *display, XRecordContext context);
 ]]
 
---[[private fields omitted]]
-
---[[@class xlib_status_c]]
---[[@class xlib_id_c]]
---[[@class xlib_mask_c]]
---[[@class xlib_atom_c]]
---[[@class xlib_visualid_c]]
---[[@class xlib_time_c]]
---[[@class xlib_window_c: xlib_drawable_c]]
---[[@class xlib_drawable_c: xlib_id_c]]
---[[@class xlib_font_c: xlib_id_c]]
---[[@class xlib_pixmap_c: xlib_drawable_c]]
---[[@class xlib_cursor_c: xlib_id_c]]
---[[@class xlib_colormap_c: xlib_id_c]]
---[[@class xlib_gcontext_c: xlib_id_c]]
---[[@class xlib_key_sym_c: xlib_id_c]]
---[[@class xlib_key_code_c]]
---[[@class xlib_pointer_c]]
-
---[[@class xlib_im_c]]
---[[@class xlib_ic_c]]
-
---[[@alias xlib_im_proc_c fun(im: xlib_im_c, a: xlib_pointer_c, b: xlib_pointer_c)]]
---[[@alias xlib_ic_proc_c fun(ic: xlib_ic_c, a: xlib_pointer_c, b: xlib_pointer_c): boolean]]
---[[@alias xlib_id_proc_c fun(d: xlib_display_c, a: xlib_pointer_c, b: xlib_pointer_c)]]
-
---[[@class xlib_rm_database_c]]
-
---[[Per character font metric information]]
---[[@class xlib_char_struct_c]]
---[[@field lbearing integer]]
---[[@field rbearing integer]]
---[[@field width integer]]
---[[@field ascent integer]]
---[[@field descent integer]]
---[[@field attributes integer]]
-
---[[To allow arbitrary information with fonts, there are additional properties returned.]]
---[[@class xlib_font_prop_c]]
---[[@field name xlib_atom_c]]
---[[@field card32 integer]]
-
---[[@class xlib_font_struct_c]]
---[[@field ext_data ptr_c<xlib_ext_data_c>]]
---[[@field fid xlib_font_c]]
---[[@field direction integer]]
---[[@field min_char_or_byte2 integer]]
---[[@field max_char_or_byte2 integer]]
---[[@field min_byte1 integer]]
---[[@field max_byte1 integer]]
---[[@field all_chars_exist boolean]]
---[[@field default_char integer]]
---[[@field n_properties integer]]
---[[@field properties ptr_c<xlib_font_prop_c>]]
---[[@field min_bounds xlib_char_struct_c]]
---[[@field max_bounds xlib_char_struct_c]]
---[[@field per_char ptr_c<xlib_char_struct_c>]]
---[[@field ascent integer]]
---[[@field descent integer]]
-
---[[@class xlib_font_set_extents_c]]
---[[@field max_ink_extent xlib_rectangle_c]]
---[[@field max_logical_extent xlib_rectangle_c]]
-
---[[@class xlib_om_c]]
-
---[[@class xlib_oc_c]]
-
---[[@class xlib_font_set_c]]
-
---[[@class xlib_window_changes_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field border_width integer]]
---[[@field window xlib_window_c]]
---[[@field stack_mode xlib_window_stacking_method]]
-
---[[@class xlib_color_c]]
---[[@field pixel integer]]
---[[@field red integer]]
---[[@field green integer]]
---[[@field blue integer]]
---[[@field flags xlib_store_color_flag]]
-
---[[@class xlib_segment_c]]
---[[@field x1 integer]]
---[[@field y1 integer]]
---[[@field x2 integer]]
---[[@field y2 integer]]
-
---[[@class xlib_point_c]]
---[[@field x integer]]
---[[@field y integer]]
-
---[[@class xlib_rectangle_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
-
---[[@class xlib_arc_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field angle1 integer]]
---[[@field angle2 integer]]
-
---[[@class _xlib_base_event_c]]
---[[@field type xlib_event_type]]
---[[@field serial integer]]
---[[@field send_event boolean]]
---[[@field display ptr_c<xlib_display_c>]]
-
---[[@class xlib_any_event_c: _xlib_base_event_c]]
---[[@field window xlib_window_c]]
-
---[[@class _xlib_positioned_event_c: xlib_any_event_c]]
---[[@field root xlib_window_c]]
---[[@field subwindow xlib_window_c]]
---[[@field time xlib_time_c ms]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field x_root integer]]
---[[@field y_root integer]]
-
---[[@class xlib_key_event_c: _xlib_positioned_event_c]]
---[[@field type 2|3]]
---[[@field state xlib_key_button_mask]]
---[[@field keycode xlib_key_code_c]]
---[[@field same_screen boolean]]
-
---[[@class xlib_key_pressed_event_c: xlib_key_event_c]]
---[[@field type 2]]
-
---[[@class xlib_key_released_event_c: xlib_key_event_c]]
---[[@field type 3]]
-
---[[@class xlib_button_event_c: _xlib_positioned_event_c]]
---[[@field type 4|5]]
---[[@field state xlib_key_button_mask]]
---[[@field button xlib_button]]
---[[@field same_screen boolean]]
-
---[[@class xlib_button_pressed_event_c: xlib_button_event_c]]
---[[@field type 4]]
-
---[[@class xlib_button_released_event_c: xlib_button_event_c]]
---[[@field type 5]]
-
---[[@class xlib_motion_event_c: _xlib_positioned_event_c]]
---[[@field type 6]]
---[[@field state xlib_key_button_mask]]
---[[@field is_hint xlib_notify_hint_mode]]
---[[@field same_screen boolean]]
-
---[[@class xlib_pointer_moved_event_c: xlib_motion_event_c]]
-
---[[@class xlib_crossing_event_c: _xlib_positioned_event_c]]
---[[@field type 7|8]]
---[[@field mode xlib_notify_mode cannot be `while_grabbed`]]
---[[@field detail xlib_notify_detail]]
---[[@field same_screen boolean]]
---[[@field focus boolean]]
-
---[[@class xlib_enter_window_event_c: xlib_crossing_event_c]]
---[[@field type 7]]
-
---[[@class xlib_leave_window_event_c: xlib_crossing_event_c]]
---[[@field type 8]]
-
---[[@class xlib_focus_change_event_c: xlib_any_event_c]]
---[[@field type 9|10]]
---[[@field mode xlib_notify_mode]]
---[[@field detail xlib_notify_detail]]
-
---[[@class xlib_focus_in_event_c: xlib_focus_change_event_c]]
---[[@field type 9]]
-
---[[@class xlib_focus_out_event_c: xlib_focus_change_event_c]]
---[[@field type 10]]
-
---[[@class xlib_keymap_event_c: xlib_any_event_c]]
---[[@field type 11]]
---[[@field key_vector integer[] length 32]]
-
---[[@class xlib_expose_event_c: xlib_any_event_c]]
---[[@field type 12]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field count integer]]
-
---[[@class xlib_graphics_expose_event_c: _xlib_base_event_c]]
---[[@field type 13]]
---[[@field drawable xlib_drawable_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field count integer]]
---[[@field major_code xlib_request_code `copy_area` or `copy_plane`]]
---[[@field minor_code integer]]
-
---[[@class xlib_no_expose_event_c: _xlib_base_event_c]]
---[[@field type 14]]
---[[@field drawable xlib_drawable_c]]
---[[@field major_code xlib_request_code `copy_area` or `copy_plane`]]
---[[@field minor_code integer]]
-
---[[@class xlib_visibility_event_c: xlib_any_event_c]]
---[[@field type 15]]
---[[@field state integer]]
-
---[[@class xlib_create_window_event_c: _xlib_base_event_c]]
---[[@field type 16]]
---[[@field parent xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field border_width integer]]
---[[@field override_redirect boolean]]
-
---[[@class xlib_destroy_window_event_c: _xlib_base_event_c]]
---[[@field type 17]]
---[[@field event xlib_window_c]]
---[[@field window xlib_window_c]]
-
---[[@class xlib_unmap_event_c: _xlib_base_event_c]]
---[[@field type 18]]
---[[@field event xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field from_configure boolean]]
-
---[[@class xlib_map_event_c: _xlib_base_event_c]]
---[[@field type 19]]
---[[@field event xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field override_redirect boolean]]
-
---[[@class xlib_map_request_event_c: _xlib_base_event_c]]
---[[@field type 20]]
---[[@field parent xlib_window_c]]
---[[@field window xlib_window_c]]
-
---[[@class xlib_reparent_event_c: _xlib_base_event_c]]
---[[@field type 21]]
---[[@field event xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field parent xlib_window_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field override_redirect boolean]]
-
---[[@class xlib_configure_event_c: _xlib_base_event_c]]
---[[@field type 22]]
---[[@field event xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field border_width integer]]
---[[@field above xlib_window_c]]
---[[@field override_redirect boolean]]
-
---[[@class xlib_configure_request_event_c: _xlib_base_event_c]]
---[[@field type 23]]
---[[@field parent xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field border_width integer]]
---[[@field above xlib_window_c]]
---[[@field detail xlib_window_stacking_method]]
---[[@field value_mask integer]]
-
---[[@class xlib_gravity_event_c: _xlib_base_event_c]]
---[[@field type 24]]
---[[@field event xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field x integer]]
---[[@field y integer]]
-
---[[@class xlib_resize_request_event_c: xlib_any_event_c]]
---[[@field type 25]]
---[[@field width integer]]
---[[@field height integer]]
-
---[[@class xlib_circulate_event_c: _xlib_base_event_c]]
---[[@field type 26]]
---[[@field event xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field place xlib_circulate_request_type]]
-
---[[@class xlib_circulate_request_event_c: _xlib_base_event_c]]
---[[@field type 27]]
---[[@field parent xlib_window_c]]
---[[@field window xlib_window_c]]
---[[@field place xlib_circulate_request_type]]
-
---[[@class xlib_property_event_c: xlib_any_event_c]]
---[[@field type 28]]
---[[@field atom xlib_atom_c]]
---[[@field time xlib_time_c]]
---[[@field state xlib_property_notification_type]]
-
---[[@class xlib_selection_clear_event_c: xlib_any_event_c]]
---[[@field type 29]]
---[[@field atom xlib_atom_c]]
---[[@field time xlib_time_c]]
-
---[[@class xlib_selection_request_event_c: _xlib_base_event_c]]
---[[@field type 30]]
---[[@field owner xlib_window_c]]
---[[@field requestor xlib_window_c]]
---[[@field selection xlib_atom_c]]
---[[@field target xlib_atom_c]]
---[[@field property xlib_atom_c can be `nil`]]
---[[@field time xlib_time_c]]
-
---[[@class xlib_selection_event_c: _xlib_base_event_c]]
---[[@field type 31]]
---[[@field requestor xlib_window_c]]
---[[@field selection xlib_atom_c]]
---[[@field target xlib_atom_c]]
---[[@field property xlib_atom_c can be `nil`]]
-
---[[@class xlib_colormap_event_c: xlib_any_event_c]]
---[[@field type 32]]
---[[@field colormap xlib_colormap_c can be `nil`]]
---[[@field new boolean]]
---[[@field state xlib_colormap_notification_type]]
-
---[[union `b`, `s`, `l`]]
---[[@class xlib_client_message_event_c: xlib_any_event_c]]
---[[@field type 33]]
---[[@field message_type xlib_atom_c]]
---[[@field format integer]]
---[[@field b integer[] ]]
---[[@field s integer[] ]]
---[[@field l integer[] ]]
-
---[[@class xlib_mapping_event_c: xlib_any_event_c]]
---[[@field type 34]]
---[[@field request xlib_mapping_type]]
---[[@field first_keycode integer]]
---[[@field count integer]]
-
---[[@class xlib_error_event_c]]
---[[@field type integer]]
---[[@field display ptr_c<xlib_display_c>]]
---[[@field resourceid xlib_id_c]]
---[[@field serial integer]]
---[[@field error_code integer]]
---[[@field request_code integer major opcode]]
---[[@field minor_code integer minor opcode]]
-
---[[@class xlib_generic_event_c: _xlib_base_event_c]]
---[[@field type 35]]
---[[@field extension integer]]
---[[@field evtype integer]]
-
---[[@class xlib_generic_event_cookie_c: xlib_generic_event_c]]
---[[@field cookie integer]]
---[[@field data ffi.cdata*]]
-
-
---[[@class xlib_event_c]]
---[[@field type xlib_event_type]]
---[[@field xany xlib_any_event_c]]
---[[@field xkey xlib_key_event_c]]
---[[@field xbutton xlib_button_event_c]]
---[[@field xmotion xlib_motion_event_c]]
---[[@field xcrossing xlib_crossing_event_c]]
---[[@field xfocus xlib_focus_change_event_c]]
---[[@field xexpose xlib_expose_event_c]]
---[[@field xgraphicsexpose xlib_graphics_expose_event_c]]
---[[@field xnoexpose xlib_no_expose_event_c]]
---[[@field xvisibility xlib_visibility_event_c]]
---[[@field xcreatewindow xlib_create_window_event_c]]
---[[@field xdestroywindow xlib_destroy_window_event_c]]
---[[@field xunmap xlib_unmap_event_c]]
---[[@field xmap xlib_map_event_c]]
---[[@field xmaprequest xlib_map_request_event_c]]
---[[@field xreparent xlib_reparent_event_c]]
---[[@field xconfigure xlib_configure_event_c]]
---[[@field xgravity xlib_gravity_event_c]]
---[[@field xresizerequest xlib_resize_request_event_c]]
---[[@field xconfigurerequest xlib_configure_request_event_c]]
---[[@field xcirculate xlib_circulate_event_c]]
---[[@field xcirculaterequest xlib_circulate_request_event_c]]
---[[@field xproperty xlib_property_event_c]]
---[[@field xselectionclear xlib_selection_clear_event_c]]
---[[@field xselectionrequest xlib_selection_request_event_c]]
---[[@field xselection xlib_selection_event_c]]
---[[@field xcolormap xlib_colormap_event_c]]
---[[@field xclient xlib_client_message_event_c]]
---[[@field xmapping xlib_mapping_event_c]]
---[[@field xerror xlib_error_event_c]]
---[[@field xkeymap xlib_keymap_event_c]]
---[[@field xgeneric xlib_generic_event_c]]
---[[@field xcookie xlib_generic_event_cookie_c]]
-
---[[Extensions need a way to hang private data on some structures.]]
---[[@class xlib_ext_data_c]]
---[[@field number integer number returned by XRegisterExtension]]
---[[@field next? ptr_c<xlib_ext_data_c>]]
---[[@field free_private fun(extension: ptr_c<xlib_ext_data_c>)]]
---[[@field private_data ptr_c<unknown>]]
-
---[[Visual structure; contains information about colormapping possible.]]
---[[@class xlib_visual_c]]
---[[@field ext_data ptr_c<xlib_ext_data_c>]]
---[[@field visualid xlib_visualid_c]]
---[[@field class integer e.g. monochrome]]
---[[@field red_mask integer]]
---[[@field green_mask integer]]
---[[@field blue_mask integer]]
---[[@field bits_per_rgb integer]]
---[[@field map_entries integer]]
-
---[[@class xlib_gc_values_c]]
---[[@field function integer logical operation]]
---[[@field plane_mask integer plane mask]]
---[[@field foreground integer foreground pixel]]
---[[@field background integer background pixel]]
---[[@field line_width integer line width]]
---[[@field line_style xlib_line_style]]
---[[@field cap_style xlib_cap_style]]
---[[@field join_style integer xlib_join_style]]
---[[@field fill_style integer xlib_fill_style]]
---[[@field fill_rule integer xlib_fill_rule]]
---[[@field arc_mode integer xlib_arc_mode]]
---[[@field tile xlib_pixmap_c for tiling operations]]
---[[@field stipple xlib_pixmap_c stipple 1 plane pixmap for stippling]]
---[[@field ts_x_origin integer offset for tile or stipple operations]]
---[[@field ts_y_origin integer]]
---[[@field font xlib_font_c default text font for text operations]]
---[[@field subwindow_mode xlib_subwindow_mode]]
---[[@field graphics_exposures boolean should exposures be generated]]
---[[@field clip_x_origin integer origin for clipping]]
---[[@field clip_y_origin integer]]
---[[@field clip_mask xlib_pixmap_c bitmap clipping; other calls for rects]]
---[[@field dash_offset integer patterned/dashed line information]]
---[[@field dashes integer char]]
-
---[[Graphics context.  ]]
---[[The contents of this structure are implementation dependent.  ]]
---[[A GC should be treated as opaque by application code.]]
---[[@class xlib__gc_c]]
---[[@field ext_data ptr_c<xlib_ext_data_c>]]
---[[@field gid xlib_gcontext_c]]
-
---[[@alias xlib_gc_c ptr_c<xlib__gc_c>]]
-
---[[Depth structure; contains information for each possible depth.]]
---[[@class xlib_depth_c]]
---[[@field depth integer]]
---[[@field nvisuals integer]]
---[[@field visuals xlib_visual_c[] ]]
-
---[[@class xlib_screen_c]]
---[[@field ext_data ptr_c<xlib_ext_data_c>]]
---[[@field display ptr_c<xlib_display_c> parent]]
---[[@field root xlib_window_c]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field mwidth integer millimeters]]
---[[@field mheight integer millimeters]]
---[[@field ndepths integer]]
---[[@field depths xlib_depth_c[] ]]
---[[@field root_depth integer bits per pixel]]
---[[@field root_visual ptr_c<xlib_visual_c>]]
---[[@field default_gc xlib_gc_c GC for the root visual]]
---[[@field cmap xlib_colormap_c default color map]]
---[[@field white_pixel integer white pixel value]]
---[[@field black_pixel integer black pixel value]]
---[[@field max_maps integer max color map]]
---[[@field min_maps integer min color map]]
---[[@field backing_store xlib_backing_store]]
---[[@field save_unders boolean]]
---[[@field root_input_mask integer]]
-
---[[Format structure; describes ZFormat data the screen will understand.]]
---[[@class xlib_screen_format_c]]
---[[@field ext_data ptr_c<xlib_ext_data_c>]]
---[[@field depth integer]]
---[[@field bits_per_pixel integer]]
---[[@field scanline_pad integer]]
-
---[[@class xlib_set_window_attributes_c]]
---[[@field background_pixmap xlib_pixmap_c can be `None` or `ParentRelative`]]
---[[@field background_pixel integer]]
---[[@field border_pixmap xlib_pixmap_c]]
---[[@field border_pixel integer]]
---[[@field bit_gravity xlib_gravity]]
---[[@field win_gravity xlib_gravity]]
---[[@field backing_store xlib_backing_store]]
---[[@field backing_planes integer planes to be preserved if possible]]
---[[@field backing_pixel integer value to use in restoring planes]]
---[[@field save_under boolean should bits under be saved? (popups)]]
---[[@field event_mask xlib_input_event_mask saved events mask]]
---[[@field do_not_propagate_mask integer]]
---[[@field override_redirect boolean]]
---[[@field colormap xlib_colormap_c]]
---[[@field cursor xlib_cursor_c can be `None`]]
-
---[[@class xlib_time_coord_c]]
---[[@field time xlib_time_c]]
---[[@field x integer]]
---[[@field y integer]]
-
---[[@class xlib_display_c]]
---[[@field ext_data ptr_c<xlib_ext_data_c>]]
---[[@field fd fd_c]]
---[[@field proto_major_version integer]]
---[[@field proto_minor_version integer]]
---[[@field vendor string]]
---[[@field resource_alloc fun(display: ptr_c<xlib_display_c>): xlib_id_c]]
---[[@field byte_order xlib_bit_byte_order]]
---[[@field bitmap_unit integer]]
---[[@field bitmap_pad integer]]
---[[@field bitmap_bit_order xlib_bit_byte_order]]
---[[@field nformats integer]]
---[[@field pixmap_format ptr_c<xlib_screen_format_c>]]
---[[@field release integer]]
---[[@field qlen integer]]
---[[@field last_request_read integer]]
---[[@field request integer]]
---[[@field max_request_size integer]]
---[[@field display_name string]]
---[[@field default_screen integer]]
---[[@field nscreens integer]]
---[[@field screens xlib_screen_c[] ]]
---[[@field motion_buffer integer]]
---[[@field min_keycode xlib_key_code_c]]
---[[@field max_keycode xlib_key_code_c]]
---[[@field xdefaults string]]
-
--- unused fields should stay for plugin dx
---[[@class xlib_window_attributes_c]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer]]
---[[@field height integer]]
---[[@field border_width integer]]
---[[@field depth integer]]
---[[@field visual ptr_c<xlib_visual_c>]]
---[[@field root xlib_window_c]]
---[[@field class integer TODO: enum?]]
---[[@field bit_gravity xlib_gravity]]
---[[@field win_gravity xlib_gravity]]
---[[@field backing_store xlib_backing_store]]
---[[@field backing_planes integer]]
---[[@field backing_pixel integer]]
---[[@field save_under boolean]]
---[[@field colormap xlib_colormap_c]]
---[[@field map_installed boolean]]
---[[@field map_state xlib_map_state]]
---[[@field all_event_masks xlib_input_event_mask]]
---[[@field your_event_mask xlib_input_event_mask]]
---[[@field do_not_propagate_mask xlib_input_event_mask]]
---[[@field override_redirect boolean]]
---[[@field screen ptr_c<xlib_screen_c>]]
-
---[[@class xlib_size_hints_c]]
---[[@field flags xlib_size_flag marks which fields in this structure are defined]]
---[[@field x integer]]
---[[@field y integer]]
---[[@field width integer should set so old wms don't mess up]]
---[[@field height integer should set so old wms don't mess up]]
---[[@field min_width integer]]
---[[@field min_height integer]]
---[[@field max_width integer]]
---[[@field max_height integer]]
---[[@field width_inc integer]]
---[[@field height_inc integer]]
---[[@field min_aspect { x: integer; y: integer; }]]
---[[@field max_aspect { x: integer; y: integer; }]]
---[[@field base_width integer]]
---[[@field base_height integer]]
---[[@field win_gravity xlib_gravity]]
-
---[[@class xlib_class_hint_c]]
---[[@field res_name string]]
---[[@field res_class string]]
-
---[[new structure for manipulating `TEXT` properties  ]]
---[[used with `WM_NAME`, `WM_ICON_NAME`, `WM_CLIENT_MACHINE`, and `WM_COMMAND`.]]
---[[@class xlib_text_property_c]]
---[[@field value string]]
---[[@field encoding xlib_atom_c]]
---[[@field format 8|16|32]]
---[[@field nitems integer]]
-
---[[@class xlib_compose_status_c]]
---[[@field compose_ptr xlib_pointer_c state table pointer]]
---[[@field matched integer match state]]
-
---[[@class xlib_record_client_spec_c: integer]]
---[[@class xlib_record_context_c: integer]]
-
---[[@alias xlib_record_intercept_proc_c fun(closure: ffi.cdata*, recorded_data: ptr_c<xlib_record_intercept_data_c>)]]
-
---[[@class xlib_record_range_8_c]]
---[[@field first integer]]
---[[@field last integer]]
-
---[[@class xlib_record_range_16_c]]
---[[@field first integer]]
---[[@field last integer]]
-
---[[@class xlib_record_ext_range_c]]
---[[@field ext_major xlib_record_range_8_c]]
---[[@field ext_minor xlib_record_range_16_c]]
-
---[[@class xlib_record_range_c]]
---[[@field core_requests xlib_record_range_8_c core X requests]]
---[[@field core_replies xlib_record_range_8_c core X replies]]
---[[@field ext_requests xlib_record_ext_range_c extension requests]]
---[[@field ext_replies xlib_record_ext_range_c extension replies]]
---[[@field delivered_events xlib_record_range_8_c delivered core and ext events]]
---[[@field device_events xlib_record_range_8_c all core and ext device events]]
---[[@field errors xlib_record_range_8_c  core X and ext errors]]
---[[@field client_started boolean connection setup reply]]
---[[@field client_died boolean notice of client disconnect]]
-
---[[@class xlib_record_client_info_c]]
---[[@field client xlib_record_client_spec_c]]
---[[@field nranges integer]]
---[[@field ranges ptr_c<xlib_record_range_c[]> ]]
-
---[[@class xlib_record_state_c]]
---[[@field enabled boolean]]
---[[@field datum_flags xlib_record_datum_flag]]
---[[@field nclients integer]]
---[[@field client_info ptr_c<xlib_record_client_info_c[]> ]]
-
---[[@class xlib_record_intercept_data_c]]
---[[@field id_base xlib_id_c]]
---[[@field server_time xlib_time_c]]
---[[@field client_seq integer]]
---[[@field category integer]]
---[[@field client_swapped boolean]]
---[[@field data string]]
---[[@field data_len integer in 4-byte units]]
-
---[[@class xlib_visual_info_c]]
---[[@field visual ptr_c<xlib_visual_c>]]
---[[@field visualid xlib_visualid_c]]
---[[@field screen integer]]
---[[@field depth integer]]
---[[@field class integer]]
---[[@field red_mask integer]]
---[[@field green_mask integer]]
---[[@field blue_mask integer]]
---[[@field colormap_size integer]]
---[[@field bits_per_rgb integer]]
-
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
 mod.none_window = 0 --[[@type xlib_window_c]]
 --[[@diagnostic disable-next-line: assign-type-mismatch]]
@@ -1797,9 +1130,19 @@ mod.event_type = {
 --[[key masks and button masks]]
 --[[@enum xlib_key_button_mask]]
 mod.key_button_mask = {
-	shift = 0x1, lock = 0x2, control = 0x4,
-	mod1 = 0x8, mod2 = 0x10, mod3 = 0x20, mod4 = 0x40, mod5 = 0x80,
-	button_1 = 0x100, button_2 = 0x200, button_3 = 0x400, button_4 = 0x800, button_5 = 0x1000,
+	shift = 0x1,
+	lock = 0x2,
+	control = 0x4,
+	mod1 = 0x8,
+	mod2 = 0x10,
+	mod3 = 0x20,
+	mod4 = 0x40,
+	mod5 = 0x80,
+	button_1 = 0x100,
+	button_2 = 0x200,
+	button_3 = 0x400,
+	button_4 = 0x800,
+	button_5 = 0x1000,
 	any_modifier = 0x8000, --[[used in `GrabButton`, `GrabKey`]]
 }
 
@@ -1814,8 +1157,14 @@ mod.notify_hint_mode = { normal = 0, hint = 1 }
 
 --[[@enum xlib_notify_detail]]
 mod.notify_detail = {
-	ancestor = 0, virtual = 1, inferior = 2, nonlinear = 3, nonlinear_virtual = 4,
-	pointer = 5, pointer_root = 6, none = 7,
+	ancestor = 0,
+	virtual = 1,
+	inferior = 2,
+	nonlinear = 3,
+	nonlinear_virtual = 4,
+	pointer = 5,
+	pointer_root = 6,
+	none = 7,
 }
 
 --[[@enum xlib_visibility_notification_type]]
@@ -1835,9 +1184,14 @@ mod.grab_status = { success = 0, already_grabbed = 1, invalid_type = 2, not_view
 
 --[[@enum xlib_allow_events_mode]]
 mod.allow_events_mode = {
-	async_pointer = 0, sync_pointer = 1, replay_pointer = 2,
-	async_keyboard = 3, sync_keyboard = 4, replay_keyboard = 5,
-	async_both = 6, sync_both = 7,
+	async_pointer = 0,
+	sync_pointer = 1,
+	replay_pointer = 2,
+	async_keyboard = 3,
+	sync_keyboard = 4,
+	replay_keyboard = 5,
+	async_both = 6,
+	sync_both = 7,
 }
 
 --[[@enum xlib_revert_to]]
@@ -1845,11 +1199,26 @@ mod.revert_to = { none = 0, pointer_root = 1, parent = 2 }
 
 --[[@enum xlib_error_code]]
 mod.error_code = {
-	success = 0, bad_request = 1, bad_value = 2,
-	bad_window = 3, bad_pixmap = 4, bad_atom = 5, bad_cursor = 6, bad_font = 7,
-	bad_match = 8, bad_drawable = 9, bad_access = 10, bad_alloc = 11, bad_color = 12,
-	bad_gc = 13, bad_id_choice = 14, bad_name = 15, bad_length = 16, bad_implementation = 17,
-	extension_start = 128, extension_end = 255,
+	success = 0,
+	bad_request = 1,
+	bad_value = 2,
+	bad_window = 3,
+	bad_pixmap = 4,
+	bad_atom = 5,
+	bad_cursor = 6,
+	bad_font = 7,
+	bad_match = 8,
+	bad_drawable = 9,
+	bad_access = 10,
+	bad_alloc = 11,
+	bad_color = 12,
+	bad_gc = 13,
+	bad_id_choice = 14,
+	bad_name = 15,
+	bad_length = 16,
+	bad_implementation = 17,
+	extension_start = 128,
+	extension_end = 255,
 }
 
 --[[@enum xlib_window_class]]
@@ -1857,11 +1226,21 @@ mod.window_class = { copy_from_parent = 0, input_output = 1, input_only = 2 }
 
 --[[@enum xlib_window_attribute]]
 mod.window_attribute = {
-	back_pixmap = 0x1, back_pixel = 0x2, border_pixmap = 0x4, border_pixel = 0x8,
-	bit_gravity = 0x10, win_gravity = 0x20,
-	backing_store = 0x40, backing_planes = 0x80, backign_pixel = 0x100,
-	override_redirect = 0x200, save_under = 0x400, event_mask = 0x800, dont_propagate = 0x1000,
-	colormap = 0x2000, cursor = 0x4000
+	back_pixmap = 0x1,
+	back_pixel = 0x2,
+	border_pixmap = 0x4,
+	border_pixel = 0x8,
+	bit_gravity = 0x10,
+	win_gravity = 0x20,
+	backing_store = 0x40,
+	backing_planes = 0x80,
+	backign_pixel = 0x100,
+	override_redirect = 0x200,
+	save_under = 0x400,
+	event_mask = 0x800,
+	dont_propagate = 0x1000,
+	colormap = 0x2000,
+	cursor = 0x4000
 }
 
 --[[@enum xlib_configure_window_attribute]]
@@ -1874,8 +1253,16 @@ mod.configure_window_attribute = {
 mod.gravity = {
 	forget = 0, --[[bit gravity, not window gravity]]
 	unmap = 0, --[[window gravity, not bit gravity]]
-	north_west = 1, north = 2, north_east = 3, west = 4, center = 5,
-	east = 6, south_west = 7, south = 8, south_east = 9, static = 10,
+	north_west = 1,
+	north = 2,
+	north_east = 3,
+	west = 4,
+	center = 5,
+	east = 6,
+	south_west = 7,
+	south = 8,
+	south_east = 9,
+	static = 10,
 }
 
 --[[@enum xlib_backing_store]]
@@ -1950,12 +1337,29 @@ mod.arc_mode = {
 
 --[[@enum xlib_gc_component]]
 mod.gc_component = {
-	["function"] = 0x1, plane_mask = 0x2, foreground = 0x4, background = 0x8,
-	line_width = 0x10, line_style = 0x20, cap_style = 0x40, join_style = 0x80, fill_style = 0x100, fill_rule = 0x200,
-	tile = 0x400, stipple = 0x800, tile_stip_x_origin = 0x1000, tile_stip_y_origin = 0x2000,
-	font = 0x4000, subwindow_mode = 0x8000, graphics_exposures = 0x10000,
-	clip_x_origin = 0x20000, clip_y_origin = 0x40000,clip_mask = 0x80000,
-	dash_offset = 0x100000, dash_list = 0x200000, arc_mode = 0x400000,
+	["function"] = 0x1,
+	plane_mask = 0x2,
+	foreground = 0x4,
+	background = 0x8,
+	line_width = 0x10,
+	line_style = 0x20,
+	cap_style = 0x40,
+	join_style = 0x80,
+	fill_style = 0x100,
+	fill_rule = 0x200,
+	tile = 0x400,
+	stipple = 0x800,
+	tile_stip_x_origin = 0x1000,
+	tile_stip_y_origin = 0x2000,
+	font = 0x4000,
+	subwindow_mode = 0x8000,
+	graphics_exposures = 0x10000,
+	clip_x_origin = 0x20000,
+	clip_y_origin = 0x40000,
+	clip_mask = 0x80000,
+	dash_offset = 0x100000,
+	dash_list = 0x200000,
+	arc_mode = 0x400000,
 }
 
 --[[@enum xlib_font_draw_direction]]
@@ -1993,8 +1397,14 @@ mod.keyboard_led_mode = { off = 0, on = 1 }
 
 --[[@enum xlib_change_keyboard_control_mask]]
 mod.change_keyboard_control_mask = {
-	key_click_percent = 0x1, bell_percent = 0x2, bell_pitch = 0x4, bell_duration = 0x8,
-	led = 0x10, led_mode = 0x20, key = 0x40, auto_repeat_mode = 0x80,
+	key_click_percent = 0x1,
+	bell_percent = 0x2,
+	bell_pitch = 0x4,
+	bell_duration = 0x8,
+	led = 0x10,
+	led_mode = 0x20,
+	key = 0x40,
+	auto_repeat_mode = 0x80,
 }
 
 --[[@enum xlib_mapping_status]]
@@ -2162,9 +1572,16 @@ mod.bitmap_status = { success = 0, open_failed = 1, file_invalid = 2, no_memory 
 --[[u = user specified, p = program specified]]
 --[[@enum xlib_size_flag]]
 mod.size_flag = {
-	us_position = 0x1, us_size = 0x2,
-	p_position = 0x4, p_size = 0x8, p_min_size = 0x10, p_max_size = 0x20, p_resize_inc = 0x40, p_aspect = 0x80,
-	p_base_size = 0x100, p_win_gravity = 0x200,
+	us_position = 0x1,
+	us_size = 0x2,
+	p_position = 0x4,
+	p_size = 0x8,
+	p_min_size = 0x10,
+	p_max_size = 0x20,
+	p_resize_inc = 0x40,
+	p_aspect = 0x80,
+	p_base_size = 0x100,
+	p_win_gravity = 0x200,
 }
 
 
@@ -2420,13 +1837,13 @@ local text_property_p_c = ffi.typeof("XTextProperty[1]") --[[@type fun(value?: x
 local color_p_c = ffi.typeof("XColor[1]") --[[@type fun(value?: {[1]:xlib_color_c}): ptr_c<xlib_color_c>]]
 
 --[[@param data ptr_c<unknown>)]]
-mod.free = function (data) xlib_ffi.XFree(data) end
+mod.free = function(data) xlib_ffi.XFree(data) end
 
 --[[@param handler fun(display: xlib_display_c, error: xlib_error_event_c)]]
-mod.set_error_handler = function (handler) xlib_ffi.XSetErrorHandler(handler) end
+mod.set_error_handler = function(handler) xlib_ffi.XSetErrorHandler(handler) end
 
 --[[@param name? string]]
-mod.open_display = function (name)
+mod.open_display = function(name)
 	local display = xlib_ffi.XOpenDisplay(name)
 	return display ~= nil and display or nil
 end
@@ -2437,7 +1854,7 @@ display.__index = display
 mod.display = display
 
 --[[@param name? string]]
-display.new = function (self, name)
+display.new = function(self, name)
 	local display_c = mod.open_display(name)
 	if not display_c then return nil end
 	local display = { --[[@class xlib_display]]
@@ -2447,39 +1864,42 @@ display.new = function (self, name)
 end
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.close_display = function (display_) xlib_ffi.XCloseDisplay(display_) end
-display.close_display = function (self) mod.close_display(self.c) end
+mod.close_display = function(display_) xlib_ffi.XCloseDisplay(display_) end
+display.close_display = function(self) mod.close_display(self.c) end
 
 display.__gc = display.close_display
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.flush = function (display_) xlib_ffi.XFlush(display_) end
-display.flush = function (self) return mod.flush(self.c) end
+mod.flush = function(display_) xlib_ffi.XFlush(display_) end
+display.flush = function(self) return mod.flush(self.c) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param discard boolean]]
-mod.sync = function (display_, discard) xlib_ffi.XSync(display_, discard) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param discard boolean]]
-display.sync = function (self, discard) return mod.sync(self.c, discard) end
+mod.sync = function(display_, discard) xlib_ffi.XSync(display_, discard) end
+--[[@param discard boolean]]
+display.sync = function(self, discard) return mod.sync(self.c, discard) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param mode xlib_events_queued_mode]]
-mod.events_queued = function (display_, mode) return xlib_ffi.XEventsQueued(display_, mode) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param mode xlib_events_queued_mode]]
-display.events_queued = function (self, mode) return mod.events_queued(self.c, mode) end
+mod.events_queued = function(display_, mode) return xlib_ffi.XEventsQueued(display_, mode) end
+--[[@param mode xlib_events_queued_mode]]
+display.events_queued = function(self, mode) return mod.events_queued(self.c, mode) end
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.pending = function (display_) return xlib_ffi.XPending(display_) end
-display.pending = function (self) return mod.pending(self.c) end
+mod.pending = function(display_) return xlib_ffi.XPending(display_) end
+display.pending = function(self) return mod.pending(self.c) end
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.grab_server = function (display_) xlib_ffi.XGrabServer(display_) end
-display.grab_server = function (self) return mod.grab_server(self.c) end
+mod.grab_server = function(display_) xlib_ffi.XGrabServer(display_) end
+display.grab_server = function(self) return mod.grab_server(self.c) end
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.ungrab_server = function (display_) xlib_ffi.XUngrabServer(display_) end
-display.ungrab_server = function (self) return mod.ungrab_server(self.c) end
+mod.ungrab_server = function(display_) xlib_ffi.XUngrabServer(display_) end
+display.ungrab_server = function(self) return mod.ungrab_server(self.c) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param window? xlib_window_c]]
-mod.query_tree = function (display_, window)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param window? xlib_window_c]]
+mod.query_tree = function(display_, window)
 	window = window or display_[0].screens[display_[0].default_screen].root
 	local root = ffi.new("Window[1]") --[[@type ptr_c<xlib_window_c>]]
 	local parent = ffi.new("Window[1]") --[[@type ptr_c<xlib_window_c>]]
@@ -2489,55 +1909,102 @@ mod.query_tree = function (display_, window)
 	return { root = root[0], parent = parent[0], children = children[0], nchildren = nchildren[0] }
 end
 --[[@param window? xlib_window_c]]
-display.query_tree = function (self, window) return mod.query_tree(self.c, window) end
+display.query_tree = function(self, window) return mod.query_tree(self.c, window) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param window? xlib_window_c]] --[[@param event_mask xlib_input_event_mask]]
-mod.select_input = function (display_, window, event_mask)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param window? xlib_window_c]]
+--[[@param event_mask xlib_input_event_mask]]
+mod.select_input = function(display_, window, event_mask)
 	window = window or display_[0].screens[display_[0].default_screen].root
 	xlib_ffi.XSelectInput(display_, window, event_mask)
 end
---[[@param window? xlib_window_c]] --[[@param event_mask xlib_input_event_mask]]
-display.select_input = function (self, window, event_mask) return mod.select_input(self.c, window, event_mask) end
+--[[@param window? xlib_window_c]]
+--[[@param event_mask xlib_input_event_mask]]
+display.select_input = function(self, window, event_mask) return mod.select_input(self.c, window, event_mask) end
 
 local error_text = ffi.new("char[1024]")
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param code integer]]
-mod.get_error_text = function (display_, code)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param code integer]]
+mod.get_error_text = function(display_, code)
 	xlib_ffi.XGetErrorText(display_, code, error_text, 1024)
 	return ffi.string(error_text)
 end
---[[@param code integer]] --[[@param buffer_return string_c]] --[[@param length integer]]
-display.get_error_text = function (self, code, buffer_return, length) return mod.get_error_text(self.c, code) end
+--[[@param code integer]]
+--[[@param buffer_return string_c]]
+--[[@param length integer]]
+display.get_error_text = function(self, code, buffer_return, length) return mod.get_error_text(self.c, code) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param depth integer]] --[[@param class xlib_window_class]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param valuemask integer]] --[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
-mod.create_window = function (display_, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
-	return xlib_ffi.XCreateWindow(display_, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param parent xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param border_width integer]]
+--[[@param depth integer]]
+--[[@param class xlib_window_class]]
+--[[@param visual ptr_c<xlib_visual_c>]]
+--[[@param valuemask integer]]
+--[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
+mod.create_window = function(display_, parent, x, y, width, height, border_width, depth, class, visual, valuemask,
+														 attributes)
+	return xlib_ffi.XCreateWindow(display_, parent, x, y, width, height, border_width, depth, class, visual, valuemask,
+		attributes)
 end
---[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param depth integer]] --[[@param class xlib_window_class]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param valuemask integer]] --[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
-display.create_window = function (self, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
+--[[@param parent xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param border_width integer]]
+--[[@param depth integer]]
+--[[@param class xlib_window_class]]
+--[[@param visual ptr_c<xlib_visual_c>]]
+--[[@param valuemask integer]]
+--[[@param attributes ptr_c<xlib_set_window_attributes_c>]]
+display.create_window = function(self, parent, x, y, width, height, border_width, depth, class, visual, valuemask,
+																 attributes)
 	return mod.create_window(self.c, parent, x, y, width, height, border_width, depth, class, visual, valuemask, attributes)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param border integer]] --[[@param background integer]]
-mod.create_simple_window = function (display_, parent, x, y, width, height, border_width, border, background)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param parent xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param border_width integer]]
+--[[@param border integer]]
+--[[@param background integer]]
+mod.create_simple_window = function(display_, parent, x, y, width, height, border_width, border, background)
 	return xlib_ffi.XCreateSimpleWindow(display_, parent, x, y, width, height, border_width, border, background)
 end
---[[@param parent xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param border_width integer]] --[[@param border integer]] --[[@param background integer]]
-display.create_simple_window = function (self, parent, x, y, width, height, border_width, border, background)
+--[[@param parent xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param border_width integer]]
+--[[@param border integer]]
+--[[@param background integer]]
+display.create_simple_window = function(self, parent, x, y, width, height, border_width, border, background)
 	return mod.create_simple_window(self.c, parent, x, y, width, height, border_width, border, background)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.get_window_attributes = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.get_window_attributes = function(display_, w)
 	local attrs = ffi.new("XWindowAttributes[1]") --[[@type ptr_c<xlib_window_attributes_c>]]
 	xlib_ffi.XGetWindowAttributes(display_, w, attrs)
 	return attrs[0]
 end
 --[[@param w xlib_window_c]]
-display.get_window_attributes = function (self, w) return mod.get_window_attributes(self.c, w) end
+display.get_window_attributes = function(self, w) return mod.get_window_attributes(self.c, w) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]]
-mod.get_geometry = function (display_, d)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+mod.get_geometry = function(display_, d)
 	local root = ffi.new("Window[1]") --[[@type ptr_c<xlib_window_c>]]
 	local x = int_p_c()
 	local y = int_p_c()
@@ -2546,287 +2013,461 @@ mod.get_geometry = function (display_, d)
 	local border_width = uint_p_c()
 	local depth = uint_p_c()
 	if xlib_ffi.XGetGeometry(display_, d, root, x, y, width, height, border_width, depth) == 0 then return nil end
-	return { root = root[0], x = x[0], y = y[0], width = width[0], height = height[0], border_width = border_width[0], depth = depth[0] }
+	return {
+		root = root[0],
+		x = x[0],
+		y = y[0],
+		width = width[0],
+		height = height[0],
+		border_width = border_width[0],
+		depth =
+				depth[0]
+	}
 end
 --[[@param d xlib_drawable_c]]
-display.get_geometry = function (self, d) return mod.get_geometry(self.c, d) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param change_mode xlib_change_save_set_mode]]
-mod.change_save_set = function (display_, w, change_mode) xlib_ffi.XChangeSaveSet(display_, w, change_mode) end
---[[@param w xlib_window_c]] --[[@param change_mode xlib_change_save_set_mode]]
-display.change_save_set = function (self, w, change_mode) return mod.change_save_set_mode(self.c, w, change_mode) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.add_to_save_set = function (display_, w) xlib_ffi.XAddToSaveSet(display_, w) end
+display.get_geometry = function(self, d) return mod.get_geometry(self.c, d) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param w xlib_window_c]]
-display.add_to_save_set = function (self, w) return mod.add_to_save_set(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.remove_from_save_set = function (display_, w) xlib_ffi.XRemoveFromSaveSet(display_, w) end
+--[[@param change_mode xlib_change_save_set_mode]]
+mod.change_save_set = function(display_, w, change_mode) xlib_ffi.XChangeSaveSet(display_, w, change_mode) end
 --[[@param w xlib_window_c]]
-display.remove_from_save_set = function (self, w) return mod.remove_from_save_set(self.c, w) end
+--[[@param change_mode xlib_change_save_set_mode]]
+display.change_save_set = function(self, w, change_mode) return mod.change_save_set_mode(self.c, w, change_mode) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.add_to_save_set = function(display_, w) xlib_ffi.XAddToSaveSet(display_, w) end
+--[[@param w xlib_window_c]]
+display.add_to_save_set = function(self, w) return mod.add_to_save_set(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.remove_from_save_set = function(display_, w) xlib_ffi.XRemoveFromSaveSet(display_, w) end
+--[[@param w xlib_window_c]]
+display.remove_from_save_set = function(self, w) return mod.remove_from_save_set(self.c, w) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param protocols xlib_atom_c[] ]]
-mod.set_wm_protocols = function (display_, w, protocols)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param protocols xlib_atom_c[] ]]
+mod.set_wm_protocols = function(display_, w, protocols)
 	return xlib_ffi.XSetWMProtocols(display_, w, protocols, #protocols) ~= 0 and true or nil
 end
---[[@param w xlib_window_c]] --[[@param protocols xlib_atom_c[] ]]
-display.set_wm_protocols = function (self, w, protocols) return mod.set_wm_protocols(self.c, w, protocols) end
+--[[@param w xlib_window_c]]
+--[[@param protocols xlib_atom_c[] ]]
+display.set_wm_protocols = function(self, w, protocols) return mod.set_wm_protocols(self.c, w, protocols) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.get_wm_protocols = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.get_wm_protocols = function(display_, w)
 	local protocols = atom_pa_c()
 	local count = int_p_c()
 	if xlib_ffi.XGetWMProtocols(display_, w, protocols, count) == 0 then return nil end
 	return { protocols = protocols[0], count = count[0] }
 end
 --[[@param w xlib_window_c]]
-display.get_wm_protocols = function (self, w) return mod.get_wm_protocols(self.c, w) end
+display.get_wm_protocols = function(self, w) return mod.get_wm_protocols(self.c, w) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.map_window = function (display_, w) xlib_ffi.XMapWindow(display_, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param w xlib_window_c]]
-display.map_window = function (self, w) return mod.map_window(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.map_raised = function (display_, w) xlib_ffi.XMapRaised(display_, w) end
+mod.map_window = function(display_, w) xlib_ffi.XMapWindow(display_, w) end
 --[[@param w xlib_window_c]]
-display.map_raised = function (self, w) return mod.map_raised(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.map_subwindows = function (display_, w) xlib_ffi.XMapSubwindows(display_, w) end
+display.map_window = function(self, w) return mod.map_window(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param w xlib_window_c]]
-display.map_subwindows = function (self, w) return mod.map_subwindows(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.unmap_window = function (display_, w) xlib_ffi.XUnmapWindow(display_, w) end
+mod.map_raised = function(display_, w) xlib_ffi.XMapRaised(display_, w) end
 --[[@param w xlib_window_c]]
-display.unmap_window = function (self, w) return mod.unmap_window(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.unmap_subwindows = function (display_, w) xlib_ffi.XUnmapSubwindows(display_, w) end
+display.map_raised = function(self, w) return mod.map_raised(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param w xlib_window_c]]
-display.unmap_subwindows = function (self, w) return mod.unmap_subwindows(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.destroy_window = function (display_, w) xlib_ffi.XDestroyWindow(display_, w) end
+mod.map_subwindows = function(display_, w) xlib_ffi.XMapSubwindows(display_, w) end
 --[[@param w xlib_window_c]]
-display.destroy_window = function (self, w) return mod.destroy_window(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.destroy_subwindows = function (display_, w) xlib_ffi.XDestroySubwindows(display_, w) end
+display.map_subwindows = function(self, w) return mod.map_subwindows(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param w xlib_window_c]]
-display.destroy_subwindows = function (self, w) return mod.destroy_subwindows(self.c, w) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param close_mode xlib_set_close_down_mode]]
-mod.set_close_down_mode = function (display_, close_mode) xlib_ffi.XSetCloseDownMode(display_, close_mode) end
+mod.unmap_window = function(display_, w) xlib_ffi.XUnmapWindow(display_, w) end
+--[[@param w xlib_window_c]]
+display.unmap_window = function(self, w) return mod.unmap_window(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.unmap_subwindows = function(display_, w) xlib_ffi.XUnmapSubwindows(display_, w) end
+--[[@param w xlib_window_c]]
+display.unmap_subwindows = function(self, w) return mod.unmap_subwindows(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.destroy_window = function(display_, w) xlib_ffi.XDestroyWindow(display_, w) end
+--[[@param w xlib_window_c]]
+display.destroy_window = function(self, w) return mod.destroy_window(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.destroy_subwindows = function(display_, w) xlib_ffi.XDestroySubwindows(display_, w) end
+--[[@param w xlib_window_c]]
+display.destroy_subwindows = function(self, w) return mod.destroy_subwindows(self.c, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param close_mode xlib_set_close_down_mode]]
-display.set_close_down_mode = function (self, close_mode) return mod.set_close_down_mode(self.c, close_mode) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param resource xlib_id_c]]
-mod.kill_client = function (display_, resource) xlib_ffi.XKillClient(display_, resource) end
+mod.set_close_down_mode = function(display_, close_mode) xlib_ffi.XSetCloseDownMode(display_, close_mode) end
+--[[@param close_mode xlib_set_close_down_mode]]
+display.set_close_down_mode = function(self, close_mode) return mod.set_close_down_mode(self.c, close_mode) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param resource xlib_id_c]]
-display.kill_client = function (self, resource) return mod.kill_client(self.c, resource) end
+mod.kill_client = function(display_, resource) xlib_ffi.XKillClient(display_, resource) end
+--[[@param resource xlib_id_c]]
+display.kill_client = function(self, resource) return mod.kill_client(self.c, resource) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param parent xlib_window_c]] --[[@param x? integer]] --[[@param y? integer]]
-mod.reparent_window = function (display_, w, parent, x, y)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param parent xlib_window_c]]
+--[[@param x? integer]]
+--[[@param y? integer]]
+mod.reparent_window = function(display_, w, parent, x, y)
 	xlib_ffi.XReparentWindow(display_, w, parent, x or 0, y or 0)
 end
---[[@param w xlib_window_c]] --[[@param parent xlib_window_c]] --[[@param x? integer]] --[[@param y? integer]]
-display.reparent_window = function (self, w, parent, x, y) return mod.reparent_window(self.c, w, parent, x, y) end
+--[[@param w xlib_window_c]]
+--[[@param parent xlib_window_c]]
+--[[@param x? integer]]
+--[[@param y? integer]]
+display.reparent_window = function(self, w, parent, x, y) return mod.reparent_window(self.c, w, parent, x, y) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param propagate boolean]] --[[@param event_mask xlib_input_event_mask]] --[[@param event_send ptr_c<xlib_event_c>]]
-mod.send_event = function (display_, w, propagate, event_mask, event_send)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param propagate boolean]]
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param event_send ptr_c<xlib_event_c>]]
+mod.send_event = function(display_, w, propagate, event_mask, event_send)
 	return xlib_ffi.XSendEvent(display_, w, propagate, event_mask, event_send) and true or nil
 end
---[[@param w xlib_window_c]] --[[@param propagate boolean]] --[[@param event_mask xlib_input_event_mask]] --[[@param event_send ptr_c<xlib_event_c>]]
-display.send_event = function (self, w, propagate, event_mask, event_send)
+--[[@param w xlib_window_c]]
+--[[@param propagate boolean]]
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param event_send ptr_c<xlib_event_c>]]
+display.send_event = function(self, w, propagate, event_mask, event_send)
 	return mod.send_event(self.c, w, propagate, event_mask, event_send)
 end
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.display_motion_buffer_size = function (display_) xlib_ffi.XDisplayMotionBufferSize(display_) end
-display.display_motion_buffer_size = function (self) mod.display_motion_buffer_size(self.c) end
+mod.display_motion_buffer_size = function(display_) xlib_ffi.XDisplayMotionBufferSize(display_) end
+display.display_motion_buffer_size = function(self) mod.display_motion_buffer_size(self.c) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param start xlib_time_c]] --[[@param stop xlib_time_c]]
-mod.get_motion_events = function (display_, w, start, stop)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param start xlib_time_c]]
+--[[@param stop xlib_time_c]]
+mod.get_motion_events = function(display_, w, start, stop)
 	local nevents = int_p_c()
 	local events = xlib_ffi.XGetMotionEvents(display_, w, start, stop, nevents)
 	return { events = events, nevents = nevents[0] }
 end
---[[@param w xlib_window_c]] --[[@param start xlib_time_c]] --[[@param stop xlib_time_c]]
-display.get_motion_events = function (self, w, start, stop) return mod.get_motion_events(self.c, w, start, stop) end
+--[[@param w xlib_window_c]]
+--[[@param start xlib_time_c]]
+--[[@param stop xlib_time_c]]
+display.get_motion_events = function(self, w, start, stop) return mod.get_motion_events(self.c, w, start, stop) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param exposures boolean]]
-mod.clear_area = function (display_, w, x, y, width, height, exposures)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param exposures boolean]]
+mod.clear_area = function(display_, w, x, y, width, height, exposures)
 	xlib_ffi.XClearArea(display_, w, x, y, width, height, exposures)
 end
---[[@param w xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param exposures boolean]]
-display.clear_area = function (self, w, x, y, width, height, exposures)
+--[[@param w xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param exposures boolean]]
+display.clear_area = function(self, w, x, y, width, height, exposures)
 	return mod.clear_area(self.c, w, x, y, width, height, exposures)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.clear_window = function (display_, w) xlib_ffi.XClearWindow(display_, w) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param w xlib_window_c]]
-display.clear_window = function (self, w) return mod.clear_window(self.c, w) end
+mod.clear_window = function(display_, w) xlib_ffi.XClearWindow(display_, w) end
+--[[@param w xlib_window_c]]
+display.clear_window = function(self, w) return mod.clear_window(self.c, w) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]] --[[@param foreground integer]] --[[@param background integer]] --[[@param function_ xlib_graphics_function]] --[[@param plane_mask integer]]
-mod.set_state = function (display_, gc, foreground, background, function_, plane_mask)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param gc xlib_gc_c]]
+--[[@param foreground integer]]
+--[[@param background integer]]
+--[[@param function_ xlib_graphics_function]]
+--[[@param plane_mask integer]]
+mod.set_state = function(display_, gc, foreground, background, function_, plane_mask)
 	xlib_ffi.XSetState(display_, gc, foreground, background, function_, plane_mask)
 end
---[[@param gc xlib_gc_c]] --[[@param foreground integer]] --[[@param background integer]] --[[@param function_ xlib_graphics_function]] --[[@param plane_mask integer]]
-display.set_state = function (self, gc, foreground, background, function_, plane_mask)
+--[[@param gc xlib_gc_c]]
+--[[@param foreground integer]]
+--[[@param background integer]]
+--[[@param function_ xlib_graphics_function]]
+--[[@param plane_mask integer]]
+display.set_state = function(self, gc, foreground, background, function_, plane_mask)
 	return mod.set_state(self.c, gc, foreground, background, function_, plane_mask)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]] --[[@param function_ xlib_graphics_function]]
-mod.set_function = function (display_, gc, function_) xlib_ffi.XSetFunction(display_, gc, function_) end
---[[@param gc xlib_gc_c]] --[[@param function_ xlib_graphics_function]]
-display.set_function = function (self, gc, function_) return mod.set_function(self.c, gc, function_) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]] --[[@param plane_mask integer]]
-mod.set_plane_mask = function (display_, gc, plane_mask) xlib_ffi.XSetPlaneMask(display_, gc, plane_mask) end
---[[@param gc xlib_gc_c]] --[[@param plane_mask integer]]
-display.set_plane_mask = function (self, gc, plane_mask) return mod.set_plane_mask(self.c, gc, plane_mask) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]] --[[@param foreground integer]]
-mod.set_foreground = function (display_, gc, foreground) xlib_ffi.XSetForeground(display_, gc, foreground) end
---[[@param gc xlib_gc_c]] --[[@param foreground integer]]
-display.set_foreground = function (self, gc, foreground) return mod.set_foreground(self.c, gc, foreground) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]] --[[@param background integer]]
-mod.set_background = function (display_, gc, background) xlib_ffi.XSetBackground(display_, gc, background) end
---[[@param gc xlib_gc_c]] --[[@param background integer]]
-display.set_background = function (self, gc, background) return mod.set_background(self.c, gc, background) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param gc xlib_gc_c]]
+--[[@param function_ xlib_graphics_function]]
+mod.set_function = function(display_, gc, function_) xlib_ffi.XSetFunction(display_, gc, function_) end
+--[[@param gc xlib_gc_c]]
+--[[@param function_ xlib_graphics_function]]
+display.set_function = function(self, gc, function_) return mod.set_function(self.c, gc, function_) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param gc xlib_gc_c]]
+--[[@param plane_mask integer]]
+mod.set_plane_mask = function(display_, gc, plane_mask) xlib_ffi.XSetPlaneMask(display_, gc, plane_mask) end
+--[[@param gc xlib_gc_c]]
+--[[@param plane_mask integer]]
+display.set_plane_mask = function(self, gc, plane_mask) return mod.set_plane_mask(self.c, gc, plane_mask) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param gc xlib_gc_c]]
+--[[@param foreground integer]]
+mod.set_foreground = function(display_, gc, foreground) xlib_ffi.XSetForeground(display_, gc, foreground) end
+--[[@param gc xlib_gc_c]]
+--[[@param foreground integer]]
+display.set_foreground = function(self, gc, foreground) return mod.set_foreground(self.c, gc, foreground) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param gc xlib_gc_c]]
+--[[@param background integer]]
+mod.set_background = function(display_, gc, background) xlib_ffi.XSetBackground(display_, gc, background) end
+--[[@param gc xlib_gc_c]]
+--[[@param background integer]]
+display.set_background = function(self, gc, background) return mod.set_background(self.c, gc, background) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param string string]]
-mod.draw_string = function (display_, d, gc, x, y, string)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param string string]]
+mod.draw_string = function(display_, d, gc, x, y, string)
 	xlib_ffi.XDrawString(display_, d, gc, x, y, string, #string)
 end
---[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param string string]]
-display.draw_string = function (self, d, gc, x, y, string) return mod.draw_string(self.c, d, gc, x, y, string) end
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param string string]]
+display.draw_string = function(self, d, gc, x, y, string) return mod.draw_string(self.c, d, gc, x, y, string) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param string string]]
-mod.draw_string_16 = function (display_, d, gc, x, y, string)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param string string]]
+mod.draw_string_16 = function(display_, d, gc, x, y, string)
 	if #string % 2 == 0 then io.stderr:write("xlib: length of wide string isn't a multiple of 2") end
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
 	xlib_ffi.XDrawString16(display_, d, gc, x, y, string, bit.rshift(#string, 1))
 end
---[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param string string]]
-display.draw_string_16 = function (self, d, gc, x, y, string)
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param string string]]
+display.draw_string_16 = function(self, d, gc, x, y, string)
 	return mod.draw_string_16(self.c, d, gc, x, y, string)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]]
-mod.fill_rectangle = function (display_, d, gc, x, y, width, height)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+mod.fill_rectangle = function(display_, d, gc, x, y, width, height)
 	xlib_ffi.XFillRectangle(display_, d, gc, x, y, width, height)
 end
---[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]]
-display.fill_rectangle = function (self, d, gc, x, y, width, height)
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+display.fill_rectangle = function(self, d, gc, x, y, width, height)
 	return mod.fill_rectangle(self.c, d, gc, x, y, width, height)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param rectangles xlib_rectangle_c[] ]]
-mod.fill_rectangles = function (display_, d, gc, rectangles)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param rectangles xlib_rectangle_c[] ]]
+mod.fill_rectangles = function(display_, d, gc, rectangles)
 	xlib_ffi.XFillRectangles(display_, d, gc, rectangles, #rectangles)
 end
---[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param rectangles xlib_rectangle_c[] ]]
-display.fill_rectangles = function (self, d, gc, rectangles) return mod.fill_rectangles(self.c, d, gc, rectangles) end
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param rectangles xlib_rectangle_c[] ]]
+display.fill_rectangles = function(self, d, gc, rectangles) return mod.fill_rectangles(self.c, d, gc, rectangles) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param points xlib_point_c[] ]] --[[@param shape? xlib_polygon_shape]] --[[@param mode? xlib_coordinate_mode]]
-mod.fill_polygon = function (display_, d, gc, points, shape, mode)
-	xlib_ffi.XFillPolygon(display_, d, gc, points, #points, shape or mod.polygon_shape.complex, mode or mod.coordinate_mode.origin)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param points xlib_point_c[] ]]
+--[[@param shape? xlib_polygon_shape]]
+--[[@param mode? xlib_coordinate_mode]]
+mod.fill_polygon = function(display_, d, gc, points, shape, mode)
+	xlib_ffi.XFillPolygon(display_, d, gc, points, #points, shape or mod.polygon_shape.complex,
+		mode or mod.coordinate_mode.origin)
 end
---[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param points xlib_point_c[] ]] --[[@param shape? xlib_polygon_shape]] --[[@param mode? xlib_coordinate_mode]]
-display.fill_polygon = function (self, d, gc, points, shape, mode) return mod.fill_polygon(self.c, d, gc, points, shape, mode) end
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param points xlib_point_c[] ]]
+--[[@param shape? xlib_polygon_shape]]
+--[[@param mode? xlib_coordinate_mode]]
+display.fill_polygon = function(self, d, gc, points, shape, mode)
+	return mod.fill_polygon(self.c, d, gc, points, shape,
+		mode)
+end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param angle1 integer]] --[[@param angle2 integer]]
-mod.fill_arc = function (display_, d, gc, x, y, width, height, angle1, angle2)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param angle1 integer]]
+--[[@param angle2 integer]]
+mod.fill_arc = function(display_, d, gc, x, y, width, height, angle1, angle2)
 	xlib_ffi.XFillArc(display_, d, gc, x, y, width, height, angle1, angle2)
 end
---[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param angle1 integer]] --[[@param angle2 integer]]
-display.fill_arc = function (self, d, gc, x, y, width, height, angle1, angle2)
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param angle1 integer]]
+--[[@param angle2 integer]]
+display.fill_arc = function(self, d, gc, x, y, width, height, angle1, angle2)
 	return mod.fill_arc(self.c, d, gc, x, y, width, height, angle1, angle2)
 end
 
 -- LINT: doesn't error when it's XFillRectangles (incorrect array type)
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param arcs xlib_arc_c[] ]]
-mod.fill_arcs = function (display_, d, gc, arcs) xlib_ffi.XFillArcs(display_, d, gc, arcs, #arcs) end
---[[@param d xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param arcs xlib_arc_c[] ]]
-display.fill_arcs = function (self, d, gc, arcs) return mod.fill_arcs(self.c, d, gc, arcs) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param arcs xlib_arc_c[] ]]
+mod.fill_arcs = function(display_, d, gc, arcs) xlib_ffi.XFillArcs(display_, d, gc, arcs, #arcs) end
+--[[@param d xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param arcs xlib_arc_c[] ]]
+display.fill_arcs = function(self, d, gc, arcs) return mod.fill_arcs(self.c, d, gc, arcs) end
 
 --[[FIXME: this probably doesn't work if you want to keep the old event around]]
 local event = ffi.new("XEvent[1]") --[[@type ptr_c<xlib_event_c>]]
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.next_event = function (display_) xlib_ffi.XNextEvent(display_, event); return event[0] end
-display.next_event = function (self) return mod.next_event(self.c) end
+mod.next_event = function(display_)
+	xlib_ffi.XNextEvent(display_, event); return event[0]
+end
+display.next_event = function(self) return mod.next_event(self.c) end
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.peek_event = function (display_) xlib_ffi.XPeekEvent(display_, event); return event[0] end
-display.peek_event = function (self) return mod.peek_event(self.c) end
+mod.peek_event = function(display_)
+	xlib_ffi.XPeekEvent(display_, event); return event[0]
+end
+display.peek_event = function(self) return mod.peek_event(self.c) end
 
 local full_mask = bit.bnot(0)
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param event_mask? xlib_input_event_mask]]
-mod.window_event = function (display_, w, event_mask) xlib_ffi.XWindowEvent(display_, w, event_mask or full_mask, event); return event[0] end
---[[@param w xlib_window_c]] --[[@param event_mask? xlib_input_event_mask]]
-display.window_event = function (self, w, event_mask) return mod.window_event(self.c, w, event_mask) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param event_mask? xlib_input_event_mask]]
+mod.window_event = function(display_, w, event_mask)
+	xlib_ffi.XWindowEvent(display_, w, event_mask or full_mask, event); return event[0]
+end
+--[[@param w xlib_window_c]]
+--[[@param event_mask? xlib_input_event_mask]]
+display.window_event = function(self, w, event_mask) return mod.window_event(self.c, w, event_mask) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param event_mask? xlib_input_event_mask]]
-mod.check_window_event = function (display_, w, event_mask)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param event_mask? xlib_input_event_mask]]
+mod.check_window_event = function(display_, w, event_mask)
 	return xlib_ffi.XCheckWindowEvent(display_, w, event_mask or full_mask, event), event[0]
 end
---[[@param w xlib_window_c]] --[[@param event_mask? xlib_input_event_mask]]
-display.check_window_event = function (self, w, event_mask) return mod.check_window_event(self.c, w, event_mask) end
-
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param event_mask? xlib_input_event_mask]]
-mod.mask_event = function (display_, event_mask) xlib_ffi.XMaskEvent(display_, event_mask or full_mask, event); return event[0] end
+--[[@param w xlib_window_c]]
 --[[@param event_mask? xlib_input_event_mask]]
-display.mask_event = function (self, event_mask) return mod.mask_event(self.c, event_mask) end
+display.check_window_event = function(self, w, event_mask) return mod.check_window_event(self.c, w, event_mask) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param event_mask xlib_input_event_mask]]
-mod.check_mask_event = function (display_, event_mask)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param event_mask? xlib_input_event_mask]]
+mod.mask_event = function(display_, event_mask)
+	xlib_ffi.XMaskEvent(display_, event_mask or full_mask, event); return event[0]
+end
+--[[@param event_mask? xlib_input_event_mask]]
+display.mask_event = function(self, event_mask) return mod.mask_event(self.c, event_mask) end
+
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param event_mask xlib_input_event_mask]]
+mod.check_mask_event = function(display_, event_mask)
 	return xlib_ffi.XCheckMaskEvent(display_, event_mask, event), event[0]
 end
 --[[@param event_mask xlib_input_event_mask]]
-display.check_mask_event = function (self, event_mask) return mod.check_mask_event(self.c, event_mask) end
+display.check_mask_event = function(self, event_mask) return mod.check_mask_event(self.c, event_mask) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param event_type xlib_event_type]]
-mod.check_typed_event = function (display_, event_type)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param event_type xlib_event_type]]
+mod.check_typed_event = function(display_, event_type)
 	return xlib_ffi.XCheckTypedEvent(display_, event_type, event), event[0]
 end
 --[[@param event_type xlib_event_type]]
-display.check_typed_event = function (self, event_type) return mod.check_typed_event(self.c, event_type) end
+display.check_typed_event = function(self, event_type) return mod.check_typed_event(self.c, event_type) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param event_type xlib_event_type]]
-mod.check_typed_window_event = function (display_, w, event_type)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param event_type xlib_event_type]]
+mod.check_typed_window_event = function(display_, w, event_type)
 	return xlib_ffi.XCheckTypedWindowEvent(display_, w, event_type, event), event[0]
 end
---[[@param w xlib_window_c]] --[[@param event_type xlib_event_type]]
-display.check_typed_window_event = function (self, w, event_type)
+--[[@param w xlib_window_c]]
+--[[@param event_type xlib_event_type]]
+display.check_typed_window_event = function(self, w, event_type)
 	return mod.check_typed_window_event(self.c, w, event_type)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param atom_name string]] --[[@param only_if_exists? boolean]]
-mod.intern_atom = function (display_, atom_name, only_if_exists)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param atom_name string]]
+--[[@param only_if_exists? boolean]]
+mod.intern_atom = function(display_, atom_name, only_if_exists)
 	local atom = xlib_ffi.XInternAtom(display_, atom_name, only_if_exists or false)
 	return atom ~= nil and atom or nil
 end
---[[@param atom_name string]] --[[@param only_if_exists? boolean]]
-display.intern_atom = function (self, atom_name, only_if_exists)
+--[[@param atom_name string]]
+--[[@param only_if_exists? boolean]]
+display.intern_atom = function(self, atom_name, only_if_exists)
 	return mod.intern_atom(self.c, atom_name, only_if_exists)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param names string[] ]] --[[@param only_if_exists? boolean]]
-mod.intern_atoms = function (display_, names, only_if_exists)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param names string[] ]]
+--[[@param only_if_exists? boolean]]
+mod.intern_atoms = function(display_, names, only_if_exists)
 	local atoms = atom_pa_c()
 	local status = xlib_ffi.XInternAtoms(display_, names, #names, only_if_exists or false, atoms)
 	return status ~= 0, atoms[0]
 end
---[[@param names string[] ]] --[[@param only_if_exists? boolean]]
-display.intern_atoms = function (self, names, only_if_exists)
+--[[@param names string[] ]]
+--[[@param only_if_exists? boolean]]
+display.intern_atoms = function(self, names, only_if_exists)
 	return mod.intern_atoms(self.c, names, only_if_exists)
 end
 
 --[[use `XFree` to free the strings]]
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param atom xlib_atom_c]]
-mod.get_atom_name = function (display_, atom)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param atom xlib_atom_c]]
+mod.get_atom_name = function(display_, atom)
 	local name = xlib_ffi.XGetAtomName(display_, atom)
 	return name ~= nil and ffi.string(name) or nil
 end
 --[[@param atom xlib_atom_c]]
-display.get_atom_name = function (self, atom) return mod.get_atom_name(self.c, atom) end
+display.get_atom_name = function(self, atom) return mod.get_atom_name(self.c, atom) end
 
 --[[use `XFree` to free the strings]]
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param atoms xlib_atom_c[] ]]
-mod.get_atom_names = function (display_, atoms)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param atoms xlib_atom_c[] ]]
+mod.get_atom_names = function(display_, atoms)
 	local names = string_a_c(#atoms)
 	local status = xlib_ffi.XGetAtomNames(display_, atoms, #atoms, names)
 	local ret = {} --[[@type (string?)[] ]]
@@ -2834,32 +2475,41 @@ mod.get_atom_names = function (display_, atoms)
 	return status ~= 0, ret
 end
 --[[@param atoms xlib_atom_c[] ]]
-display.get_atom_names = function (self, atoms) return mod.get_atom_names(self.c, atoms) end
+display.get_atom_names = function(self, atoms) return mod.get_atom_names(self.c, atoms) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param base_font_name_list string[] ]]
-mod.create_font_set = function (display_, base_font_name_list)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param base_font_name_list string[] ]]
+mod.create_font_set = function(display_, base_font_name_list)
 	local missing_charset_list = string_pa_c()
 	local missing_charset_count = int_p_c()
 	local def_string = string_p_c()
-	local font_set = xlib_ffi.XCreateFontSet(display_, table.concat(base_font_name_list, ","), missing_charset_list, missing_charset_count, def_string)
+	local font_set = xlib_ffi.XCreateFontSet(display_, table.concat(base_font_name_list, ","), missing_charset_list,
+		missing_charset_count, def_string)
 	if font_set == nil then return nil end
-	return { font_set = font_set, missing_charset_list = missing_charset_list[0], missing_charset_count = missing_charset_count[0], def_string = def_string[0] }
+	return {
+		font_set = font_set,
+		missing_charset_list = missing_charset_list[0],
+		missing_charset_count =
+				missing_charset_count[0],
+		def_string = def_string[0]
+	}
 end
 --[[@param base_font_name_list string[] ]]
-display.create_font_set = function (self, base_font_name_list)
+display.create_font_set = function(self, base_font_name_list)
 	return mod.create_font_set(self.c, base_font_name_list)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param font_set xlib_font_set_c]]
-mod.free_font_set = function (display_, font_set) xlib_ffi.XFreeFontSet(display_, font_set) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param font_set xlib_font_set_c]]
-display.free_font_set = function (self, font_set) return mod.free_font_set(self.c, font_set) end
+mod.free_font_set = function(display_, font_set) xlib_ffi.XFreeFontSet(display_, font_set) end
+--[[@param font_set xlib_font_set_c]]
+display.free_font_set = function(self, font_set) return mod.free_font_set(self.c, font_set) end
 --[[must be freed using `free_font_set`]]
 --[[@param font_set xlib_font_set_c]]
-mod.extents_of_font_set = function (font_set) return xlib_ffi.XExtentsOfFontSet(font_set)[0] end
+mod.extents_of_font_set = function(font_set) return xlib_ffi.XExtentsOfFontSet(font_set)[0] end
 
 --[[@param font_set xlib_font_set_c]]
-mod.fonts_of_font_set = function (font_set)
+mod.fonts_of_font_set = function(font_set)
 	local font_struct_list = font_struct_pap_c()
 	local font_name_list = string_pa_c()
 	local nfonts = xlib_ffi.XFontsOfFontSet(font_set, font_struct_list, font_name_list)
@@ -2867,122 +2517,167 @@ mod.fonts_of_font_set = function (font_set)
 end
 
 --[[@param font_set xlib_font_set_c]]
-mod.base_font_name_list_of_font_set = function (font_set)
+mod.base_font_name_list_of_font_set = function(font_set)
 	local names = ffi.string(xlib_ffi.XBaseFontNameListOfFontSet(font_set)) --[[cstring owned by xlib]]
 	local ret = {} --[[@type string[] ]]
-	for name in names:gmatch("[^,]+") do ret[#ret+1] = name end
+	for name in names:gmatch("[^,]+") do ret[#ret + 1] = name end
 	return ret
 end
 
 --[[@param font_set xlib_font_set_c]]
-mod.locale_of_font_set = function (font_set) return ffi.string(xlib_ffi.XLocaleOfFontSet(font_set)[0]) end
+mod.locale_of_font_set = function(font_set) return ffi.string(xlib_ffi.XLocaleOfFontSet(font_set)[0]) end
 --[[@param font_set xlib_font_set_c]]
-mod.context_dependent_drawing = function (font_set) return xlib_ffi.XContextDependentDrawing(font_set) end
+mod.context_dependent_drawing = function(font_set) return xlib_ffi.XContextDependentDrawing(font_set) end
 --[[@param font_set xlib_font_set_c]]
-mod.contextual_drawing = function (font_set) return xlib_ffi.XContextualDrawing(font_set) end
+mod.contextual_drawing = function(font_set) return xlib_ffi.XContextualDrawing(font_set) end
 --[[@param font_set xlib_font_set_c]]
-mod.directional_dependent_drawing = function (font_set) return xlib_ffi.XDirectionalDependentDrawing(font_set) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param name string]]
-mod.load_font = function (display_, name) return xlib_ffi.XLoadFont(display_, name) end
+mod.directional_dependent_drawing = function(font_set) return xlib_ffi.XDirectionalDependentDrawing(font_set) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param name string]]
-display.load_font = function (self, name) return mod.load_font(self.c, name) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param font_id xlib_id_c]]
-mod.query_font = function (display_, font_id) return xlib_ffi.XQueryFont(display_, font_id) end
+mod.load_font = function(display_, name) return xlib_ffi.XLoadFont(display_, name) end
+--[[@param name string]]
+display.load_font = function(self, name) return mod.load_font(self.c, name) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param font_id xlib_id_c]]
-display.query_font = function (self, font_id) return mod.query_font(self.c, font_id) end
+mod.query_font = function(display_, font_id) return xlib_ffi.XQueryFont(display_, font_id) end
+--[[@param font_id xlib_id_c]]
+display.query_font = function(self, font_id) return mod.query_font(self.c, font_id) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param name string]]
-mod.load_query_font = function (display_, name) return xlib_ffi.XLoadQueryFont(display_, name) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param name string]]
-display.load_query_font = function (self, name) return mod.load_query_font(self.c, name) end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param font_struct ptr_c<xlib_font_struct_c>]]
-mod.free_font = function (display_, font_struct) xlib_ffi.XFreeFont(display_, font_struct) end
+mod.load_query_font = function(display_, name) return xlib_ffi.XLoadQueryFont(display_, name) end
+--[[@param name string]]
+display.load_query_font = function(self, name) return mod.load_query_font(self.c, name) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param font_struct ptr_c<xlib_font_struct_c>]]
-display.free_font = function (self, font_struct) return mod.free_font(self.c, font_struct) end
+mod.free_font = function(display_, font_struct) xlib_ffi.XFreeFont(display_, font_struct) end
+--[[@param font_struct ptr_c<xlib_font_struct_c>]]
+display.free_font = function(self, font_struct) return mod.free_font(self.c, font_struct) end
 
---[[@param font_struct ptr_c<xlib_font_struct_c>]] --[[@param atom xlib_atom_c]]
-mod.get_font_property = function (font_struct, atom)
+--[[@param font_struct ptr_c<xlib_font_struct_c>]]
+--[[@param atom xlib_atom_c]]
+mod.get_font_property = function(font_struct, atom)
 	local value = ulong_p_c()
 	return xlib_ffi.XGetFontProperty(font_struct, atom, value) and value[0] or nil
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param font xlib_font_c]]
-mod.unload_font = function (display_, font) return xlib_ffi.XUnloadFont(display_, font) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param font xlib_font_c]]
-display.unload_font = function (self, font) return mod.unload_font(self.c, font) end
+mod.unload_font = function(display_, font) return xlib_ffi.XUnloadFont(display_, font) end
+--[[@param font xlib_font_c]]
+display.unload_font = function(self, font) return mod.unload_font(self.c, font) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param property xlib_atom_c]] --[[@param long_offset integer]] --[[@param long_length integer]] --[[@param delete boolean]] --[[@param req_type xlib_atom_c]]
-mod.get_window_property = function (display_, w, property, long_offset, long_length, delete, req_type)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+--[[@param long_offset integer]]
+--[[@param long_length integer]]
+--[[@param delete boolean]]
+--[[@param req_type xlib_atom_c]]
+mod.get_window_property = function(display_, w, property, long_offset, long_length, delete, req_type)
 	local actual_type = atom_p_c()
 	local actual_format = int_p_c()
 	local nitems = ulong_p_c()
 	local bytes_after = ulong_p_c()
 	local prop = void_p_c()
-	xlib_ffi.XGetWindowProperty(display_, w, property, long_offset, long_length, delete, req_type, actual_type, actual_format, nitems, bytes_after, prop)
+	xlib_ffi.XGetWindowProperty(display_, w, property, long_offset, long_length, delete, req_type, actual_type,
+		actual_format, nitems, bytes_after, prop)
 	if actual_type[0] == 0 then return nil end
 	return {
-		actual_type = actual_type[0], actual_format = actual_format[0], nitems = nitems[0],
-		bytes_after = bytes_after[0], prop = prop[0],
+		actual_type = actual_type[0],
+		actual_format = actual_format[0],
+		nitems = nitems[0],
+		bytes_after = bytes_after[0],
+		prop = prop[0],
 	}
 end
---[[@param w xlib_window_c]] --[[@param property xlib_atom_c]] --[[@param long_offset integer]] --[[@param long_length integer]] --[[@param delete boolean]] --[[@param req_type xlib_atom_c]]
-display.get_window_property = function (self, w, property, long_offset, long_length, delete, req_type)
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+--[[@param long_offset integer]]
+--[[@param long_length integer]]
+--[[@param delete boolean]]
+--[[@param req_type xlib_atom_c]]
+display.get_window_property = function(self, w, property, long_offset, long_length, delete, req_type)
 	return mod.get_window_property(self.c, w, property, long_offset, long_length, delete, req_type)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.list_properties = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.list_properties = function(display_, w)
 	local nprops = int_p_c()
 	local props = xlib_ffi.XListProperties(display_, w, nprops)
 	return { props = props, nprops = nprops[0] }
 end
 --[[@param w xlib_window_c]]
-display.list_properties = function (self, w)
+display.list_properties = function(self, w)
 	return mod.list_properties(self.c, w)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param property xlib_atom_c]] --[[@param type xlib_atom_c]] --[[@param format integer]] --[[@param mode xlib_property_mode]] --[[@param data ptr_c<ffi.cdata*>]] --[[@param nelements integer]]
-mod.change_property = function (display_, w, property, type, format, mode, data, nelements)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+--[[@param type xlib_atom_c]]
+--[[@param format integer]]
+--[[@param mode xlib_property_mode]]
+--[[@param data ptr_c<ffi.cdata*>]]
+--[[@param nelements integer]]
+mod.change_property = function(display_, w, property, type, format, mode, data, nelements)
 	xlib_ffi.XChangeProperty(display_, w, property, type, format, mode, data, nelements)
 end
---[[@param w xlib_window_c]] --[[@param property xlib_atom_c]] --[[@param type xlib_atom_c]] --[[@param format integer]] --[[@param mode xlib_property_mode]] --[[@param data ptr_c<ffi.cdata*>]] --[[@param nelements integer]]
-display.change_property = function (self, w, property, type, format, mode, data, nelements)
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+--[[@param type xlib_atom_c]]
+--[[@param format integer]]
+--[[@param mode xlib_property_mode]]
+--[[@param data ptr_c<ffi.cdata*>]]
+--[[@param nelements integer]]
+display.change_property = function(self, w, property, type, format, mode, data, nelements)
 	return mod.change_property(self.c, w, property, type, format, mode, data, nelements)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param properties xlib_atom_c[] ]]--[[@param npositions integer]]
-mod.rotate_window_properties = function (display_, w, properties, npositions)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param properties xlib_atom_c[] ]]
+--[[@param npositions integer]]
+mod.rotate_window_properties = function(display_, w, properties, npositions)
 	xlib_ffi.XRotateWindowProperties(display_, w, properties, #properties, npositions)
 end
---[[@param w xlib_window_c]] --[[@param properties xlib_atom_c[] ]] --[[@param npositions integer]]
-display.rotate_window_properties = function (self, w, properties, npositions)
+--[[@param w xlib_window_c]]
+--[[@param properties xlib_atom_c[] ]]
+--[[@param npositions integer]]
+display.rotate_window_properties = function(self, w, properties, npositions)
 	return mod.rotate_window_properties(self.c, w, properties, npositions)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param property xlib_atom_c]]
-mod.delete_property = function (display_, w, property) return xlib_ffi.XDeleteProperty(display_, w, property) end
---[[@param w xlib_window_c]] --[[@param property xlib_atom_c]]
-display.delete_property = function (self, w, property) return mod.delete_property(self.c, w, property) end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+mod.delete_property = function(display_, w, property) return xlib_ffi.XDeleteProperty(display_, w, property) end
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+display.delete_property = function(self, w, property) return mod.delete_property(self.c, w, property) end
 --[[@param om xlib_om_c]]
-mod.create_oc = function (om) return xlib_ffi.XCreateOC(om) end
+mod.create_oc = function(om) return xlib_ffi.XCreateOC(om) end
 --[[@param oc xlib_oc_c]]
-mod.destroy_oc = function (oc) xlib_ffi.XDestroyOC(oc) end
---[[@param oc xlib_oc_c]] --[[@param ... unknown]]
-mod.set_oc_values = function (oc, ...) return xlib_ffi.XSetOCValues(oc, ...) end
---[[@param oc xlib_oc_c]] --[[@param ... unknown]]
-mod.get_oc_values = function (oc, ...) return xlib_ffi.XGetOCValues(oc, ...) end
+mod.destroy_oc = function(oc) xlib_ffi.XDestroyOC(oc) end
 --[[@param oc xlib_oc_c]]
-mod.om_of_oc = function (oc) return xlib_ffi.XOMOfOC(oc) end
+--[[@param ... unknown]]
+mod.set_oc_values = function(oc, ...) return xlib_ffi.XSetOCValues(oc, ...) end
+--[[@param oc xlib_oc_c]]
+--[[@param ... unknown]]
+mod.get_oc_values = function(oc, ...) return xlib_ffi.XGetOCValues(oc, ...) end
+--[[@param oc xlib_oc_c]]
+mod.om_of_oc = function(oc) return xlib_ffi.XOMOfOC(oc) end
 
 --[[@param list string[] ]]
-mod.string_list_to_text_property = function (list)
+mod.string_list_to_text_property = function(list)
 	local text_prop = text_property_p_c()
 	if xlib_ffi.XStringListToTextProperty(list, #list, text_prop) == 0 then return nil end
 	return text_prop[0]
 end
 
 --[[@param text_prop ptr_c<xlib_text_property_c>]]
-mod.text_property_to_string_list = function (text_prop)
+mod.text_property_to_string_list = function(text_prop)
 	local list = string_pa_c()
 	local count = int_p_c()
 	if xlib_ffi.XTextPropertyToStringList(text_prop, list, count) == 0 then return nil end
@@ -2990,25 +2685,35 @@ mod.text_property_to_string_list = function (text_prop)
 end
 
 --[[@param list string[] ]]
-mod.free_string_list = function (list) return xlib_ffi.XFreeStringList(list) end
+mod.free_string_list = function(list) return xlib_ffi.XFreeStringList(list) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param width integer]] --[[@param height integer]] --[[@param depth integer]]
-mod.create_pixmap = function (display_, d, width, height, depth)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param depth integer]]
+mod.create_pixmap = function(display_, d, width, height, depth)
 	return xlib_ffi.XCreatePixmap(display_, d, width, height, depth)
 end
---[[@param d xlib_drawable_c]] --[[@param width integer]] --[[@param height integer]] --[[@param depth integer]]
-display.create_pixmap = function (self, d, width, height, depth)
+--[[@param d xlib_drawable_c]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param depth integer]]
+display.create_pixmap = function(self, d, width, height, depth)
 	return mod.create_pixmap(self.c, d, width, height, depth)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param pixmap xlib_pixmap_c]]
-mod.free_pixmap = function (display_, pixmap) return xlib_ffi.XFreePixmap(display_, pixmap) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param pixmap xlib_pixmap_c]]
-display.free_pixmap = function (self, pixmap) return mod.free_pixmap(self.c, pixmap) end
+mod.free_pixmap = function(display_, pixmap) return xlib_ffi.XFreePixmap(display_, pixmap) end
+--[[@param pixmap xlib_pixmap_c]]
+display.free_pixmap = function(self, pixmap) return mod.free_pixmap(self.c, pixmap) end
 
 --[[must free when done using XFreePixmap]]
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param filename string]]
-mod.read_bitmap_file = function (display_, d, filename)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param filename string]]
+mod.read_bitmap_file = function(display_, d, filename)
 	local width = uint_p_c()
 	local height = uint_p_c()
 	local bitmap = ffi.new("Pixmap[1]") --[[@type ptr_c<xlib_pixmap_c>]]
@@ -3018,95 +2723,181 @@ mod.read_bitmap_file = function (display_, d, filename)
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
 	return { bitmap = bitmap[0], width = width[0], height = height[0], x_hot = x_hot[0], y_hot = y_hot[0] }
 end
---[[@param d xlib_drawable_c]] --[[@param filename string]]
-display.read_bitmap_file = function (self, d, filename)
+--[[@param d xlib_drawable_c]]
+--[[@param filename string]]
+display.read_bitmap_file = function(self, d, filename)
 	return mod.read_bitmap_file(self.c, d, filename)
 end
 
 --[[@param filename string]]
-mod.read_bitmap_file_data = function (filename)
+mod.read_bitmap_file_data = function(filename)
 	local width = uint_p_c()
 	local height = uint_p_c()
 	local data = void_p_c()
 	local x_hot = int_p_c()
 	local y_hot = int_p_c()
 	if xlib_ffi.XReadBitmapFileData(filename, width, height, data, x_hot, y_hot) ~= 0 then return nil end
-	return { data = ffi.gc(data[0], xlib_ffi.XFree), width = width[0], height = height[0], x_hot = x_hot[0], y_hot = y_hot[0] }
+	return {
+		data = ffi.gc(data[0], xlib_ffi.XFree),
+		width = width[0],
+		height = height[0],
+		x_hot = x_hot[0],
+		y_hot = y_hot
+				[0]
+	}
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param filename string]] --[[@param bitmap xlib_pixmap_c]] --[[@param width integer]] --[[@param height integer]] --[[@param x_hot integer]] --[[@param y_hot integer]]
-mod.write_bitmap_file = function (display_, filename, bitmap, width, height, x_hot, y_hot)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param filename string]]
+--[[@param bitmap xlib_pixmap_c]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param x_hot integer]]
+--[[@param y_hot integer]]
+mod.write_bitmap_file = function(display_, filename, bitmap, width, height, x_hot, y_hot)
 	xlib_ffi.XWriteBitmapFile(display_, filename, bitmap, width, height, x_hot, y_hot)
 end
---[[@param filename string]] --[[@param bitmap xlib_pixmap_c]] --[[@param width integer]] --[[@param height integer]] --[[@param x_hot integer]] --[[@param y_hot integer]]
-display.write_bitmap_file = function (self, filename, bitmap, width, height, x_hot, y_hot)
+--[[@param filename string]]
+--[[@param bitmap xlib_pixmap_c]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param x_hot integer]]
+--[[@param y_hot integer]]
+display.write_bitmap_file = function(self, filename, bitmap, width, height, x_hot, y_hot)
 	return mod.write_bitmap_file(self.c, filename, bitmap, width, height, x_hot, y_hot)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param data ffi.cdata*]] --[[@param width integer]] --[[@param height integer]] --[[@param fg integer]] --[[@param bg integer]] --[[@param depth integer]]
-mod.create_pixmap_from_bitmap_data = function (display_, d, data, width, height, fg, bg, depth)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param data ffi.cdata*]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param fg integer]]
+--[[@param bg integer]]
+--[[@param depth integer]]
+mod.create_pixmap_from_bitmap_data = function(display_, d, data, width, height, fg, bg, depth)
 	return xlib_ffi.XCreatePixmapFromBitmapData(display_, d, data, width, height, fg, bg, depth)
 end
---[[@param d xlib_drawable_c]] --[[@param data ffi.cdata*]] --[[@param width integer]] --[[@param height integer]] --[[@param fg integer]] --[[@param bg integer]] --[[@param depth integer]]
-display.create_pixmap_from_bitmap_data = function (self, d, data, width, height, fg, bg, depth)
+--[[@param d xlib_drawable_c]]
+--[[@param data ffi.cdata*]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param fg integer]]
+--[[@param bg integer]]
+--[[@param depth integer]]
+display.create_pixmap_from_bitmap_data = function(self, d, data, width, height, fg, bg, depth)
 	return mod.create_pixmap_from_bitmap_data(self.c, d, data, width, height, fg, bg, depth)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param data ptr_c<ffi.cdata*>]] --[[@param width integer]] --[[@param height integer]]
-mod.create_bitmap_from_data = function (display_, d, data, width, height)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param data ptr_c<ffi.cdata*>]]
+--[[@param width integer]]
+--[[@param height integer]]
+mod.create_bitmap_from_data = function(display_, d, data, width, height)
 	local pixmap = xlib_ffi.XCreateBitmapFromData(display_, d, data, width, height)
 	if pixmap == 0 then return nil end
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
-	ffi.gc(pixmap, function (c) xlib_ffi.XFreePixmap(display_, c) end)
+	ffi.gc(pixmap, function(c) xlib_ffi.XFreePixmap(display_, c) end)
 	return pixmap -- docs don't say to free this
 end
---[[@param d xlib_drawable_c]] --[[@param data ptr_c<ffi.cdata*>]] --[[@param width integer]] --[[@param height integer]]
-display.create_bitmap_from_data = function (self, d, data, width, height)
+--[[@param d xlib_drawable_c]]
+--[[@param data ptr_c<ffi.cdata*>]]
+--[[@param width integer]]
+--[[@param height integer]]
+display.create_bitmap_from_data = function(self, d, data, width, height)
 	return mod.create_bitmap_from_data(self.c, d, data, width, height)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param src xlib_drawable_c]] --[[@param dest xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param src_x integer]] --[[@param src_y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param dest_x integer]] --[[@param dest_y integer]]
-mod.copy_area = function (display_, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param src xlib_drawable_c]]
+--[[@param dest xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param src_x integer]]
+--[[@param src_y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param dest_x integer]]
+--[[@param dest_y integer]]
+mod.copy_area = function(display_, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y)
 	xlib_ffi.XCopyArea(display_, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y)
 end
---[[@param src xlib_drawable_c]] --[[@param dest xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param src_x integer]] --[[@param src_y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param dest_x integer]] --[[@param dest_y integer]]
-display.copy_area = function (self, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y)
+--[[@param src xlib_drawable_c]]
+--[[@param dest xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param src_x integer]]
+--[[@param src_y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param dest_x integer]]
+--[[@param dest_y integer]]
+display.copy_area = function(self, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y)
 	return mod.copy_area(self.c, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param src xlib_drawable_c]] --[[@param dest xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param src_x integer]] --[[@param src_y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param dest_x integer]] --[[@param dest_y integer]] --[[@param plane integer]]
-mod.copy_plane = function (display_, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y, plane)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param src xlib_drawable_c]]
+--[[@param dest xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param src_x integer]]
+--[[@param src_y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param dest_x integer]]
+--[[@param dest_y integer]]
+--[[@param plane integer]]
+mod.copy_plane = function(display_, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y, plane)
 	xlib_ffi.XCopyPlane(display_, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y, plane)
 end
---[[@param src xlib_drawable_c]] --[[@param dest xlib_drawable_c]] --[[@param gc xlib_gc_c]] --[[@param src_x integer]] --[[@param src_y integer]] --[[@param width integer]] --[[@param height integer]] --[[@param dest_x integer]] --[[@param dest_y integer]] --[[@param plane integer]]
-display.copy_plane = function (self, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y, plane)
+--[[@param src xlib_drawable_c]]
+--[[@param dest xlib_drawable_c]]
+--[[@param gc xlib_gc_c]]
+--[[@param src_x integer]]
+--[[@param src_y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+--[[@param dest_x integer]]
+--[[@param dest_y integer]]
+--[[@param plane integer]]
+display.copy_plane = function(self, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y, plane)
 	return mod.copy_plane(self.c, src, dest, gc, src_x, src_y, width, height, dest_x, dest_y, plane)
 end
 
---[[@param font_struct ptr_c<xlib_font_struct_c>]] --[[@param string string]]
-mod.text_width = function (font_struct, string)
+--[[@param font_struct ptr_c<xlib_font_struct_c>]]
+--[[@param string string]]
+mod.text_width = function(font_struct, string)
 	return xlib_ffi.XTextWidth(font_struct, string, #string)
 end
 
---[[@param font_struct ptr_c<xlib_font_struct_c>]] --[[@param string string]]
-mod.text_width16 = function (font_struct, string)
+--[[@param font_struct ptr_c<xlib_font_struct_c>]]
+--[[@param string string]]
+mod.text_width16 = function(font_struct, string)
 	return xlib_ffi.XTextWidth16(font_struct, string, bit.rshift(#string, 1))
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param colormap xlib_colormap_c]] --[[@param red integer 0x0000-0xffff]] --[[@param green integer 0x0000-0xffff]] --[[@param blue integer 0x0000-0xffff]]
-mod.alloc_color = function (display_, colormap, red, green, blue)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param colormap xlib_colormap_c]]
+--[[@param red integer 0x0000-0xffff]]
+--[[@param green integer 0x0000-0xffff]]
+--[[@param blue integer 0x0000-0xffff]]
+mod.alloc_color = function(display_, colormap, red, green, blue)
 	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	local screen = color_p_c({ { red = red, green = green, blue = blue, pixel = 0, flags = 0 } })
 	if xlib_ffi.XAllocColor(display_, colormap, screen) == 0 then return nil end
 	return screen[0].pixel
 end
---[[@param colormap xlib_colormap_c]] --[[@param red integer 0x0000-0xffff]] --[[@param green integer 0x0000-0xffff]] --[[@param blue integer 0x0000-0xffff]]
-display.alloc_color = function (self, colormap, red, green, blue)
+--[[@param colormap xlib_colormap_c]]
+--[[@param red integer 0x0000-0xffff]]
+--[[@param green integer 0x0000-0xffff]]
+--[[@param blue integer 0x0000-0xffff]]
+display.alloc_color = function(self, colormap, red, green, blue)
 	return mod.alloc_color(self.c, colormap, red, green, blue)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param colormap xlib_colormap_c]] --[[@param rgb integer 0xrrggbb]]
-mod.alloc_color_x = function (display_, colormap, rgb)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param colormap xlib_colormap_c]]
+--[[@param rgb integer 0xrrggbb]]
+mod.alloc_color_x = function(display_, colormap, rgb)
 	return mod.alloc_color(
 		display_, colormap,
 		bit.band(bit.rshift(rgb, 8), 0xff00),
@@ -3114,35 +2905,52 @@ mod.alloc_color_x = function (display_, colormap, rgb)
 		bit.band(bit.lshift(rgb, 8), 0xff00)
 	)
 end
---[[@param colormap xlib_colormap_c]] --[[@param rgb integer 0xrrggbb]]
-display.alloc_color_x = function (self, colormap, rgb) return mod.alloc_color_x(self.c, colormap, rgb) end
+--[[@param colormap xlib_colormap_c]]
+--[[@param rgb integer 0xrrggbb]]
+display.alloc_color_x = function(self, colormap, rgb) return mod.alloc_color_x(self.c, colormap, rgb) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param colormap xlib_colormap_c]] --[[@param color_name string]]
-mod.alloc_named_color = function (display_, colormap, color_name)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param colormap xlib_colormap_c]]
+--[[@param color_name string]]
+mod.alloc_named_color = function(display_, colormap, color_name)
 	local screen_def = color_p_c()
 	local exact_def = color_p_c()
 	if xlib_ffi.XAllocNamedColor(display_, colormap, color_name, screen_def, exact_def) == 0 then return nil end
 	return { screen_def = screen_def, exact_def = exact_def }
 end
---[[@param colormap xlib_colormap_c]] --[[@param color_name string]]
-display.alloc_named_color = function (self, colormap, color_name)
+--[[@param colormap xlib_colormap_c]]
+--[[@param color_name string]]
+display.alloc_named_color = function(self, colormap, color_name)
 	return mod.alloc_named_color(self.c, colormap, color_name)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param colormap xlib_colormap_c]] --[[@param contig boolean]] --[[@param nplanes integer]] --[[@param npixels integer >=1]]
-mod.alloc_color_cells = function (display_, colormap, contig, nplanes, npixels)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param colormap xlib_colormap_c]]
+--[[@param contig boolean]]
+--[[@param nplanes integer]]
+--[[@param npixels integer >=1]]
+mod.alloc_color_cells = function(display_, colormap, contig, nplanes, npixels)
 	local plane_masks = ulong_a_c(nplanes)
 	local pixels = ulong_a_c(npixels)
 	if xlib_ffi.XAllocColorCells(display_, colormap, contig, plane_masks, nplanes, pixels, npixels) then return nil end
 	return { plane_masks = plane_masks, pixels = pixels }
 end
---[[@param colormap xlib_colormap_c]] --[[@param contig boolean]] --[[@param nplanes integer]] --[[@param npixels integer >=1]]
-display.alloc_color_cells = function (self, colormap, contig, nplanes, npixels)
+--[[@param colormap xlib_colormap_c]]
+--[[@param contig boolean]]
+--[[@param nplanes integer]]
+--[[@param npixels integer >=1]]
+display.alloc_color_cells = function(self, colormap, contig, nplanes, npixels)
 	return mod.alloc_color_cells(self.c, colormap, contig, nplanes, npixels)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param colormap xlib_colormap_c]] --[[@param contig boolean]] --[[@param ncolors integer >=1]] --[[@param nreds integer]] --[[@param ngreens integer]] --[[@param nblues integer]]
-mod.alloc_color_planes = function (display_, colormap, contig, ncolors, nreds, ngreens, nblues)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param colormap xlib_colormap_c]]
+--[[@param contig boolean]]
+--[[@param ncolors integer >=1]]
+--[[@param nreds integer]]
+--[[@param ngreens integer]]
+--[[@param nblues integer]]
+mod.alloc_color_planes = function(display_, colormap, contig, ncolors, nreds, ngreens, nblues)
 	local pixels = ulong_a_c(ncolors)
 	local rmask = ulong_p_c()
 	local gmask = ulong_p_c()
@@ -3150,72 +2958,107 @@ mod.alloc_color_planes = function (display_, colormap, contig, ncolors, nreds, n
 	if xlib_ffi.XAllocColorPlanes(display_, colormap, contig, pixels, ncolors, nreds, ngreens, nblues, rmask, gmask, bmask) == 0 then return nil end
 	return { pixels = pixels, red_mask = rmask, green_mask = gmask, blue_mask = bmask }
 end
---[[@param colormap xlib_colormap_c]] --[[@param contig boolean]] --[[@param ncolors integer >=1]] --[[@param nreds integer]] --[[@param ngreens integer]] --[[@param nblues integer]]
-display.alloc_color_planes = function (self, colormap, contig, ncolors, nreds, ngreens, nblues)
+--[[@param colormap xlib_colormap_c]]
+--[[@param contig boolean]]
+--[[@param ncolors integer >=1]]
+--[[@param nreds integer]]
+--[[@param ngreens integer]]
+--[[@param nblues integer]]
+display.alloc_color_planes = function(self, colormap, contig, ncolors, nreds, ngreens, nblues)
 	return mod.alloc_color_planes(self.c, colormap, contig, ncolors, nreds, ngreens, nblues)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param colormap xlib_colormap_c]] --[[@param pixels integer[] ]] --[[@param npixels integer]] --[[@param planes integer]]
-mod.free_colors = function (display_, colormap, pixels, npixels, planes)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param colormap xlib_colormap_c]]
+--[[@param pixels integer[] ]]
+--[[@param npixels integer]]
+--[[@param planes integer]]
+mod.free_colors = function(display_, colormap, pixels, npixels, planes)
 	xlib_ffi.XFreeColors(display_, colormap, pixels, npixels, planes)
 end
---[[@param colormap xlib_colormap_c]] --[[@param pixels integer[] ]] --[[@param npixels integer]] --[[@param planes integer]]
-display.free_colors = function (self, colormap, pixels, npixels, planes)
+--[[@param colormap xlib_colormap_c]]
+--[[@param pixels integer[] ]]
+--[[@param npixels integer]]
+--[[@param planes integer]]
+display.free_colors = function(self, colormap, pixels, npixels, planes)
 	return mod.free_colors(self.c, colormap, pixels, npixels, planes)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param d xlib_drawable_c]] --[[@param valuemask integer]] --[[@param values ptr_c<xlib_gc_values_c>?]]
-mod.create_gc = function (display_, d, valuemask, values)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param d xlib_drawable_c]]
+--[[@param valuemask integer]]
+--[[@param values ptr_c<xlib_gc_values_c>?]]
+mod.create_gc = function(display_, d, valuemask, values)
 	return xlib_ffi.XCreateGC(display_, d, valuemask, values)
 end
---[[@param d xlib_drawable_c]] --[[@param valuemask integer]] --[[@param values ptr_c<xlib_gc_values_c>?]]
-display.create_gc = function (self, d, valuemask, values)
+--[[@param d xlib_drawable_c]]
+--[[@param valuemask integer]]
+--[[@param values ptr_c<xlib_gc_values_c>?]]
+display.create_gc = function(self, d, valuemask, values)
 	return mod.create_gc(self.c, d, valuemask, values)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param src xlib_gc_c]] --[[@param valuemask integer]] --[[@param dest xlib_gc_c]]
-mod.copy_gc = function (display_, src, valuemask, dest)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param src xlib_gc_c]]
+--[[@param valuemask integer]]
+--[[@param dest xlib_gc_c]]
+mod.copy_gc = function(display_, src, valuemask, dest)
 	return xlib_ffi.XCopyGC(display_, src, valuemask, dest)
 end
---[[@param src xlib_gc_c]] --[[@param valuemask integer]] --[[@param dest xlib_gc_c]]
-display.copy_gc = function (self, src, valuemask, dest)
+--[[@param src xlib_gc_c]]
+--[[@param valuemask integer]]
+--[[@param dest xlib_gc_c]]
+display.copy_gc = function(self, src, valuemask, dest)
 	return mod.copy_gc(self.c, src, valuemask, dest)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]] --[[@param valuemask integer]] --[[@param values ptr_c<xlib_gc_values_c>]]
-mod.change_gc = function (display_, gc, valuemask, values)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param gc xlib_gc_c]]
+--[[@param valuemask integer]]
+--[[@param values ptr_c<xlib_gc_values_c>]]
+mod.change_gc = function(display_, gc, valuemask, values)
 	return xlib_ffi.XChangeGC(display_, gc, valuemask, values)
 end
---[[@param gc xlib_gc_c]] --[[@param valuemask integer]] --[[@param values ptr_c<xlib_gc_values_c>]]
-display.change_gc = function (self, gc, valuemask, values)
+--[[@param gc xlib_gc_c]]
+--[[@param valuemask integer]]
+--[[@param values ptr_c<xlib_gc_values_c>]]
+display.change_gc = function(self, gc, valuemask, values)
 	return mod.change_gc(self.c, gc, valuemask, values)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]] --[[@param valuemask integer]]
-mod.get_gc_values = function (display_, gc, valuemask)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param gc xlib_gc_c]]
+--[[@param valuemask integer]]
+mod.get_gc_values = function(display_, gc, valuemask)
 	local values = ffi.new("XGCValues[1]") --[[@type ptr_c<xlib_gc_values_c>]]
 	if xlib_ffi.XGetGCValues(display_, gc, valuemask, values) == 0 then return nil end
 	return values[0]
 end
---[[@param gc xlib_gc_c]] --[[@param valuemask integer]]
-display.get_gc_values = function (self, gc, valuemask)
+--[[@param gc xlib_gc_c]]
+--[[@param valuemask integer]]
+display.get_gc_values = function(self, gc, valuemask)
 	return mod.get_gc_values(self.c, gc, valuemask)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param gc xlib_gc_c]]
-mod.free_gc = function (display_, gc) return xlib_ffi.XFreeGC(display_, gc) end
+--[[@param display_ ptr_c<xlib_display_c>]]
 --[[@param gc xlib_gc_c]]
-display.free_gc = function (self, gc) return mod.free_gc(self.c, gc) end
+mod.free_gc = function(display_, gc) return xlib_ffi.XFreeGC(display_, gc) end
 --[[@param gc xlib_gc_c]]
-mod.gcontext_from_gc = function (gc) return xlib_ffi.XGContextFromGC(gc) end
-mod.alloc_size_hints = function () return xlib_ffi.XAllocSizeHints() end
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param hints ptr_c<xlib_size_hints_c>]]
-mod.set_wm_normal_hints = function (display_, w, hints) return xlib_ffi.XSetWMNormalHints(display_, w, hints) end
---[[@param w xlib_window_c]] --[[@param hints ptr_c<xlib_size_hints_c>]]
-display.set_wm_normal_hints = function (self, w, hints) return mod.set_wm_normal_hints(self.c, w, hints) end
+display.free_gc = function(self, gc) return mod.free_gc(self.c, gc) end
+--[[@param gc xlib_gc_c]]
+mod.gcontext_from_gc = function(gc) return xlib_ffi.XGContextFromGC(gc) end
+mod.alloc_size_hints = function() return xlib_ffi.XAllocSizeHints() end
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param hints ptr_c<xlib_size_hints_c>]]
+mod.set_wm_normal_hints = function(display_, w, hints) return xlib_ffi.XSetWMNormalHints(display_, w, hints) end
+--[[@param w xlib_window_c]]
+--[[@param hints ptr_c<xlib_size_hints_c>]]
+display.set_wm_normal_hints = function(self, w, hints) return mod.set_wm_normal_hints(self.c, w, hints) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.get_wm_normal_hints = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.get_wm_normal_hints = function(display_, w)
 	local hints = ffi.new("XSizeHints[1]") --[[@type ptr_c<xlib_size_hints_c>]]
 	local supplied = int_p_c()
 	if xlib_ffi.XGetWMNormalHints(display_, w, hints, supplied) == 0 then return nil end
@@ -3225,271 +3068,404 @@ mod.get_wm_normal_hints = function (display_, w)
 	}
 end
 --[[@param w xlib_window_c]]
-display.get_wm_normal_hints = function (self, w)
+display.get_wm_normal_hints = function(self, w)
 	return mod.get_wm_normal_hints(self.c, w)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param hints ptr_c<xlib_size_hints_c>]] --[[@param property xlib_atom_c]]
-mod.set_wm_size_hints = function (display_, w, hints, property)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param hints ptr_c<xlib_size_hints_c>]]
+--[[@param property xlib_atom_c]]
+mod.set_wm_size_hints = function(display_, w, hints, property)
 	return xlib_ffi.XSetWMSizeHints(display_, w, hints, property)
 end
---[[@param w xlib_window_c]] --[[@param hints ptr_c<xlib_size_hints_c>]] --[[@param property xlib_atom_c]]
-display.set_wm_size_hints = function (self, w, hints, property)
+--[[@param w xlib_window_c]]
+--[[@param hints ptr_c<xlib_size_hints_c>]]
+--[[@param property xlib_atom_c]]
+display.set_wm_size_hints = function(self, w, hints, property)
 	return mod.set_wm_size_hints(self.c, w, hints, property)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param property xlib_atom_c]]
-mod.get_wm_size_hints = function (display_, w, property)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+mod.get_wm_size_hints = function(display_, w, property)
 	local hints = ffi.new("XSizeHints[1]") --[[@type ptr_c<xlib_size_hints_c>]]
 	local supplied = int_p_c()
 	if xlib_ffi.XGetWMSizeHints(display_, w, hints, supplied, property) == 0 then return nil end
 	return { hints = hints, flags = supplied }
 end
---[[@param w xlib_window_c]] --[[@param property xlib_atom_c]]
-display.get_wm_size_hints = function (self, w, property) return mod.get_wm_size_hints(self.c, w, property) end
+--[[@param w xlib_window_c]]
+--[[@param property xlib_atom_c]]
+display.get_wm_size_hints = function(self, w, property) return mod.get_wm_size_hints(self.c, w, property) end
 
-mod.alloc_class_hint = function () return xlib_ffi.XAllocClassHint() end
+mod.alloc_class_hint = function() return xlib_ffi.XAllocClassHint() end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param class_hints ptr_c<xlib_class_hint_c>]]
-mod.set_class_hint = function (display_, w, class_hints)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param class_hints ptr_c<xlib_class_hint_c>]]
+mod.set_class_hint = function(display_, w, class_hints)
 	return xlib_ffi.XSetClassHint(display_, w, class_hints)
 end
---[[@param w xlib_window_c]] --[[@param class_hints ptr_c<xlib_class_hint_c>]]
-display.set_class_hint = function (self, w, class_hints)
+--[[@param w xlib_window_c]]
+--[[@param class_hints ptr_c<xlib_class_hint_c>]]
+display.set_class_hint = function(self, w, class_hints)
 	return mod.set_class_hint(self.c, w, class_hints)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.get_class_hint = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.get_class_hint = function(display_, w)
 	local class_hints = ffi.new("XClassHint[1]") --[[@type ptr_c<xlib_class_hint_c>]]
 	if xlib_ffi.XGetClassHint(display_, w, class_hints) == 0 then return nil end
 	return class_hints
 end
 --[[@param w xlib_window_c]]
-display.get_class_hint = function (self, w) return mod.get_class_hint(self.c, w) end
+display.get_class_hint = function(self, w) return mod.get_class_hint(self.c, w) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param text_prop ptr_c<xlib_text_property_c>]]
-mod.set_wm_name = function (display_, w, text_prop)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param text_prop ptr_c<xlib_text_property_c>]]
+mod.set_wm_name = function(display_, w, text_prop)
 	return xlib_ffi.XSetWMName(display_, w, text_prop)
 end
---[[@param w xlib_window_c]] --[[@param text_prop ptr_c<xlib_text_property_c>]]
-display.set_wm_name = function (self, w, text_prop)
+--[[@param w xlib_window_c]]
+--[[@param text_prop ptr_c<xlib_text_property_c>]]
+display.set_wm_name = function(self, w, text_prop)
 	return mod.set_wm_name(self.c, w, text_prop)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.get_wm_name = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.get_wm_name = function(display_, w)
 	local text_prop = ffi.new("XTextProperty[1]") --[[@type ptr_c<xlib_text_property_c>]]
 	if xlib_ffi.XGetWMName(display_, w, text_prop) == 0 then return nil end
 	return text_prop
 end
 --[[@param w xlib_window_c]]
-display.get_wm_name = function (self, w) return mod.get_wm_name(self.c, w) end
+display.get_wm_name = function(self, w) return mod.get_wm_name(self.c, w) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param window_name ptr_c<ffi.cdata*>]]
-mod.store_name = function (display_, w, window_name)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param window_name ptr_c<ffi.cdata*>]]
+mod.store_name = function(display_, w, window_name)
 	return xlib_ffi.XStoreName(display_, w, window_name)
 end
---[[@param w xlib_window_c]] --[[@param window_name ptr_c<ffi.cdata*>]]
-display.store_name = function (self, w, window_name)
+--[[@param w xlib_window_c]]
+--[[@param window_name ptr_c<ffi.cdata*>]]
+display.store_name = function(self, w, window_name)
 	return mod.store_name(self.c, w, window_name)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.fetch_name = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.fetch_name = function(display_, w)
 	local window_name = string_p_c()
 	if xlib_ffi.XFetchName(display_, w, window_name) == 0 then return nil end
 	return window_name[0]
 end
 --[[@param w xlib_window_c]]
-display.fetch_name = function (self, w) return mod.fetch_name(self.c, w) end
+display.fetch_name = function(self, w) return mod.fetch_name(self.c, w) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param text_prop ptr_c<xlib_text_property_c>]]
-mod.set_wm_client_machine = function (display_, w, text_prop)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param text_prop ptr_c<xlib_text_property_c>]]
+mod.set_wm_client_machine = function(display_, w, text_prop)
 	return xlib_ffi.XSetWMClientMachine(display_, w, text_prop)
 end
---[[@param w xlib_window_c]] --[[@param text_prop ptr_c<xlib_text_property_c>]]
-display.set_wm_client_machine = function (self, w, text_prop)
+--[[@param w xlib_window_c]]
+--[[@param text_prop ptr_c<xlib_text_property_c>]]
+display.set_wm_client_machine = function(self, w, text_prop)
 	return mod.set_wm_client_machine(self.c, w, text_prop)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]]
-mod.get_wm_client_machine = function (display_, w)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+mod.get_wm_client_machine = function(display_, w)
 	local text_prop = ffi.new("XTextProperty[1]") --[[@type ptr_c<xlib_text_property_c>]]
 	if not xlib_ffi.XGetWMClientMachine(display_, w, text_prop) then return nil end
 	return text_prop
 end
 --[[@param w xlib_window_c]]
-display.get_wm_client_machine = function (self, w) return mod.get_wm_client_machine(self.c, w) end
+display.get_wm_client_machine = function(self, w) return mod.get_wm_client_machine(self.c, w) end
 
---[[@param font_set xlib_font_set_c]] --[[@param string string]]
-mod.mb_text_extents = function (font_set, string)
+--[[@param font_set xlib_font_set_c]]
+--[[@param string string]]
+mod.mb_text_extents = function(font_set, string)
 	local overall_ink = ffi.new("XRectangle[1]") --[[@type ptr_c<xlib_rectangle_c>]]
 	local overall_logical = ffi.new("XRectangle[1]") --[[@type ptr_c<xlib_rectangle_c>]]
 	xlib_ffi.XmbTextExtents(font_set, string, #string, overall_ink, overall_logical)
 	return { ink = overall_ink[0], logical = overall_logical[0] }
 end
 
---[[@param font_set xlib_font_set_c]] --[[@param string ptr_c<integer>]]
-mod.wc_text_extents = function (font_set, string)
+--[[@param font_set xlib_font_set_c]]
+--[[@param string ptr_c<integer>]]
+mod.wc_text_extents = function(font_set, string)
 	local overall_ink = ffi.new("XRectangle[1]") --[[@type ptr_c<xlib_rectangle_c>]]
 	local overall_logical = ffi.new("XRectangle[1]") --[[@type ptr_c<xlib_rectangle_c>]]
-	xlib_ffi.XwcTextExtents(font_set, ffi.cast("const uint16_t *", string), bit.rshift(#string, 1), overall_ink, overall_logical)
+	xlib_ffi.XwcTextExtents(font_set, ffi.cast("const uint16_t *", string), bit.rshift(#string, 1), overall_ink,
+		overall_logical)
 	return { ink = overall_ink[0], logical = overall_logical[0] }
 end
 
---[[@param font_set xlib_font_set_c]] --[[@param string string]]
-mod.utf8_text_extents = function (font_set, string)
+--[[@param font_set xlib_font_set_c]]
+--[[@param string string]]
+mod.utf8_text_extents = function(font_set, string)
 	local overall_ink = ffi.new("XRectangle[1]") --[[@type ptr_c<xlib_rectangle_c>]]
 	local overall_logical = ffi.new("XRectangle[1]") --[[@type ptr_c<xlib_rectangle_c>]]
 	xlib_ffi.Xutf8TextExtents(font_set, string, #string, overall_ink, overall_logical)
 	return { ink = overall_ink[0], logical = overall_logical[0] }
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param value_mask integer]] --[[@param changes ptr_c<xlib_window_changes_c>]]
-mod.configure_window = function (display_, w, value_mask, changes)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param value_mask integer]]
+--[[@param changes ptr_c<xlib_window_changes_c>]]
+mod.configure_window = function(display_, w, value_mask, changes)
 	return xlib_ffi.XConfigureWindow(display_, w, value_mask, changes)
 end
---[[@param w xlib_window_c]] --[[@param value_mask integer]] --[[@param changes ptr_c<xlib_window_changes_c>]]
-display.configure_window = function (self, w, value_mask, changes)
+--[[@param w xlib_window_c]]
+--[[@param value_mask integer]]
+--[[@param changes ptr_c<xlib_window_changes_c>]]
+display.configure_window = function(self, w, value_mask, changes)
 	return mod.configure_window(self.c, w, value_mask, changes)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param x integer]] --[[@param y integer]]
-mod.move_window = function (display_, w, x, y)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+mod.move_window = function(display_, w, x, y)
 	return xlib_ffi.XMoveWindow(display_, w, x, y)
 end
---[[@param w xlib_window_c]] --[[@param x integer]] --[[@param y integer]]
-display.move_window = function (self, w, x, y)
+--[[@param w xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+display.move_window = function(self, w, x, y)
 	return mod.move_window(self.c, w, x, y)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param width integer]] --[[@param height integer]]
-mod.resize_window = function (display_, w, width, height)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param width integer]]
+--[[@param height integer]]
+mod.resize_window = function(display_, w, width, height)
 	return xlib_ffi.XResizeWindow(display_, w, width, height)
 end
---[[@param w xlib_window_c]] --[[@param width integer]] --[[@param height integer]]
-display.resize_window = function (self, w, width, height)
+--[[@param w xlib_window_c]]
+--[[@param width integer]]
+--[[@param height integer]]
+display.resize_window = function(self, w, width, height)
 	return mod.resize_window(self.c, w, width, height)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]]
-mod.move_resize_window = function (display_, w, x, y, width, height)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+mod.move_resize_window = function(display_, w, x, y, width, height)
 	return xlib_ffi.XMoveResizeWindow(display_, w, x, y, width, height)
 end
---[[@param w xlib_window_c]] --[[@param x integer]] --[[@param y integer]] --[[@param width integer]] --[[@param height integer]]
-display.move_resize_window = function (self, w, x, y, width, height)
+--[[@param w xlib_window_c]]
+--[[@param x integer]]
+--[[@param y integer]]
+--[[@param width integer]]
+--[[@param height integer]]
+display.move_resize_window = function(self, w, x, y, width, height)
 	return mod.move_resize_window(self.c, w, x, y, width, height)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param w xlib_window_c]] --[[@param width integer]]
-mod.set_window_border_width = function (display_, w, width)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param w xlib_window_c]]
+--[[@param width integer]]
+mod.set_window_border_width = function(display_, w, width)
 	return xlib_ffi.XSetWindowBorderWidth(display_, w, width)
 end
---[[@param w xlib_window_c]] --[[@param width integer]]
-display.set_window_border_width = function (self, w, width) return mod.set_window_border_width(self.c, w, width) end
+--[[@param w xlib_window_c]]
+--[[@param width integer]]
+display.set_window_border_width = function(self, w, width) return mod.set_window_border_width(self.c, w, width) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param focus xlib_window_c]] --[[@param revert_to xlib_revert_to]] --[[@param time xlib_time_c]]
-mod.set_input_focus = function (display_, focus, revert_to, time)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param focus xlib_window_c]]
+--[[@param revert_to xlib_revert_to]]
+--[[@param time xlib_time_c]]
+mod.set_input_focus = function(display_, focus, revert_to, time)
 	return xlib_ffi.XSetInputFocus(display_, focus, revert_to, time)
 end
---[[@param focus xlib_window_c]] --[[@param revert_to xlib_revert_to]] --[[@param time xlib_time_c]]
-display.set_input_focus = function (self, focus, revert_to, time)
+--[[@param focus xlib_window_c]]
+--[[@param revert_to xlib_revert_to]]
+--[[@param time xlib_time_c]]
+display.set_input_focus = function(self, focus, revert_to, time)
 	return mod.set_input_focus(self.c, focus, revert_to, time)
 end
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.get_input_focus = function (display_)
+mod.get_input_focus = function(display_)
 	local focus = ffi.new("Window[1]") --[[@type ptr_c<xlib_window_c>]]
 	local revert_to = ffi.new("int[1]") --[[@type ptr_c<integer>]]
 	xlib_ffi.XGetInputFocus(display_, focus, revert_to)
 	return { focus = focus[0], revert_to = revert_to[0] }
 end
-display.get_input_focus = function (self) return mod.get_input_focus(self.c) end
+display.get_input_focus = function(self) return mod.get_input_focus(self.c) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param button xlib_button]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]] --[[@param owner_events boolean]] --[[@param event_mask xlib_input_event_mask]] --[[@param pointer_mode xlib_grab_mode]] --[[@param keyboard_mode xlib_grab_mode]] --[[@param confine_to xlib_window_c]] --[[@param cursor xlib_cursor_c]]
-mod.grab_button = function (display_, button, modifiers, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor)
-	return xlib_ffi.XGrabButton(display_, button, modifiers, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param button xlib_button]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+--[[@param owner_events boolean]]
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param pointer_mode xlib_grab_mode]]
+--[[@param keyboard_mode xlib_grab_mode]]
+--[[@param confine_to xlib_window_c]]
+--[[@param cursor xlib_cursor_c]]
+mod.grab_button = function(display_, button, modifiers, grab_window, owner_events, event_mask, pointer_mode,
+													 keyboard_mode, confine_to, cursor)
+	return xlib_ffi.XGrabButton(display_, button, modifiers, grab_window, owner_events, event_mask, pointer_mode,
+		keyboard_mode, confine_to, cursor)
 end
---[[@param button xlib_button]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]] --[[@param owner_events boolean]] --[[@param event_mask xlib_input_event_mask]] --[[@param pointer_mode xlib_grab_mode]] --[[@param keyboard_mode xlib_grab_mode]] --[[@param confine_to xlib_window_c]] --[[@param cursor xlib_cursor_c]]
-display.grab_button = function (self, button, modifiers, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor)
-	return mod.grab_button(self.c, button, modifiers, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor)
+--[[@param button xlib_button]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+--[[@param owner_events boolean]]
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param pointer_mode xlib_grab_mode]]
+--[[@param keyboard_mode xlib_grab_mode]]
+--[[@param confine_to xlib_window_c]]
+--[[@param cursor xlib_cursor_c]]
+display.grab_button = function(self, button, modifiers, grab_window, owner_events, event_mask, pointer_mode,
+															 keyboard_mode, confine_to, cursor)
+	return mod.grab_button(self.c, button, modifiers, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode,
+		confine_to, cursor)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param button xlib_button]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]]
-mod.ungrab_button = function (display_, button, modifiers, grab_window)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param button xlib_button]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+mod.ungrab_button = function(display_, button, modifiers, grab_window)
 	return xlib_ffi.XUngrabButton(display_, button, modifiers, grab_window)
 end
---[[@param button xlib_button]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]]
-display.ungrab_button = function (self, button, modifiers, grab_window)
+--[[@param button xlib_button]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+display.ungrab_button = function(self, button, modifiers, grab_window)
 	return mod.ungrab_button(self.c, button, modifiers, grab_window)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param keycode xlib_key_code_c]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]] --[[@param owner_events boolean]] --[[@param pointer_mode xlib_grab_mode]] --[[@param keyboard_mode xlib_grab_mode]]
-mod.grab_key = function (display_, keycode, modifiers, grab_window, owner_events, pointer_mode, keyboard_mode)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param keycode xlib_key_code_c]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+--[[@param owner_events boolean]]
+--[[@param pointer_mode xlib_grab_mode]]
+--[[@param keyboard_mode xlib_grab_mode]]
+mod.grab_key = function(display_, keycode, modifiers, grab_window, owner_events, pointer_mode, keyboard_mode)
 	return xlib_ffi.XGrabKey(display_, keycode, modifiers, grab_window, owner_events, pointer_mode, keyboard_mode)
 end
---[[@param keycode xlib_key_code_c]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]] --[[@param owner_events boolean]] --[[@param pointer_mode xlib_grab_mode]] --[[@param keyboard_mode xlib_grab_mode]]
-display.grab_key = function (self, keycode, modifiers, grab_window, owner_events, pointer_mode, keyboard_mode)
+--[[@param keycode xlib_key_code_c]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+--[[@param owner_events boolean]]
+--[[@param pointer_mode xlib_grab_mode]]
+--[[@param keyboard_mode xlib_grab_mode]]
+display.grab_key = function(self, keycode, modifiers, grab_window, owner_events, pointer_mode, keyboard_mode)
 	return mod.grab_key(self.c, keycode, modifiers, grab_window, owner_events, pointer_mode, keyboard_mode)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param keycode xlib_key_code_c]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]]
-mod.ungrab_key = function (display_, keycode, modifiers, grab_window)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param keycode xlib_key_code_c]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+mod.ungrab_key = function(display_, keycode, modifiers, grab_window)
 	return xlib_ffi.XUngrabKey(display_, keycode, modifiers, grab_window)
 end
---[[@param keycode xlib_key_code_c]] --[[@param modifiers xlib_key_button_mask]] --[[@param grab_window xlib_window_c]]
-display.ungrab_key = function (self, keycode, modifiers, grab_window)
+--[[@param keycode xlib_key_code_c]]
+--[[@param modifiers xlib_key_button_mask]]
+--[[@param grab_window xlib_window_c]]
+display.ungrab_key = function(self, keycode, modifiers, grab_window)
 	return mod.ungrab_key(self.c, keycode, modifiers, grab_window)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param grab_window xlib_window_c]] --[[@param owner_events boolean]] --[[@param event_mask xlib_input_event_mask]] --[[@param pointer_mode xlib_grab_mode]] --[[@param keyboard_mode xlib_grab_mode]] --[[@param confine_to xlib_window_c]] --[[@param cursor xlib_cursor_c]] --[[@param time xlib_time_c]]
-mod.grab_pointer = function (display_, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor, time)
-	return xlib_ffi.XGrabPointer(display_, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor, time)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param grab_window xlib_window_c]]
+--[[@param owner_events boolean]]
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param pointer_mode xlib_grab_mode]]
+--[[@param keyboard_mode xlib_grab_mode]]
+--[[@param confine_to xlib_window_c]]
+--[[@param cursor xlib_cursor_c]]
+--[[@param time xlib_time_c]]
+mod.grab_pointer = function(display_, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to,
+														cursor, time)
+	return xlib_ffi.XGrabPointer(display_, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to,
+		cursor, time)
 end
---[[@param grab_window xlib_window_c]] --[[@param owner_events boolean]] --[[@param event_mask xlib_input_event_mask]] --[[@param pointer_mode xlib_grab_mode]] --[[@param keyboard_mode xlib_grab_mode]] --[[@param confine_to xlib_window_c]] --[[@param cursor xlib_cursor_c]] --[[@param time xlib_time_c]]
-display.grab_pointer = function (self, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor, time)
-	return mod.grab_pointer(self.c, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor, time)
+--[[@param grab_window xlib_window_c]]
+--[[@param owner_events boolean]]
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param pointer_mode xlib_grab_mode]]
+--[[@param keyboard_mode xlib_grab_mode]]
+--[[@param confine_to xlib_window_c]]
+--[[@param cursor xlib_cursor_c]]
+--[[@param time xlib_time_c]]
+display.grab_pointer = function(self, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to,
+																cursor, time)
+	return mod.grab_pointer(self.c, grab_window, owner_events, event_mask, pointer_mode, keyboard_mode, confine_to, cursor,
+		time)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param time xlib_time_c]]
-mod.ungrab_pointer = function (display_, time)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param time xlib_time_c]]
+mod.ungrab_pointer = function(display_, time)
 	return xlib_ffi.XUngrabPointer(display_, time)
 end
 --[[@param time xlib_time_c]]
-display.ungrab_pointer = function (self, time)
+display.ungrab_pointer = function(self, time)
 	return mod.ungrab_pointer(self.c, time)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param event_mask xlib_input_event_mask]] --[[@param cursor xlib_cursor_c]] --[[@param time xlib_time_c]]
-mod.change_active_pointer_grab = function (display_, event_mask, cursor, time)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param cursor xlib_cursor_c]]
+--[[@param time xlib_time_c]]
+mod.change_active_pointer_grab = function(display_, event_mask, cursor, time)
 	return xlib_ffi.XChangeActivePointerGrab(display_, event_mask, cursor, time)
 end
---[[@param event_mask xlib_input_event_mask]] --[[@param cursor xlib_cursor_c]] --[[@param time xlib_time_c]]
-display.change_active_pointer_grab = function (self, event_mask, cursor, time)
+--[[@param event_mask xlib_input_event_mask]]
+--[[@param cursor xlib_cursor_c]]
+--[[@param time xlib_time_c]]
+display.change_active_pointer_grab = function(self, event_mask, cursor, time)
 	return mod.change_active_pointer_grab(self.c, event_mask, cursor, time)
 end
 
---[[@return xlib_key_sym_c]] --[[@param string string]]
-mod.string_to_keysym = function (string) return xlib_ffi.XStringToKeysym(string) end
---[[@return ptr_c<ffi.cdata*>]] --[[@param keysym xlib_key_sym_c]]
-mod.keysym_to_string = function (keysym) return xlib_ffi.XKeysymToString(keysym) end
+--[[@return xlib_key_sym_c]]
+--[[@param string string]]
+mod.string_to_keysym = function(string) return xlib_ffi.XStringToKeysym(string) end
+--[[@return ptr_c<ffi.cdata*>]]
+--[[@param keysym xlib_key_sym_c]]
+mod.keysym_to_string = function(keysym) return xlib_ffi.XKeysymToString(keysym) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param keycode xlib_key_code_c]] --[[@param index integer]]
-mod.keycode_to_keysym = function (display_, keycode, index)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param keycode xlib_key_code_c]]
+--[[@param index integer]]
+mod.keycode_to_keysym = function(display_, keycode, index)
 	return xlib_ffi.XKeycodeToKeysym(display_, keycode, index)
 end
---[[@param keycode xlib_key_code_c]] --[[@param index integer]]
-display.keycode_to_keysym = function (self, keycode, index)
+--[[@param keycode xlib_key_code_c]]
+--[[@param index integer]]
+display.keycode_to_keysym = function(self, keycode, index)
 	return mod.keycode_to_keysym(self.c, keycode, index)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param keysym xlib_key_sym_c]]
-mod.keysym_to_keycode = function (display_, keysym)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param keysym xlib_key_sym_c]]
+mod.keysym_to_keycode = function(display_, keysym)
 	return xlib_ffi.XKeysymToKeycode(display_, keysym)
 end
 --[[@param keysym xlib_key_sym_c]]
-display.keysym_to_keycode = function (self, keysym)
+display.keysym_to_keycode = function(self, keysym)
 	return mod.keysym_to_keycode(self.c, keysym)
 end
 
@@ -3497,7 +3473,7 @@ local lower = ffi.new("KeySym[1]") --[[@type ptr_c<xlib_key_sym_c>]]
 local upper = ffi.new("KeySym[1]") --[[@type ptr_c<xlib_key_sym_c>]]
 
 --[[@param keysym xlib_key_sym_c]]
-mod.convert_case = function (keysym)
+mod.convert_case = function(keysym)
 	--[[@diagnostic disable-next-line: assign-type-mismatch]]
 	lower[0] = 0
 	--[[@diagnostic disable-next-line: assign-type-mismatch]]
@@ -3506,145 +3482,207 @@ mod.convert_case = function (keysym)
 	return { lower = lower[0], upper = upper[0] }
 end
 --[[@param keysym xlib_key_sym_c]]
-display.convert_case = function (keysym) return mod.convert_case(keysym) end
+display.convert_case = function(keysym) return mod.convert_case(keysym) end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param src_w xlib_window_c]] --[[@param dest_w xlib_window_c]] --[[@param src_x integer]] --[[@param src_y integer]] --[[@param src_width integer]] --[[@param src_height integer]] --[[@param dest_x integer]] --[[@param dest_y integer]]
-mod.warp_pointer = function (display_, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, dest_y)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param src_w xlib_window_c]]
+--[[@param dest_w xlib_window_c]]
+--[[@param src_x integer]]
+--[[@param src_y integer]]
+--[[@param src_width integer]]
+--[[@param src_height integer]]
+--[[@param dest_x integer]]
+--[[@param dest_y integer]]
+mod.warp_pointer = function(display_, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, dest_y)
 	return xlib_ffi.XWarpPointer(display_, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, dest_y)
 end
---[[@param src_w xlib_window_c]] --[[@param dest_w xlib_window_c]] --[[@param src_x integer]] --[[@param src_y integer]] --[[@param src_width integer]] --[[@param src_height integer]] --[[@param dest_x integer]] --[[@param dest_y integer]]
-display.warp_pointer = function (self, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, dest_y)
+--[[@param src_w xlib_window_c]]
+--[[@param dest_w xlib_window_c]]
+--[[@param src_x integer]]
+--[[@param src_y integer]]
+--[[@param src_width integer]]
+--[[@param src_height integer]]
+--[[@param dest_x integer]]
+--[[@param dest_y integer]]
+display.warp_pointer = function(self, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, dest_y)
 	return mod.warp_pointer(self.c, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, dest_y)
 end
 
---[[@return xlib_key_sym_c]] --[[@param key_event ptr_c<xlib_key_event_c>]] --[[@param index integer]]
-mod.lookup_keysym = function (key_event, index)
+--[[@return xlib_key_sym_c]]
+--[[@param key_event ptr_c<xlib_key_event_c>]]
+--[[@param index integer]]
+mod.lookup_keysym = function(key_event, index)
 	return xlib_ffi.XLookupKeysym(key_event, index)
 end
 
 --[[@param event_map ptr_c<xlib_mapping_event_c>]]
-mod.refresh_keyboard_mapping = function (event_map)
+mod.refresh_keyboard_mapping = function(event_map)
 	return xlib_ffi.XRefreshKeyboardMapping(event_map)
 end
 
 local lookup_string_text = ffi.new("char[64]")
 
---[[@param event_struct ptr_c<xlib_key_event_c>]] --[[@param status? xlib_compose_status_c]]
-mod.lookup_string = function (event_struct, status)
+--[[@param event_struct ptr_c<xlib_key_event_c>]]
+--[[@param status? xlib_compose_status_c]]
+mod.lookup_string = function(event_struct, status)
 	local keysym = ffi.new("KeySym[1]") --[[@type ptr_c<xlib_key_sym_c>]]
 	local status_ = status and ffi.new("XComposeStatus[1]", status) or nil
 	local length = xlib_ffi.XLookupString(event_struct, lookup_string_text, 64, keysym, status_)
 	return { string = ffi.string(lookup_string_text, length), keysym = keysym[0], status = status_ and status_[0] }
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param keysym xlib_key_sym_c]] --[[@param list xlib_key_sym_c[] ]] --[[@param string string]]
-mod.rebind_keysym = function (display_, keysym, list, string)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param keysym xlib_key_sym_c]]
+--[[@param list xlib_key_sym_c[] ]]
+--[[@param string string]]
+mod.rebind_keysym = function(display_, keysym, list, string)
 	return xlib_ffi.XRebindKeysym(display_, keysym, list, #list, string, #string)
 end
 
---[[@return boolean]] --[[@param event xlib_event_c]] --[[@param w xlib_window_c]]
-mod.filter_event = function (event, w)
+--[[@return boolean]]
+--[[@param event xlib_event_c]]
+--[[@param w xlib_window_c]]
+mod.filter_event = function(event, w)
 	return xlib_ffi.XFilterEvent(ffi.new("XEvent[1]", event), w)
 end
 
 local buffer = ffi.new("char[128]")
 
---[[@param ic xlib_ic_c]] --[[@param event ptr_c<xlib_key_pressed_event_c>]]
-mod.mb_lookup_string = function (ic, event)
+--[[@param ic xlib_ic_c]]
+--[[@param event ptr_c<xlib_key_pressed_event_c>]]
+mod.mb_lookup_string = function(ic, event)
 	local keysym = ffi.new("KeySym[1]") --[[@type ptr_c<xlib_key_sym_c>]]
 	local status = ffi.new("Status[1]") --[[@type ptr_c<xlib_status_c>]]
 	xlib_ffi.XmbLookupString(ic, event, buffer, 128, keysym, status)
 	return { string = ffi.string(buffer), keysym = keysym[0], status = status[0] }
 end
 
---[[@param ic xlib_ic_c]] --[[@param event ptr_c<xlib_key_pressed_event_c>]]
-mod.wc_lookup_string = function (ic, event)
+--[[@param ic xlib_ic_c]]
+--[[@param event ptr_c<xlib_key_pressed_event_c>]]
+mod.wc_lookup_string = function(ic, event)
 	local keysym = ffi.new("KeySym[1]") --[[@type ptr_c<xlib_key_sym_c>]]
 	local status = ffi.new("Status[1]") --[[@type ptr_c<xlib_status_c>]]
 	xlib_ffi.XwcLookupString(ic, event, buffer, 64, keysym, status)
 	return { string = ffi.string(buffer), keysym = keysym[0], status = status[0] }
 end
 
---[[@param ic xlib_ic_c]] --[[@param event ptr_c<xlib_key_pressed_event_c>]]
-mod.utf8_lookup_string = function (ic, event)
+--[[@param ic xlib_ic_c]]
+--[[@param event ptr_c<xlib_key_pressed_event_c>]]
+mod.utf8_lookup_string = function(ic, event)
 	local keysym = ffi.new("KeySym[1]") --[[@type ptr_c<xlib_key_sym_c>]]
 	local status = ffi.new("Status[1]") --[[@type ptr_c<xlib_status_c>]]
 	xlib_ffi.Xutf8LookupString(ic, event, buffer, 128, keysym, status)
 	return { string = ffi.string(buffer), keysym = keysym[0], status = status[0] }
 end
 
---[[@return xlib_im_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]]
-mod.open_im = function (display_, db, res_name, res_class)
+--[[@return xlib_im_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param db xlib_rm_database_c]]
+--[[@param res_name ptr_c<ffi.cdata*>]]
+--[[@param res_class ptr_c<ffi.cdata*>]]
+mod.open_im = function(display_, db, res_name, res_class)
 	return xlib_ffi.XOpenIM(display_, db, res_name, res_class)
 end
---[[@return xlib_im_c]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]]
-display.open_im = function (self, db, res_name, res_class)
+--[[@return xlib_im_c]]
+--[[@param db xlib_rm_database_c]]
+--[[@param res_name ptr_c<ffi.cdata*>]]
+--[[@param res_class ptr_c<ffi.cdata*>]]
+display.open_im = function(self, db, res_name, res_class)
 	return mod.open_im(self.c, db, res_name, res_class)
 end
 
---[[@return xlib_status_c]] --[[@param im xlib_im_c]]
-mod.close_im = function (im) return xlib_ffi.XCloseIM(im) end
+--[[@return xlib_status_c]]
+--[[@param im xlib_im_c]]
+mod.close_im = function(im) return xlib_ffi.XCloseIM(im) end
 
---[[@param im xlib_im_c]] --[[@param ... unknown]]
-mod.set_im_values = function (im, ...)
+--[[@param im xlib_im_c]]
+--[[@param ... unknown]]
+mod.set_im_values = function(im, ...)
 	local first_failing_arg = xlib_ffi.XSetIMValues(im, ...)
 	return first_failing_arg ~= nil and ffi.string(first_failing_arg) or nil
 end
 
---[[@param im xlib_im_c]] --[[@param ... unknown]]
-mod.get_im_values = function (im, ...) 
+--[[@param im xlib_im_c]]
+--[[@param ... unknown]]
+mod.get_im_values = function(im, ...)
 	local first_failing_arg = xlib_ffi.XGetIMValues(im, ...)
 	return first_failing_arg ~= nil and ffi.string(first_failing_arg) or nil
 end
 
 --[[@param im xlib_im_c]]
-mod.display_of_im = function (im) return xlib_ffi.XDisplayOfIM(im)[0] end
+mod.display_of_im = function(im) return xlib_ffi.XDisplayOfIM(im)[0] end
 --[[@param im xlib_im_c]]
-mod.locale_of_im = function (im) return ffi.string(xlib_ffi.XLocaleOfIM(im)) end
+mod.locale_of_im = function(im) return ffi.string(xlib_ffi.XLocaleOfIM(im)) end
 
---[[@return boolean]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
-mod.register_im_instantiate_callback = function (display_, db, res_name, res_class, callback, client_data)
+--[[@return boolean]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param db xlib_rm_database_c]]
+--[[@param res_name ptr_c<ffi.cdata*>]]
+--[[@param res_class ptr_c<ffi.cdata*>]]
+--[[@param callback xlib_id_proc_c]]
+--[[@param client_data xlib_pointer_c?]]
+mod.register_im_instantiate_callback = function(display_, db, res_name, res_class, callback, client_data)
 	return xlib_ffi.XRegisterIMInstantiateCallback(display_, db, res_name, res_class, callback, client_data)
 end
---[[@return boolean]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
-display.register_im_instantiate_callback = function (self, db, res_name, res_class, callback, client_data)
+--[[@return boolean]]
+--[[@param db xlib_rm_database_c]]
+--[[@param res_name ptr_c<ffi.cdata*>]]
+--[[@param res_class ptr_c<ffi.cdata*>]]
+--[[@param callback xlib_id_proc_c]]
+--[[@param client_data xlib_pointer_c?]]
+display.register_im_instantiate_callback = function(self, db, res_name, res_class, callback, client_data)
 	return mod.register_im_instantiate_callback(self.c, db, res_name, res_class, callback, client_data)
 end
 
---[[@return boolean]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
-mod.unregister_im_instantiate_callback = function (display_, db, res_name, res_class, callback, client_data)
+--[[@return boolean]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param db xlib_rm_database_c]]
+--[[@param res_name ptr_c<ffi.cdata*>]]
+--[[@param res_class ptr_c<ffi.cdata*>]]
+--[[@param callback xlib_id_proc_c]]
+--[[@param client_data xlib_pointer_c?]]
+mod.unregister_im_instantiate_callback = function(display_, db, res_name, res_class, callback, client_data)
 	return xlib_ffi.XUnregisterIMInstantiateCallback(display_, db, res_name, res_class, callback, client_data)
 end
---[[@return boolean]] --[[@param db xlib_rm_database_c]] --[[@param res_name ptr_c<ffi.cdata*>]] --[[@param res_class ptr_c<ffi.cdata*>]] --[[@param callback xlib_id_proc_c]] --[[@param client_data xlib_pointer_c?]]
-display.unregister_im_instantiate_callback = function (self, db, res_name, res_class, callback, client_data)
+--[[@return boolean]]
+--[[@param db xlib_rm_database_c]]
+--[[@param res_name ptr_c<ffi.cdata*>]]
+--[[@param res_class ptr_c<ffi.cdata*>]]
+--[[@param callback xlib_id_proc_c]]
+--[[@param client_data xlib_pointer_c?]]
+display.unregister_im_instantiate_callback = function(self, db, res_name, res_class, callback, client_data)
 	return mod.unregister_im_instantiate_callback(self.c, db, res_name, res_class, callback, client_data)
 end
 
---[[@return xlib_ic_c]] --[[@param im xlib_im_c]] --[[@param ... unknown]]
-mod.create_ic = function (im, ...) return xlib_ffi.XCreateIC(im, ...) end
+--[[@return xlib_ic_c]]
+--[[@param im xlib_im_c]]
+--[[@param ... unknown]]
+mod.create_ic = function(im, ...) return xlib_ffi.XCreateIC(im, ...) end
 --[[@param ic xlib_ic_c]]
-mod.destroy_ic = function (ic) return xlib_ffi.XDestroyIC(ic) end
+mod.destroy_ic = function(ic) return xlib_ffi.XDestroyIC(ic) end
 --[[@param ic xlib_ic_c]]
-mod.im_of_ic = function (ic) return xlib_ffi.XIMOfIC(ic) end
+mod.im_of_ic = function(ic) return xlib_ffi.XIMOfIC(ic) end
 --[[@param ic xlib_ic_c]]
-mod.set_ic_focus = function (ic) return xlib_ffi.XSetICFocus(ic) end
+mod.set_ic_focus = function(ic) return xlib_ffi.XSetICFocus(ic) end
 --[[@param ic xlib_ic_c]]
-mod.unset_ic_focus = function (ic) return xlib_ffi.XUnsetICFocus(ic) end
+mod.unset_ic_focus = function(ic) return xlib_ffi.XUnsetICFocus(ic) end
 
---[[@param ic xlib_ic_c]] --[[@param ... unknown]]
-mod.set_ic_values = function (ic, ...)
+--[[@param ic xlib_ic_c]]
+--[[@param ... unknown]]
+mod.set_ic_values = function(ic, ...)
 	local first_failing_arg = xlib_ffi.XSetICValues(ic, ...)
 	return first_failing_arg ~= nil and ffi.string(first_failing_arg) or nil
 end
 
---[[@param ic xlib_ic_c]] --[[@param ... unknown]]
-mod.get_ic_values = function (ic, ...)
+--[[@param ic xlib_ic_c]]
+--[[@param ... unknown]]
+mod.get_ic_values = function(ic, ...)
 	local first_failing_arg = xlib_ffi.XGetICValues(ic, ...)
 	return first_failing_arg ~= nil and ffi.string(first_failing_arg) or nil
 end
 
 --[[@param ic xlib_ic_c]]
-mod.b_reset_ic = function (ic)
+mod.b_reset_ic = function(ic)
 	local ret = xlib_ffi.XmbResetIC(ic)
 	local s = ffi.string(ret)
 	mod.free(ret)
@@ -3652,7 +3690,7 @@ mod.b_reset_ic = function (ic)
 end
 
 --[[@param ic xlib_ic_c]]
-mod.wc_reset_ic = function (ic)
+mod.wc_reset_ic = function(ic)
 	local ret = xlib_ffi.XwcResetIC(ic)
 	local s = ffi.string(ret)
 	mod.free(ret)
@@ -3660,151 +3698,219 @@ mod.wc_reset_ic = function (ic)
 end
 
 --[[@param ic xlib_ic_c]]
-mod.utf8_reset_ic = function (ic)
+mod.utf8_reset_ic = function(ic)
 	local ret = xlib_ffi.Xutf8ResetIC(ic)
 	local s = ffi.string(ret)
 	mod.free(ret)
 	return s
 end
 
---[[@return xlib_colormap_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param window xlib_window_c]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param alloc integer]]
-mod.create_colormap = function (display_, window, visual, alloc)
+--[[@return xlib_colormap_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param window xlib_window_c]]
+--[[@param visual ptr_c<xlib_visual_c>]]
+--[[@param alloc integer]]
+mod.create_colormap = function(display_, window, visual, alloc)
 	return xlib_ffi.XCreateColormap(display_, window, visual, alloc)
 end
---[[@return xlib_colormap_c]] --[[@param window xlib_window_c]] --[[@param visual ptr_c<xlib_visual_c>]] --[[@param alloc integer]]
-display.create_colormap = function (self, window, visual, alloc)
+--[[@return xlib_colormap_c]]
+--[[@param window xlib_window_c]]
+--[[@param visual ptr_c<xlib_visual_c>]]
+--[[@param alloc integer]]
+display.create_colormap = function(self, window, visual, alloc)
 	return mod.create_colormap(self.c, window, visual, alloc)
 end
 
---[[@return xlib_visual_info_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param screen integer]] --[[@param depth integer]]  --[[@param class xlib_display_class]]
-mod.match_visual_info = function (display_, screen, depth, class)
+--[[@return xlib_visual_info_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param screen integer]]
+--[[@param depth integer]]
+--[[@param class xlib_display_class]]
+mod.match_visual_info = function(display_, screen, depth, class)
 	local vinfo = ffi.new("XVisualInfo[1]")
 	xlib_ffi.XMatchVisualInfo(display_, screen, depth, class, vinfo)
 	return vinfo[0]
 end
---[[@return xlib_visual_info_c]] --[[@param screen integer]] --[[@param depth integer]]  --[[@param class xlib_display_class]]
-display.match_visual_info = function (self, screen, depth, class)
+--[[@return xlib_visual_info_c]]
+--[[@param screen integer]]
+--[[@param depth integer]]
+--[[@param class xlib_display_class]]
+display.match_visual_info = function(self, screen, depth, class)
 	return mod.match_visual_info(self.c, screen, depth, class)
 end
 
 local cmajor = ffi.new("int[1]") --[[@type ptr_c<integer>]]
 local cminor = ffi.new("int[1]") --[[@type ptr_c<integer>]]
 
---[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]]
-mod.record_query_version = function (display_)
+--[[@return xlib_status_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+mod.record_query_version = function(display_)
 	--[[returns nonzero (success) only if the returned version numbers are common to both the library and the server]]
 	xlib_tst_ffi.XRecordQueryVersion(display_, cmajor, cminor)
 	return { cmajor = cmajor[0], cminor = cminor[0] }
 end
 --[[@return xlib_status_c]]
-display.record_query_version = function (self)
+display.record_query_version = function(self)
 	return mod.record_query_version(self.c)
 end
 
---[[@return xlib_record_context_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
-mod.record_create_context = function (display_, datum_flags, clients, nclients, ranges, nranges)
+--[[@return xlib_record_context_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param datum_flags xlib_record_datum_flag]]
+--[[@param clients ptr_c<xlib_record_client_spec_c>]]
+--[[@param nclients integer]]
+--[[@param ranges ptr_c<xlib_record_range_c>]]
+--[[@param nranges integer]]
+mod.record_create_context = function(display_, datum_flags, clients, nclients, ranges, nranges)
 	return xlib_tst_ffi.XRecordCreateContext(display_, datum_flags, clients, nclients, ranges, nranges)
 end
---[[@return xlib_record_context_c]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
-display.record_create_context = function (self, datum_flags, clients, nclients, ranges, nranges)
+--[[@return xlib_record_context_c]]
+--[[@param datum_flags xlib_record_datum_flag]]
+--[[@param clients ptr_c<xlib_record_client_spec_c>]]
+--[[@param nclients integer]]
+--[[@param ranges ptr_c<xlib_record_range_c>]]
+--[[@param nranges integer]]
+display.record_create_context = function(self, datum_flags, clients, nclients, ranges, nranges)
 	return mod.record_create_context(self.c, datum_flags, clients, nclients, ranges, nranges)
 end
 
 --[[@return xlib_record_range_c]]
-mod.record_alloc_range = function () return xlib_tst_ffi.XRecordAllocRange()[0] end
+mod.record_alloc_range = function() return xlib_tst_ffi.XRecordAllocRange()[0] end
 
---[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
-mod.record_register_clients = function (display_, context, datum_flags, clients, nclients, ranges, nranges)
+--[[@return xlib_status_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param context xlib_record_context_c]]
+--[[@param datum_flags xlib_record_datum_flag]]
+--[[@param clients ptr_c<xlib_record_client_spec_c>]]
+--[[@param nclients integer]]
+--[[@param ranges ptr_c<xlib_record_range_c>]]
+--[[@param nranges integer]]
+mod.record_register_clients = function(display_, context, datum_flags, clients, nclients, ranges, nranges)
 	return xlib_tst_ffi.XRecordRegisterClients(display_, context, datum_flags, clients, nclients, ranges, nranges)
 end
---[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param datum_flags xlib_record_datum_flag]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]] --[[@param ranges ptr_c<xlib_record_range_c>]] --[[@param nranges integer]]
-display.record_register_clients = function (self, context, datum_flags, clients, nclients, ranges, nranges)
+--[[@return xlib_status_c]]
+--[[@param context xlib_record_context_c]]
+--[[@param datum_flags xlib_record_datum_flag]]
+--[[@param clients ptr_c<xlib_record_client_spec_c>]]
+--[[@param nclients integer]]
+--[[@param ranges ptr_c<xlib_record_range_c>]]
+--[[@param nranges integer]]
+display.record_register_clients = function(self, context, datum_flags, clients, nclients, ranges, nranges)
 	return mod.record_register_clients(self.c, context, datum_flags, clients, nclients, ranges, nranges)
 end
 
---[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]]
-mod.record_un_register_clients = function (display_, context, clients, nclients)
+--[[@return xlib_status_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param context xlib_record_context_c]]
+--[[@param clients ptr_c<xlib_record_client_spec_c>]]
+--[[@param nclients integer]]
+mod.record_un_register_clients = function(display_, context, clients, nclients)
 	return xlib_tst_ffi.XRecordUnRegisterClients(display_, context, clients, nclients)
 end
---[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param clients ptr_c<xlib_record_client_spec_c>]] --[[@param nclients integer]]
-display.record_un_register_clients = function (self, context, clients, nclients)
+--[[@return xlib_status_c]]
+--[[@param context xlib_record_context_c]]
+--[[@param clients ptr_c<xlib_record_client_spec_c>]]
+--[[@param nclients integer]]
+display.record_un_register_clients = function(self, context, clients, nclients)
 	return mod.record_un_register_clients(self.c, context, clients, nclients)
 end
 
---[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]]
-mod.record_get_context = function (display_, context)
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param context xlib_record_context_c]]
+mod.record_get_context = function(display_, context)
 	local state = ffi.new("XRecordState *[1]") --[[@type ptr_c<xlib_record_state_c[]>]]
 	xlib_tst_ffi.XRecordGetContext(display_, context, state)
 	return state[0]
 end
 --[[@param context xlib_record_context_c]]
-display.record_get_context = function (self, context)
+display.record_get_context = function(self, context)
 	return mod.record_get_context(self.c, context)
 end
 
 --[[@param state xlib_record_state_c]]
-mod.record_free_state = function (state) return xlib_tst_ffi.XRecordFreeState(state) end
+mod.record_free_state = function(state) return xlib_tst_ffi.XRecordFreeState(state) end
 
---[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
-mod.record_enable_context = function (display_, context, callback, closure)
+--[[@return xlib_status_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param context xlib_record_context_c]]
+--[[@param callback xlib_record_intercept_proc_c]]
+--[[@param closure xlib_pointer_c]]
+mod.record_enable_context = function(display_, context, callback, closure)
 	return xlib_tst_ffi.XRecordEnableContext(display_, context, callback, closure)
 end
---[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
-display.record_enable_context = function (self, context, callback, closure)
+--[[@return xlib_status_c]]
+--[[@param context xlib_record_context_c]]
+--[[@param callback xlib_record_intercept_proc_c]]
+--[[@param closure xlib_pointer_c]]
+display.record_enable_context = function(self, context, callback, closure)
 	return mod.record_enable_context(self.c, context, callback, closure)
 end
 
---[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
-mod.record_enable_context_async = function (display_, context, callback, closure)
+--[[@return xlib_status_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param context xlib_record_context_c]]
+--[[@param callback xlib_record_intercept_proc_c]]
+--[[@param closure xlib_pointer_c]]
+mod.record_enable_context_async = function(display_, context, callback, closure)
 	return xlib_tst_ffi.XRecordEnableContextAsync(display_, context, callback, closure)
 end
---[[@return xlib_status_c]] --[[@param context xlib_record_context_c]] --[[@param callback xlib_record_intercept_proc_c]] --[[@param closure xlib_pointer_c]]
-display.record_enable_context_async = function (self, context, callback, closure)
+--[[@return xlib_status_c]]
+--[[@param context xlib_record_context_c]]
+--[[@param callback xlib_record_intercept_proc_c]]
+--[[@param closure xlib_pointer_c]]
+display.record_enable_context_async = function(self, context, callback, closure)
 	return mod.record_enable_context_async(self.c, context, callback, closure)
 end
 
 --[[@param display_ ptr_c<xlib_display_c>]]
-mod.record_process_replies = function (display_)
+mod.record_process_replies = function(display_)
 	return xlib_tst_ffi.XRecordProcessReplies(display_)
 end
 
-display.record_process_replies = function (self)
+display.record_process_replies = function(self)
 	return mod.record_process_replies(self.c)
 end
 
 --[[@param data ptr_c<xlib_record_intercept_data_c>]]
-mod.record_free_data = function (data)
+mod.record_free_data = function(data)
 	return xlib_tst_ffi.XRecordFreeData(data)
 end
 --[[@param data ptr_c<xlib_record_intercept_data_c>]]
-display.record_free_data = function (data)
+display.record_free_data = function(data)
 	return mod.record_free_data(data)
 end
 
---[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]]
-mod.record_disable_context = function (display_, context)
+--[[@return xlib_status_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param context xlib_record_context_c]]
+mod.record_disable_context = function(display_, context)
 	return xlib_tst_ffi.XRecordDisableContext(display_, context)
 end
---[[@return xlib_status_c]] --[[@param context xlib_record_context_c]]
-display.record_disable_context = function (self, context)
+--[[@return xlib_status_c]]
+--[[@param context xlib_record_context_c]]
+display.record_disable_context = function(self, context)
 	return mod.record_disable_context(self.c, context)
 end
 
---[[@return xlib_id_c]] --[[@param display_ ptr_c<xlib_display_c>]]
-mod.record_id_base_mask = function (display_)
+--[[@return xlib_id_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+mod.record_id_base_mask = function(display_)
 	return xlib_tst_ffi.XRecordIdBaseMask(display_)
 end
---[[@return xlib_id_c]] 
-display.record_id_base_mask = function (self)
+--[[@return xlib_id_c]]
+display.record_id_base_mask = function(self)
 	return mod.record_id_base_mask(self.c)
 end
 
---[[@return xlib_status_c]] --[[@param display_ ptr_c<xlib_display_c>]] --[[@param context xlib_record_context_c]]
-mod.record_free_context = function (display_, context)
+--[[@return xlib_status_c]]
+--[[@param display_ ptr_c<xlib_display_c>]]
+--[[@param context xlib_record_context_c]]
+mod.record_free_context = function(display_, context)
 	return xlib_tst_ffi.XRecordFreeContext(display_, context)
 end
---[[@return xlib_status_c]] --[[@param context xlib_record_context_c]]
-display.record_free_context = function (self, context)
+--[[@return xlib_status_c]]
+--[[@param context xlib_record_context_c]]
+display.record_free_context = function(self, context)
 	return mod.record_free_context(self.c, context)
 end
 

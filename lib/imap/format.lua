@@ -11,8 +11,9 @@ local mod = {}
 
 local ffi
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_quoted = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_quoted = function(s, i)
 	i = i or 1
 	if s:byte(i) ~= 0x22 --[["]] then return nil, "imap: quoted string is missing starting quote" end
 	local parts = {} --[[@type string[] ]]
@@ -26,7 +27,7 @@ mod.read_quoted = function (s, i)
 		else
 			--[[does not validate that the non-ascii sequences are utf8]]
 			local match = s:match("[^\"\\\\]", i)
-			parts[#parts+1] = match
+			parts[#parts + 1] = match
 			i = i + #match
 		end
 		if i > #s then break end
@@ -36,8 +37,9 @@ mod.read_quoted = function (s, i)
 	return table.concat(parts), i + 1
 end
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_literal = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_literal = function(s, i)
 	i = i or 1
 	local _, end_, length_raw = s:find("{(%d+)+?}", i)
 	if not end_ then return nil, "imap: literal string is missing length" end
@@ -54,17 +56,23 @@ mod.read_literal = function (s, i)
 	return s:sub(i, i + length - 1), i + length
 end
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_string = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_string = function(s, i)
 	i = i or 1
 	local c = s:byte(i)
-	if c == 0x22 --[["]] then return mod.read_quoted(s, i)
-	elseif c == 0x7b --[[{]] then return mod.read_literal(s, i)
-	else return nil, "imap: invalid start of string: " .. s:sub(i, i) end
+	if c == 0x22 --[["]] then
+		return mod.read_quoted(s, i)
+	elseif c == 0x7b --[[{]] then
+		return mod.read_literal(s, i)
+	else
+		return nil, "imap: invalid start of string: " .. s:sub(i, i)
+	end
 end
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_astring = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_astring = function(s, i)
 	i = i or 1
 	local ret = s:match("[^%z- \x7f(){%*\"\\\\]+", i)
 	if ret then return ret, i + #ret end
@@ -76,21 +84,29 @@ end
 --[[@type imap_nil]]
 mod.nil_ = {}
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_string_or_nil = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_string_or_nil = function(s, i)
 	i = i or 1
 	local c = s:byte(i)
-	if c == 0x22 --[["]] then return mod.read_quoted(s, i)
-	elseif c == 0x7b --[[{]] then return mod.read_literal(s, i)
-	elseif s:find("[Nn][Ii][Ll]", i) then return mod.nil_, i + 3
-	else return nil, "imap: invalid start of string: " .. s:sub(i, i) end
+	if c == 0x22 --[["]] then
+		return mod.read_quoted(s, i)
+	elseif c == 0x7b --[[{]] then
+		return mod.read_literal(s, i)
+	elseif s:find("[Nn][Ii][Ll]", i) then
+		return mod.nil_, i + 3
+	else
+		return nil, "imap: invalid start of string: " .. s:sub(i, i)
+	end
 end
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_date_time = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_date_time = function(s, i)
 	i = i or 1
 	--[[@type integer?, integer?, string, string, string, string, string, string, string, string, string]]
-	local _, end_, day, month, year, hour, minute, second, zone_sign, zone_hour, zone_minute = s:find("\"([ %d]%d)-([a-z][a-z][a-z])-(%d%d%d%d) (%d%d):(%d%d):(%d%d) ([+-])(%d%d)(%d%d)\"")
+	local _, end_, day, month, year, hour, minute, second, zone_sign, zone_hour, zone_minute = s:find(
+		"\"([ %d]%d)-([a-z][a-z][a-z])-(%d%d%d%d) (%d%d):(%d%d):(%d%d) ([+-])(%d%d)(%d%d)\"")
 	if not end_ then return nil, "imap: date_time: invalid" end
 	local ret = { --[[@class imap_date_time]]
 		day = day, month = month, hour = hour, minute = minute, second = second, zone = { sign = zone_sign, hour = zone_hour, minute = zone_minute }
@@ -98,8 +114,9 @@ mod.read_date_time = function (s, i)
 	return ret, end_ + 1
 end
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_flag = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_flag = function(s, i)
 	i = i or 1
 	--[[flags: \Answered | \Flagged | \Deleted | \Seen | \Draft]]
 	--[[flag-keywords: $MDNSent | $Forwarded | $Junk | $NotJunk | $Phishing]]
@@ -108,8 +125,9 @@ mod.read_flag = function (s, i)
 	return match, i + #match
 end
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_capability = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_capability = function(s, i)
 	i = i or 1
 	local match = s:match("[Aa][Uu][Tt][Hh]=[^%z- \x7f(){%*\"\\\\]+", i) --[[@type imap_capability?]]
 	if not match then match = s:match("[^%z- \x7f(){%*\"\\\\]+", i) --[[@type imap_capability?]] end
@@ -117,10 +135,11 @@ mod.read_capability = function (s, i)
 	return match, i + #match
 end
 
-local noop_command_reader = function () return {} end
+local noop_command_reader = function() return {} end
 
---[[@param s string]] --[[@param i integer]]
-local mailbox_command_reader = function (s, i)
+--[[@param s string]]
+--[[@param i integer]]
+local mailbox_command_reader = function(s, i)
 	local mailbox
 	--[[@diagnostic disable-next-line: cast-local-type]]
 	mailbox, i = mod.read_astring(s, i)
@@ -133,7 +152,7 @@ mod.command_readers = {}
 mod.command_readers.capability = noop_command_reader
 mod.command_readers.logout = noop_command_reader
 mod.command_readers.noop = noop_command_reader
-mod.command_readers.append = function (s, i)
+mod.command_readers.append = function(s, i)
 	local mailbox
 	--[[@diagnostic disable: param-type-mismatch]]
 	mailbox, i = mod.read_astring(s, i)
@@ -148,7 +167,7 @@ mod.command_readers.append = function (s, i)
 			if not flag then break end
 			if s:byte(i) ~= 0x20 then break end
 			i = i + 1
-			flags[#flags+1] = flag
+			flags[#flags + 1] = flag
 		end
 		if s:byte(i) ~= 0x29 --[[)]] then return nil, "imap: append: missing `)` after flags" end
 	end
@@ -164,14 +183,15 @@ end
 mod.command_readers.create = mailbox_command_reader
 --[[use of "inbox" should give a NO error]]
 mod.command_readers.delete = mailbox_command_reader
-mod.command_readers.enable = function (s, i)
+mod.command_readers.enable = function(s, i)
 	local capabilities = {} --[[@type imap_capability[] ]]
 	while s:byte(i) == 0x20 do
 		i = i + 1
 		local capability
+		--[[@type imap_capability, integer]]
 		capability, i = mod.read_capability(s, i)
 		if not capability then break end
-		capabilities[#capabilities+1] = capability
+		capabilities[#capabilities + 1] = capability
 	end
 	--[[@diagnostic enable: param-type-mismatch]]
 	return { capabilities = capabilities }, i
@@ -181,8 +201,9 @@ mod.command_readers.close = noop_command_reader
 mod.command_readers.unselect = noop_command_reader
 mod.command_readers.expunge = noop_command_reader
 
---[[@param s string]] --[[@param i? integer]]
-mod.read_command = function (s, i)
+--[[@param s string]]
+--[[@param i? integer]]
+mod.read_command = function(s, i)
 	i = i or 1
 	--[[@type integer?, integer?, string, string]]
 	local _, end_, tag, type = s:find("([^%z- \x7f(){%*\"\\\\+]+) (%S+) ?")
@@ -202,117 +223,3 @@ end
 mod.string_to_imap_command = mod.read_command
 
 return mod
-
---[[@class imap_flag: string]]
---[[@class imap_capability: string]]
---[[@class imap_mailbox: string]]
---[[@class imap_message: string]]
---[[@class imap_message_id: string]]
-
---[[@alias imap_command_type "capability"|"logout"|"noop"|"append"|"create"|"delete"|""]]
-
---[[@class imap_command]]
---[[@field tag string distinguishes between commands, not necessarily unique]]
---[[@field type string case insensitive]]
-
---[[@class imap_capability_command: imap_command]]
---[[@field type "capability" case insensitive]]
-
---[[@class imap_logout_command: imap_command]]
---[[@field type "logout" case insensitive]]
-
---[[@class imap_noop_command: imap_command]]
---[[@field type "noop" case insensitive]]
-
---[[@class imap_append_command: imap_command]]
---[[@field type "append" case insensitive]]
---[[@field mailbox imap_mailbox]]
---[[@field flags imap_flag[] ]]
---[[@field date_time imap_date_time?]]
---[[@field messsage imap_message]]
-
---[[@class imap_create_command: imap_command]]
---[[@field type "create" case insensitive]]
---[[@field mailbox imap_mailbox]]
-
---[[@class imap_delete_command: imap_command]]
---[[@field type "delete" case insensitive]]
---[[@field mailbox imap_mailbox]]
-
---[[class imap_enable_command: imap_command]]
---[[field type "enable" case insensitive]]
-
---[[class imap_examine_command: imap_command]]
---[[field type "examine" case insensitive]]
-
---[[class imap_list_command: imap_command]]
---[[field type "list" case insensitive]]
-
---[[class imap_namespace_command: imap_command]]
---[[field type "namespace" case insensitive]]
-
---[[class imap_rename_command: imap_command]]
---[[field type "rename" case insensitive]]
-
---[[class imap_select_command: imap_command]]
---[[field type "select" case insensitive]]
-
---[[class imap_status_command: imap_command]]
---[[field type "status" case insensitive]]
-
---[[class imap_subscribe_command: imap_command]]
---[[field type "subscribe" case insensitive]]
-
---[[class imap_unsubscribe_command: imap_command]]
---[[field type "unsubscribe" case insensitive]]
-
---[[class imap_idle_command: imap_command]]
---[[field type "idle" case insensitive]]
-
---[[class imap_login_command: imap_command]]
---[[field type "login" case insensitive]]
-
---[[class imap_authentiate_command: imap_command]]
---[[field type "authentiate" case insensitive]]
-
---[[@class imap_starttls_command: imap_command]]
---[[@field type "starttls" case insensitive]]
-
---[[@class imap_close_command: imap_command]]
---[[@field type "close" case insensitive]]
-
---[[@class imap_unselect_command: imap_command]]
---[[@field type "unselect" case insensitive]]
-
---[[@class imap_expunge_command: imap_command]]
---[[@field type "expunge" case insensitive]]
-
---[[@class imap_copy_command: imap_command]]
---[[@field type "copy" case insensitive]]
---[[@field message_ids imap_message_id[] ]]
---[[@field mailbox imap_mailbox]]
-
---[[class imap_move_command: imap_command]]
---[[field type "move" case insensitive]]
-
---[[class imap_fetch_command: imap_command]]
---[[field type "fetch" case insensitive]]
-
---[[class imap_store_command: imap_command]]
---[[field type "store" case insensitive]]
-
---[[class imap_search_command: imap_command]]
---[[field type "search" case insensitive]]
-
---[[class imap_uid_command: imap_command]]
---[[field type "uid" case insensitive]]
-
---[["CAPABILITY" / "LOGOUT" / "NOOP"]]
---[[@alias imap_any_any_command imap_capability_command | imap_logout_command | imap_noop_command]]
---[[valid only in authenticated or selected state]]
---[[@alias imap_any_auth_command imap_append_command | imap_create_command | imap_delete_command | imap_enable_command | imap_examine_command | imap_list_command | imap_namespace_command | imap_rename_command | imap_select_command | imap_status_command | imap_subscribe_command | imap_unsubscribe_command | imap_idle_command]]
---[[valid only in not authenticated state]]
---[[@alias imap_any_nonauth_command imap_login_command | imap_authenticate_command | imap_starttls_command]]
---[[valid only in slected state]]
---[[@alias imap_any_select_command imap_close_command | imap_unselect_command | imap_expunge_command | imap_copy_command | imap_move_command | imap_fetch_command | imap_store_command | imap_search_command | imap_uid_command]]
---[[@alias imap_any_command imap_any_any_command | imap_any_auth_command | imap_any_nonauth_command | imap_any_select_command]]

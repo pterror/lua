@@ -1,0 +1,13 @@
+--[[@class http_response]]
+--[[@field status? integer]]
+--[[@field status_text? string]]
+--[[@field headers table<string, string | string[]>]]
+--[[@field body? string]]
+
+--[[@class http_client_request]]
+--[[@field method string]]
+--[[@field host string]]
+--[[@field port? integer]]
+--[[@field path string]]
+--[[@field headers table<string, string[]>]]
+--[[@field body string]]
