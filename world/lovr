@@ -1,0 +1,2 @@
+#!/bin/sh
+nix run nixpkgs#appimage-run /home/me/git/world/deps/lovr-v0.17.1-x86_64.AppImage $@
