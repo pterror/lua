@@ -339,7 +339,6 @@ ffi.cdef [[
 	int wl_list_length(const struct wl_list *list);
 	int wl_list_empty(const struct wl_list *list);
 	void wl_list_insert_list(struct wl_list *list, struct wl_list *other);
-	// #define wl_container_of(ptr, sample, member) (WL_TYPEOF(sample))((char *)(ptr) - offsetof(WL_TYPEOF(*sample), member))
 	struct wl_array {
 			size_t size;
 			size_t alloc;
@@ -520,13 +519,27 @@ mod.wl_fixed_to_int = function(f) return bit.rshift(f, 8) end
 --[[@param i integer]]
 mod.wl_fixed_from_int = function(i) return i * 256 end
 
+local dl = ffi.load("wayland-server")
+
+--[[@param type string]]
+--[[@param member string]]
+mod.wl_container_of = function(ptr, type, member)
+	--[[@diagnostic disable-next-line: param-type-mismatch]]
+	return ffi.cast(type .. "*", ffi.cast("char *", ptr) - ffi.offsetof(type, member))
+end
+
+--[[@param signal wl_signal]]
+mod.wl_signal_init = function(signal)
+	dl.wl_list_init(signal.listener_list)
+end
+
+--[[@param signal wl_signal]]
+--[[@param listener wl_listener]]
+mod.wl_signal_add = function(signal, listener)
+	dl.wl_list_insert(signal.listener_list.prev, listener.link)
+end
+
 --[[TODO:
-	static inline void wl_signal_init(struct wl_signal *signal) {
-		wl_list_init(&signal->listener_list);
-	}
-	static inline void wl_signal_add(struct wl_signal *signal, struct wl_listener *listener) {
-		wl_list_insert(signal->listener_list.prev, &listener->link);
-	}
 	static inline struct wl_listener *wl_signal_get(struct wl_signal *signal, wl_notify_func_t notify) {
 		struct wl_listener *l;
 		wl_list_for_each(l, &signal->listener_list, link)
@@ -545,6 +558,12 @@ mod.wl_fixed_from_int = function(i) return i * 256 end
 
 
 --[[@type wayland_ffi]]
-return ffi.load("wayland-server")
+return setmetatable(mod, { __index = function(_, k) return dl[k] end })
 
 --[[@class wayland_ffi]]
+
+--[[@class wl_signal]]
+--[[@field listener_list unknown]]
+
+--[[@class wl_listener]]
+--[[@field link unknown]]

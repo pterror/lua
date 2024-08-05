@@ -6,6 +6,7 @@ else
 	package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path
 end
 
+--[[TODO: libxkbcommon]]
 local ffi = require("ffi")
 local wlr = require("dep.wlroots")
 local wl = require("dep.wayland_server")
@@ -14,13 +15,15 @@ local wl = require("dep.wayland_server")
 local tinywl_cursor_mode = { passthrough = 0, move = 1, resize = 2 }
 
 ffi.cdef [[
+	void free(void *ptr);
+
 	enum tinywl_cursor_mode {
 		TINYWL_CURSOR_PASSTHROUGH,
 		TINYWL_CURSOR_MOVE,
 		TINYWL_CURSOR_RESIZE,
 	};
 	
-	struct tinywl_server {
+	typedef struct tinywl_server {
 		struct wl_display *wl_display;
 		struct wlr_backend *backend;
 		struct wlr_renderer *renderer;
@@ -55,18 +58,18 @@ ffi.cdef [[
 		struct wlr_output_layout *output_layout;
 		struct wl_list outputs;
 		struct wl_listener new_output;
-	};
+	} tinywl_server;
 	
-	struct tinywl_output {
+	typedef struct tinywl_output {
 		struct wl_list link;
 		struct tinywl_server *server;
 		struct wlr_output *wlr_output;
 		struct wl_listener frame;
 		struct wl_listener request_state;
 		struct wl_listener destroy;
-	};
+	} tinywl_output;
 	
-	struct tinywl_toplevel {
+	typedef struct tinywl_toplevel {
 		struct wl_list link;
 		struct tinywl_server *server;
 		struct wlr_xdg_toplevel *xdg_toplevel;
@@ -79,22 +82,22 @@ ffi.cdef [[
 		struct wl_listener request_resize;
 		struct wl_listener request_maximize;
 		struct wl_listener request_fullscreen;
-	};
-	
-	struct tinywl_popup {
+	} tinywl_toplevel;
+
+	typedef struct tinywl_popup {
 		struct wlr_xdg_popup *xdg_popup;
 		struct wl_listener commit;
 		struct wl_listener destroy;
-	};
+	} tinywl_popup;
 	
-	struct tinywl_keyboard {
+	typedef struct tinywl_keyboard {
 		struct wl_list link;
 		struct tinywl_server *server;
 		struct wlr_keyboard *wlr_keyboard;
 		struct wl_listener modifiers;
 		struct wl_listener key;
 		struct wl_listener destroy;
-	};	
+	} tinywl_keyboard;
 ]]
 
 local mod = {}
@@ -146,17 +149,8 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.keyboard_handle_modifiers = function(listener, data)
-	--[[ This event is raised when a modifier key, such as shift or alt, is
-	 * pressed. We simply communicate this to the client. ]]
-	local keyboard = wl.wl_container_of(listener, keyboard, modifiers)
-	--[[
-	 * A seat can only have one keyboard, but this is a limitation of the
-	 * Wayland protocol - not wlroots. We assign all connected keyboards to the
-	 * same seat. You can swap out the underlying wlr_keyboard like this and
-	 * wlr_seat handles this transparently.
-	 ]]
+	local keyboard = wl.wl_container_of(listener, "tinywl_keyboard", "modifiers")
 	wlr.wlr_seat_set_keyboard(keyboard[0].server[0].seat, keyboard[0].wlr_keyboard)
-	--[[Send modifiers to the client.]]
 	wlr.wlr_seat_keyboard_notify_modifiers(keyboard[0].server[0].seat,
 		keyboard[0].wlr_keyboard[0].modifiers)
 end
@@ -173,7 +167,7 @@ mod.handle_keybinding = function(server, sym)
 		--[[Cycle to the next toplevel]]
 		if wl.wl_list_length(server[0].toplevels) >= 2 then
 			local next_toplevel =
-					wl.wl_container_of(server[0].toplevels.prev, next_toplevel, link)
+					wl.wl_container_of(server[0].toplevels.prev, "tinywl_toplevel", "link")
 			focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
 		end
 	else
@@ -185,22 +179,16 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.keyboard_handle_key = function(listener, data)
-	--[[This event is raised when a key is pressed or released.]]
-	local keyboard =
-			wl.wl_container_of(listener, keyboard, key)
+	local keyboard = wl.wl_container_of(listener, "tinywl_keyboard", "key")
 	local server = keyboard[0].server
 	local event = data
 	local seat = server[0].seat
-
-	--[[Translate libinput keycode [0]. xkbcommon]]
 	local keycode = event[0].keycode + 8
-	--[[Get a list of keysyms based on the keymap for this keyboard]]
 	local syms --[[@type ptr_c<xkb_keysym_t>]]
 	local nsyms = xkb_state_key_get_syms(keyboard[0].wlr_keyboard[0].xkb_state, keycode, syms)
 	local handled = false
 	local modifiers = wlr.wlr_keyboard_get_modifiers(keyboard[0].wlr_keyboard)
-	if bit.band(modifiers, wlr.wlr_modifier.alt) ~= 0 and event[0].state == wl_keyboard_key_state.pressed then
-		--[[if alt was pressed-then try to handle it as a compositor shortcut]]
+	if bit.band(modifiers, wlr.WLR_MODIFIER_ALT) ~= 0 and event[0].state == wl.WL_KEYBOARD_KEY_STATE_PRESSED then
 		for i = 0, nsyms - 1 do
 			handled = mod.handle_keybinding(server, syms[i])
 		end
@@ -216,24 +204,23 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.keyboard_handle_destroy = function(listener, data)
-	local keyboard = wl.wl_container_of(listener, keyboard, destroy)
+	local keyboard = wl.wl_container_of(listener, "wlr_keyboard", "destroy")
 	wl.wl_list_remove(keyboard[0].modifiers.link)
 	wl.wl_list_remove(keyboard[0].key.link)
 	wl.wl_list_remove(keyboard[0].destroy.link)
 	wl.wl_list_remove(keyboard[0].link)
-	free(keyboard)
+	ffi.C.free(keyboard)
 end
 
 --[[@param server ptr_c<tinywl_server>]]
 --[[@param device ptr_c<wlr_input_device>]]
 mod.server_new_keyboard = function(server, device)
 	local wlr_keyboard = wlr.wlr_keyboard_from_input_device(device)
-	local keyboard = ffi.new("wlr_keyboard [1]") --[[@type ptr_c<wlr_keyboard>]]
+	local keyboard = ffi.new("tinywl_keyboard [1]") --[[@type ptr_c<tinywl_keyboard>]]
 	keyboard[0].server = server
 	keyboard[0].wlr_keyboard = wlr_keyboard
 	local context = xkb_context_new(XKB_CONTEXT_NO_FLAGS)
-	local keymap = xkb_keymap_new_from_names(context, nil,
-		XKB_KEYMAP_COMPILE_NO_FLAGS)
+	local keymap = xkb_keymap_new_from_names(context, nil, XKB_KEYMAP_COMPILE_NO_FLAGS)
 	wlr.wlr_keyboard_set_keymap(wlr_keyboard, keymap)
 	xkb_keymap_unref(keymap)
 	xkb_context_unref(context)
@@ -251,31 +238,22 @@ end
 --[[@param server ptr_c<tinywl_server>]]
 --[[@param pointer ptr_c<wlr_input_device>]]
 mod.server_new_pointer = function(server, device)
-	--[[ We don't do anything special with pointers. All of our pointer handling
-	 * is proxied through wlr_cursor. On another compositor, you might take this
-	 * opportunity to do libinput configuration on the device to set
-	 * acceleration, etc. ]]
 	wlr.wlr_cursor_attach_input_device(server[0].cursor, device)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_new_input = function(listener, data)
-	--[[ This event is raised by the backend when a new input device becomes
-	 * available. ]]
-	local server = wl.wl_container_of(listener, server, new_input)
-	local device = data
-	if device[0].type == wlr_input_device.keyboard then
-		server_new_keyboard(server, device)
-	elseif device[0].type == wlr_input_device.pointer then
-		server_new_pointer(server, device)
+	local server = wl.wl_container_of(listener, "tinywl_server", "new_input")
+	local device = ffi.cast("struct wlr_input_device *", data)
+	if device[0].type == wlr.WLR_INPUT_DEVICE_KEYBOARD then
+		mod.server_new_keyboard(server, device)
+	elseif device[0].type == wlr.WLR_INPUT_DEVICE_POINTER then
+		mod.server_new_pointer(server, device)
 	end
-	--[[ We need to let the wlr_seat know what our capabilities are, which is
-	 * communiciated to the client. In TinyWL we always have a cursor, even if
-	 * there are no pointer devices, so we always include that capability. ]]
-	local caps = WL_SEAT_CAPABILITY_POINTER
+	local caps = wl.WL_SEAT_CAPABILITY_POINTER
 	if not wl.wl_list_empty(server[0].keyboards) then
-		caps = bit.bor(caps, wl_seat_capability.keyboard)
+		caps = bit.bor(caps, wl.WL_SEAT_CAPABILITY_KEYBOARD)
 	end
 	wlr.wlr_seat_set_capabilities(server[0].seat, caps)
 end
@@ -283,32 +261,18 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.seat_request_cursor = function(listener, data)
-	local server = wl.wl_container_of(
-		listener, server, request_cursor)
-	--[[This event is raised by the seat when a client provides a cursor image]]
+	local server = wl.wl_container_of(listener, "tinywl_server", "request_cursor")
 	local event = data
-	local focused_client =
-			server[0].seat[0].pointer_state.focused_client
-	--[[ This can be sent by any client, so we check to make sure this one is
-	 * actually has pointer focus first. ]]
+	local focused_client = server[0].seat[0].pointer_state.focused_client
 	if focused_client == event[0].seat_client then
-		--[[ Once we've vetted the client, we can tell the cursor to use the
-		 * provided surface as the cursor image. It will set the hardware cursor
-		 * on the output that it's currently on and continue to do so as the
-		 * cursor moves between outputs. ]]
-		wlr.wlr_cursor_set_surface(server[0].cursor, event[0].surface,
-			event[0].hotspot_x, event[0].hotspot_y)
+		wlr.wlr_cursor_set_surface(server[0].cursor, event[0].surface, event[0].hotspot_x, event[0].hotspot_y)
 	end
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.seat_request_set_selection = function(listener, data)
-	--[[ This event is raised by the seat when a client wants to set the selection,
-	 * usually when the user copies something. wlroots allows compositors to
-	 * ignore such requests if they so choose, but in tinywl we always honor
-	 ]]
-	local server = wl.wl_container_of(listener, server, request_set_selection)
+	local server = wl.wl_container_of(listener, "tinywl_server", "request_set_selection")
 	local event = data
 	wlr.wlr_seat_set_selection(server[0].seat, event[0].source, event[0].serial)
 end
@@ -319,26 +283,16 @@ end
 --[[@param surface ptr_c<ptr_c<wlr_surface>>]]
 --[[@param sx ptr_c<number>]]
 --[[@param sy ptr_c<number>]]
---[[@return ptr_c<tinywl_toplevel>]]
+--[[@return ptr_c<tinywl_toplevel>?]]
 mod.desktop_toplevel_at = function(server, lx, ly,
 																	 surface, sx, sy)
-	--[[ This returns the topmost node in the scene at the given layout coords.
-	 * We only care about surface nodes as we are specifically looking for a
-	 * surface in the surface tree of a tinywl_toplevel[0]. ]]
 	local node = wlr.wlr_scene_node_at(server[0].scene[0].tree.node, lx, ly, sx, sy)
-	if node == nil or node[0].type ~= wlr_scene_node.buffer then
-		return nil
-	end
+	if node == nil or node[0].type ~= wlr.WLR_SCENE_NODE_BUFFER then return nil end
 	local scene_buffer = wlr.wlr_scene_buffer_from_node(node)
 	local scene_surface =
 			wlr.wlr_scene_surface_try_from_buffer(scene_buffer)
-	if not scene_surface then
-		return nil
-	end
-
+	if not scene_surface then return nil end
 	surface[0] = scene_surface[0].surface
-	--[[ Find the node corresponding to the tinywl_toplevel at the root of this
-	 * surface tree, it is the only one for which we set the data field. ]]
 	local tree = node[0].parent
 	while tree ~= nil and tree[0].node.data == nil do
 		tree = tree[0].node.parent
@@ -348,7 +302,6 @@ end
 
 --[[@param server ptr_c<tinywl_server>]]
 mod.reset_cursor_mode = function(server)
-	--[[Reset the cursor mode to passthrough.]]
 	server[0].cursor_mode = tinywl_cursor_mode.passthrough
 	server[0].grabbed_toplevel = nil
 end
@@ -356,7 +309,6 @@ end
 --[[@param server ptr_c<tinywl_server>]]
 --[[@param time integer]]
 mod.process_cursor_move = function(server, time)
-	--[[Move the grabbed toplevel to the new position.]]
 	local toplevel = server[0].grabbed_toplevel
 	wlr.wlr_scene_node_set_position(toplevel[0].scene_tree[0].node,
 		server[0].cursor[0].x - server[0].grab_x,
@@ -366,16 +318,6 @@ end
 --[[@param server ptr_c<tinywl_server>]]
 --[[@param time integer]]
 mod.process_cursor_resize = function(server, time)
-	--[[
-	 * Resizing the grabbed toplevel can be a little bit complicated, because we
-	 * could be resizing from any corner or edge. This not only resizes the
-	 * toplevel on one or two axes, but can also move the toplevel if you resize
-	 * from the top or left edges (or top-left corner).
-	 *
-	 * Note that some shortcuts are taken here. In a more fleshed-out
-	 * compositor, you'd wait for the client to prepare a buffer at the new
-	 * size, then commit any movement that was prepared.
-	 ]]
 	local toplevel = server[0].grabbed_toplevel
 	local border_x = server[0].cursor[0].x - server[0].grab_x
 	local border_y = server[0].cursor[0].y - server[0].grab_y
@@ -383,7 +325,6 @@ mod.process_cursor_resize = function(server, time)
 	local new_right = server[0].grab_geobox.x + server[0].grab_geobox.width
 	local new_top = server[0].grab_geobox.y
 	local new_bottom = server[0].grab_geobox.y + server[0].grab_geobox.height
-
 	if bit.band(server[0].resize_edges, wlr_edge.top) ~= 0 then
 		new_top = border_y
 		if new_top >= new_bottom then new_top = new_bottom - 1 end
@@ -398,7 +339,6 @@ mod.process_cursor_resize = function(server, time)
 		new_right = border_x
 		if new_right <= new_left then new_right = new_left + 1 end
 	end
-	local wlr_box
 	local geo_box
 	wlr.wlr_xdg_surface_get_geometry(toplevel[0].xdg_toplevel[0].base, geo_box)
 	wlr.wlr_scene_node_set_position(toplevel[0].scene_tree[0].node,
@@ -411,21 +351,18 @@ end
 --[[@param server ptr_c<tinywl_server>]]
 --[[@param time integer]]
 mod.process_cursor_motion = function(server, time)
-	--[[If the mode is non-passthrough, delegate to those functions.]]
 	if server[0].cursor_mode == tinywl_cursor_mode.move then
-		process_cursor_move(server, time)
+		mod.process_cursor_move(server, time)
 		return
 	elseif server[0].cursor_mode == tinywl_cursor_mode.resize then
-		process_cursor_resize(server, time)
+		mod.process_cursor_resize(server, time)
 		return
 	end
-	--[[Otherwise, find the toplevel under the pointer and send the event along.]]
 	local sx --[[@type number]]
 	local sy --[[@type number]]
 	local seat = server[0].seat
 	local surface = nil
-	local toplevel = desktop_toplevel_at(server,
-		server[0].cursor[0].x, server[0].cursor[0].y, surface, sx, sy)
+	local toplevel = mod.desktop_toplevel_at(server, server[0].cursor[0].x, server[0].cursor[0].y, surface, sx, sy)
 	if not toplevel then
 		wlr.wlr_cursor_set_xcursor(server[0].cursor, server[0].cursor_mgr, "default")
 	end
@@ -433,8 +370,6 @@ mod.process_cursor_motion = function(server, time)
 		wlr.wlr_seat_pointer_notify_enter(seat, surface, sx, sy)
 		wlr.wlr_seat_pointer_notify_motion(seat, time, sx, sy)
 	else
-		--[[ Clear pointer focus so future button events and such are not sent to
-		 * the last client to have the cursor over it. ]]
 		wlr.wlr_seat_pointer_clear_focus(seat)
 	end
 end
@@ -442,7 +377,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_motion = function(listener, data)
-	local server = wl.wl_container_of(listener, server, cursor_motion)
+	local server = wl.wl_container_of(listener, "tinywl_server", "cursor_motion")
 	local event = data
 	wlr.wlr_cursor_move(server[0].cursor, event[0].pointer[0].base,
 		event[0].delta_x, event[0].delta_y)
@@ -452,7 +387,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_motion_absolute = function(listener, data)
-	local server = wl.wl_container_of(listener, server, cursor_motion_absolute)
+	local server = wl.wl_container_of(listener, "tinywl_server", "cursor_motion_absolute")
 	local event = data
 	wlr.wlr_cursor_warp_absolute(server[0].cursor, event[0].pointer[0].base, event[0].x,
 		event[0].y)
@@ -462,20 +397,17 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_button = function(listener, data)
-	local server = wl.wl_container_of(listener, server, cursor_button)
+	local server = wl.wl_container_of(listener, "tinywl_server", "cursor_button")
 	local event = data
 	wlr.wlr_seat_pointer_notify_button(server[0].seat,
 		event[0].time_msec, event[0].button, event[0].state)
 	local sx --[[@type number]]
 	local sy --[[@type number]]
 	local surface = nil
-	local toplevel = desktop_toplevel_at(server,
-		server[0].cursor[0].x, server[0].cursor[0].y, surface, sx, sy)
-	if event[0].state == wl_pointer_button_state.released then
-		--[[If you released any buttons, we exit interactive move/resize mode.]]
+	local toplevel = mod.desktop_toplevel_at(server, server[0].cursor[0].x, server[0].cursor[0].y, surface, sx, sy)
+	if event[0].state == wl.WL_POINTER_BUTTON_STATE_RELEASED then
 		mod.reset_cursor_mode(server)
 	else
-		--[[Focus that client if the button was _pressed_]]
 		mod.focus_toplevel(toplevel, surface)
 	end
 end
@@ -483,11 +415,8 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_axis = function(listener, data)
-	--[[ This event is forwarded by the cursor when a pointer emits an axis event,
-	 * for example when you move the scroll wheel. ]]
-	local server = wl.wl_container_of(listener, server, cursor_axis)
+	local server = wl.wl_container_of(listener, "tinywl_server", "cursor_axis")
 	local event = data
-	--[[Notify the client with pointer focus of the axis event.]]
 	wlr.wlr_seat_pointer_notify_axis(server[0].seat,
 		event[0].time_msec, event[0].orientation, event[0].delta,
 		event[0].delta_discrete, event[0].source, event[0].relative_direction)
@@ -496,23 +425,19 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_frame = function(listener, data)
-	local server = wl.wl_container_of(listener, server, cursor_frame)
-	--[[Notify the client with pointer focus of the frame event.]]
+	local server = wl.wl_container_of(listener, "tinywl_server", "cursor_frame")
 	wlr.wlr_seat_pointer_notify_frame(server[0].seat)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.output_frame = function(listener, data)
-	--[[ This function is called every time an output is ready to display a frame,
-	 * generally at the output's refresh rate (e.g. 60Hz). ]]
-	local output = wl.wl_container_of(listener, output, frame)
+	local output = wl.wl_container_of(listener, "tinywl_output", "frame")
 	local scene = output[0].server[0].scene
 
 	local scene_output = wlr.wlr_scene_get_scene_output(
 		scene, output[0].wlr_output)
 
-	--[[Render the scene if needed and commit the output]]
 	wlr.wlr_scene_output_commit(scene_output, nil)
 	local now --[[@type timespec_c]]
 	--[[FIXME: call gettime]]
@@ -523,10 +448,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.output_request_state = function(listener, data)
-	--[[ This function is called when the backend requests a new state for
-	 * the output. For example, Wayland and X11 backends request a new mode
-	 * when the output window is resized. ]]
-	local output = wl.wl_container_of(listener, output, request_state)
+	local output = wl.wl_container_of(listener, "tinywl_output", "request_state")
 	local event = data
 	wlr.wlr_output_commit_state(output[0].wlr_output, event[0].state)
 end
@@ -534,19 +456,18 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.output_destroy = function(listener, data)
-	local output = wl.wl_container_of(listener, output, destroy)
-
+	local output = wl.wl_container_of(listener, "tinywl_output", "destroy")
 	wl.wl_list_remove(output[0].frame.link)
 	wl.wl_list_remove(output[0].request_state.link)
 	wl.wl_list_remove(output[0].destroy.link)
 	wl.wl_list_remove(output[0].link)
-	free(output)
+	ffi.C.free(output)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_new_output = function(listener, data)
-	local server = wl.wl_container_of(listener, server, new_output)
+	local server = wl.wl_container_of(listener, "tinywl_server", "new_output")
 	local wlr_output = data
 	wlr.wlr_output_init_render(wlr_output, server[0].allocator, server[0].renderer)
 	local state --[[@type wlr_output_state]]
@@ -574,7 +495,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_map = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, toplevel, map)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "map")
 
 	wl.wl_list_insert(toplevel[0].server[0].toplevels, toplevel[0].link)
 
@@ -584,7 +505,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_unmap = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, toplevel, unmap)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "unmap")
 	if toplevel == toplevel[0].server[0].grabbed_toplevel then
 		reset_cursor_mode(toplevel[0].server)
 	end
@@ -594,7 +515,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_commit = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, toplevel, commit)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "commit")
 	if toplevel[0].xdg_toplevel[0].base[0].initial_commit then
 		wlr.wlr_xdg_toplevel_set_size(toplevel[0].xdg_toplevel, 0, 0)
 	end
@@ -604,7 +525,7 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_destroy = function(listener, data)
 	--[[Called when the xdg_toplevel is destroyed.]]
-	local toplevel = wl.wl_container_of(listener, toplevel, destroy)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "destroy")
 	wl.wl_list_remove(toplevel[0].map.link)
 	wl.wl_list_remove(toplevel[0].unmap.link)
 	wl.wl_list_remove(toplevel[0].commit.link)
@@ -613,7 +534,7 @@ mod.xdg_toplevel_destroy = function(listener, data)
 	wl.wl_list_remove(toplevel[0].request_resize.link)
 	wl.wl_list_remove(toplevel[0].request_maximize.link)
 	wl.wl_list_remove(toplevel[0].request_fullscreen.link)
-	free(toplevel)
+	ffi.C.free(toplevel)
 end
 
 --[[@param toplevel ptr_c<tinywl_toplevel>]]
@@ -650,7 +571,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_move = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, toplevel, request_move)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "request_move")
 	mod.begin_interactive(toplevel, tinywl_cursor_mode.move, 0)
 end
 
@@ -658,14 +579,14 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_resize = function(listener, data)
 	local event = data
-	local toplevel = wl.wl_container_of(listener, toplevel, request_resize)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "request_resize")
 	mod.begin_interactive(toplevel, tinywl_cursor_mode.resize, event[0].edges)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_maximize = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, toplevel, request_maximize)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "request_maximize")
 	if toplevel[0].xdg_toplevel[0].base[0].initialized then
 		wlr.wlr_xdg_surface_schedule_configure(toplevel[0].xdg_toplevel[0].base)
 	end
@@ -675,7 +596,7 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_fullscreen = function(listener, data)
 	--[[Just as with request_maximize, we must send a configure here.]]
-	local toplevel = wl.wl_container_of(listener, toplevel, request_fullscreen)
+	local toplevel = wl.wl_container_of(listener, "tinywl_toplevel", "request_fullscreen")
 	if toplevel[0].xdg_toplevel[0].base[0].initialized then
 		wlr.wlr_xdg_surface_schedule_configure(toplevel[0].xdg_toplevel[0].base)
 	end
@@ -684,7 +605,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_new_xdg_toplevel = function(listener, data)
-	local server = wl.wl_container_of(listener, server, new_xdg_toplevel)
+	local server = wl.wl_container_of(listener, "tinywl_server", "new_xdg_toplevel")
 	local xdg_toplevel = data
 	local toplevel = ffi.new("tinywl_toplevel [1]") --[[@type ptr_c<tinywl_toplevel>]]
 	toplevel[0].server = server
@@ -714,7 +635,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_popup_commit = function(listener, data)
-	local popup = wl.wl_container_of(listener, popup, commit)
+	local popup = wl.wl_container_of(listener, "tinywl_popup", "commit")
 	if popup[0].xdg_popup[0].base[0].initial_commit then
 		wlr.wlr_xdg_surface_schedule_configure(popup[0].xdg_popup[0].base)
 	end
@@ -723,7 +644,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_popup_destroy = function(listener, data)
-	local popup = wl.wl_container_of(listener, popup, destroy)
+	local popup = wl.wl_container_of(listener, "tinywl_popup", "destroy")
 	wl.wl_list_remove(popup[0].commit.link)
 	wl.wl_list_remove(popup[0].destroy.link)
 	ffi.C.free(popup)
@@ -733,7 +654,7 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.server_new_xdg_popup = function(listener, data)
 	local xdg_popup = data
-	local popup = ffi.new("tinywl_popup [1]") --[[@type ptr_c<tinywl_popup>]]
+	local popup = ffi.new("tinywl_popup[1]") --[[@type ptr_c<tinywl_popup>]]
 	popup[0].xdg_popup = xdg_popup
 	local parent = wlr.wlr_xdg_surface_try_from_wlr_surface(xdg_popup[0].parent)
 	assert(parent ~= nil)
@@ -747,7 +668,7 @@ end
 
 mod.run = function()
 	wlr.wlr_log_init(wlr.WLR_DEBUG, nil)
-	local server = ffi.new("struct tinywl_server") --[[@type tinywl_server]]
+	local server = ffi.new("tinywl_server") --[[@type tinywl_server]]
 	server.wl_display = wl.wl_display_create()
 	server.backend = wlr.wlr_backend_autocreate(wl.wl_display_get_event_loop(server.wl_display), nil)
 	if server.backend == nil then
@@ -776,7 +697,7 @@ mod.run = function()
 	server.scene_layout = wlr.wlr_scene_attach_output_layout(server.scene, server.output_layout)
 	wl.wl_list_init(server.toplevels)
 	server.xdg_shell = wlr.wlr_xdg_shell_create(server.wl_display, 3)
-	server.new_xdg_toplevel[0].notify = mod.server_new_xdg_toplevel
+	server.new_xdg_toplevel.notify = mod.server_new_xdg_toplevel
 	wl.wl_signal_add(server.xdg_shell[0].events.new_toplevel, server.new_xdg_toplevel)
 	server.new_xdg_popup.notify = mod.server_new_xdg_popup
 	wl.wl_signal_add(server.xdg_shell[0].events.new_popup, server.new_xdg_popup)
