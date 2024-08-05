@@ -3,6 +3,290 @@ local ffi = require("ffi")
 local mod = {}
 
 ffi.cdef [[
+	enum wl_data_device_error {
+		WL_DATA_DEVICE_ERROR_ROLE,
+	};
+
+	enum wl_display_error {
+		WL_DISPLAY_ERROR_INVALID_OBJECT,
+		WL_DISPLAY_ERROR_INVALID_METHOD,
+		WL_DISPLAY_ERROR_NO_MEMORY,
+	};
+
+	enum wl_keyboard_key_state {
+		WL_KEYBOARD_KEY_STATE_RELEASED,
+		WL_KEYBOARD_KEY_STATE_PRESSED,
+	};
+
+	enum wl_keyboard_keymap_format {
+		WL_KEYBOARD_KEYMAP_FORMAT_NO_KEYMAP,
+		WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
+	};
+
+	enum wl_output_mode {
+		WL_OUTPUT_MODE_CURRENT = 0x1,
+		WL_OUTPUT_MODE_PREFERRED = 0x2,
+	};
+
+	enum wl_output_subpixel {
+		WL_OUTPUT_SUBPIXEL_UNKNOWN,
+		WL_OUTPUT_SUBPIXEL_NONE,
+		WL_OUTPUT_SUBPIXEL_HORIZONTAL_RGB,
+		WL_OUTPUT_SUBPIXEL_HORIZONTAL_BGR,
+		WL_OUTPUT_SUBPIXEL_VERTICAL_RGB,
+		WL_OUTPUT_SUBPIXEL_VERTICAL_BGR,
+	};
+
+	enum wl_output_transform {
+		WL_OUTPUT_TRANSFORM_NORMAL,
+		WL_OUTPUT_TRANSFORM_90,
+		WL_OUTPUT_TRANSFORM_180,
+		WL_OUTPUT_TRANSFORM_270,
+		WL_OUTPUT_TRANSFORM_FLIPPED,
+		WL_OUTPUT_TRANSFORM_FLIPPED_90,
+		WL_OUTPUT_TRANSFORM_FLIPPED_180,
+		WL_OUTPUT_TRANSFORM_FLIPPED_270,
+	};
+
+	enum wl_pointer_axis {
+		WL_POINTER_AXIS_VERTICAL_SCROLL,
+		WL_POINTER_AXIS_HORIZONTAL_SCROLL,
+	};
+
+	enum wl_pointer_button_state {
+		WL_POINTER_BUTTON_STATE_RELEASED,
+		WL_POINTER_BUTTON_STATE_PRESSED,
+	};
+
+	enum wl_pointer_error {
+		WL_POINTER_ERROR_ROLE,
+	};
+
+	enum wl_seat_capability {
+		WL_SEAT_CAPABILITY_POINTER,
+		WL_SEAT_CAPABILITY_KEYBOARD,
+		WL_SEAT_CAPABILITY_TOUCH,
+	};
+
+	enum wl_shell_error {
+		WL_SHELL_ERROR_ROLE,
+	};
+
+	enum wl_shell_surface_fullscreen_method {
+		WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT,
+		WL_SHELL_SURFACE_FULLSCREEN_METHOD_SCALE,
+		WL_SHELL_SURFACE_FULLSCREEN_METHOD_DRIVER,
+		WL_SHELL_SURFACE_FULLSCREEN_METHOD_FILL,
+	};
+
+	enum wl_shell_surface_resize {
+		WL_SHELL_SURFACE_RESIZE_NONE,
+		WL_SHELL_SURFACE_RESIZE_TOP,
+		WL_SHELL_SURFACE_RESIZE_BOTTOM,
+		WL_SHELL_SURFACE_RESIZE_LEFT,
+		WL_SHELL_SURFACE_RESIZE_TOP_LEFT,
+		WL_SHELL_SURFACE_RESIZE_BOTTOM_LEFT,
+		WL_SHELL_SURFACE_RESIZE_RIGHT,
+		WL_SHELL_SURFACE_RESIZE_TOP_RIGHT,
+		WL_SHELL_SURFACE_RESIZE_BOTTOM_RIGHT,
+	};
+
+	enum wl_shell_surface_transient {
+		WL_SHELL_SURFACE_TRANSIENT_INACTIVE = 0x1,
+	};
+
+	enum wl_shm_error {
+		WL_SHM_ERROR_INVALID_FORMAT,
+		WL_SHM_ERROR_INVALID_STRIDE,
+		WL_SHM_ERROR_INVALID_FD,
+	};
+
+	enum wl_shm_format {
+		WL_SHM_FORMAT_ARGB8888,
+		WL_SHM_FORMAT_XRGB8888,
+		WL_SHM_FORMAT_C8 = 0x20203843,
+		WL_SHM_FORMAT_RGB332 = 0x38424752,
+		WL_SHM_FORMAT_BGR233 = 0x38524742,
+		WL_SHM_FORMAT_XRGB4444 = 0x32315258,
+		WL_SHM_FORMAT_XBGR4444 = 0x32314258,
+		WL_SHM_FORMAT_RGBX4444 = 0x32315852,
+		WL_SHM_FORMAT_BGRX4444 = 0x32315842,
+		WL_SHM_FORMAT_ARGB4444 = 0x32315241,
+		WL_SHM_FORMAT_ABGR4444 = 0x32314241,
+		WL_SHM_FORMAT_RGBA4444 = 0x32314152,
+		WL_SHM_FORMAT_BGRA4444 = 0x32314142,
+		WL_SHM_FORMAT_XRGB1555 = 0x35315258,
+		WL_SHM_FORMAT_XBGR1555 = 0x35314258,
+		WL_SHM_FORMAT_RGBX5551 = 0x35315852,
+		WL_SHM_FORMAT_BGRX5551 = 0x35315842,
+		WL_SHM_FORMAT_ARGB1555 = 0x35315241,
+		WL_SHM_FORMAT_ABGR1555 = 0x35314241,
+		WL_SHM_FORMAT_RGBA5551 = 0x35314152,
+		WL_SHM_FORMAT_BGRA5551 = 0x35314142,
+		WL_SHM_FORMAT_RGB565 = 0x36314752,
+		WL_SHM_FORMAT_BGR565 = 0x36314742,
+		WL_SHM_FORMAT_RGB888 = 0x34324752,
+		WL_SHM_FORMAT_BGR888 = 0x34324742,
+		WL_SHM_FORMAT_XBGR8888 = 0x34324258,
+		WL_SHM_FORMAT_RGBX8888 = 0x34325852,
+		WL_SHM_FORMAT_BGRX8888 = 0x34325842,
+		WL_SHM_FORMAT_ABGR8888 = 0x34324241,
+		WL_SHM_FORMAT_RGBA8888 = 0x34324152,
+		WL_SHM_FORMAT_BGRA8888 = 0x34324142,
+		WL_SHM_FORMAT_XRGB2101010 = 0x30335258,
+		WL_SHM_FORMAT_XBGR2101010 = 0x30334258,
+		WL_SHM_FORMAT_RGBX1010102 = 0x30335852,
+		WL_SHM_FORMAT_BGRX1010102 = 0x30335842,
+		WL_SHM_FORMAT_ARGB2101010 = 0x30335241,
+		WL_SHM_FORMAT_ABGR2101010 = 0x30334241,
+		WL_SHM_FORMAT_RGBA1010102 = 0x30334152,
+		WL_SHM_FORMAT_BGRA1010102 = 0x30334142,
+		WL_SHM_FORMAT_YUYV = 0x56595559,
+		WL_SHM_FORMAT_YVYU = 0x55595659,
+		WL_SHM_FORMAT_UYVY = 0x59565955,
+		WL_SHM_FORMAT_VYUY = 0x59555956,
+		WL_SHM_FORMAT_AYUV = 0x56555941,
+		WL_SHM_FORMAT_NV12 = 0x3231564e,
+		WL_SHM_FORMAT_NV21 = 0x3132564e,
+		WL_SHM_FORMAT_NV16 = 0x3631564e,
+		WL_SHM_FORMAT_NV61 = 0x3136564e,
+		WL_SHM_FORMAT_YUV410 = 0x39565559,
+		WL_SHM_FORMAT_YVU410 = 0x39555659,
+		WL_SHM_FORMAT_YUV411 = 0x31315559,
+		WL_SHM_FORMAT_YVU411 = 0x31315659,
+		WL_SHM_FORMAT_YUV420 = 0x32315559,
+		WL_SHM_FORMAT_YVU420 = 0x32315659,
+		WL_SHM_FORMAT_YUV422 = 0x36315559,
+		WL_SHM_FORMAT_YVU422 = 0x36315659,
+		WL_SHM_FORMAT_YUV444 = 0x34325559,
+		WL_SHM_FORMAT_YVU444 = 0x34325659,
+	};
+
+	enum wl_subcompositor_error {
+		WL_SUBCOMPOSITOR_ERROR_BAD_SURFACE,
+	};
+
+	enum wl_subsurface_error {
+		WL_SUBSURFACE_ERROR_BAD_SURFACE,
+	};
+
+	enum wl_surface_error {
+		WL_SURFACE_ERROR_INVALID_SCALE,
+		WL_SURFACE_ERROR_INVALID_TRANSFORM,
+	};
+	enum wp_cursor_shape_device_v1_shape {
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT = 1,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CONTEXT_MENU = 2,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_HELP = 3,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER = 4,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_PROGRESS = 5,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_WAIT = 6,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CELL = 7,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR = 8,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT = 9,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_VERTICAL_TEXT = 10,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALIAS = 11,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COPY = 12,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE = 13,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NO_DROP = 14,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NOT_ALLOWED = 15,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRAB = 16,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRABBING = 17,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_E_RESIZE = 18,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_N_RESIZE = 19,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NE_RESIZE = 20,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NW_RESIZE = 21,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_S_RESIZE = 22,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SE_RESIZE = 23,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SW_RESIZE = 24,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_W_RESIZE = 25,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE = 26,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE = 27,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE = 28,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE = 29,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COL_RESIZE = 30,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ROW_RESIZE = 31,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_SCROLL = 32,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ZOOM_IN = 33,
+		WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ZOOM_OUT = 34,
+	};
+	enum wl_data_device_manager_dnd_action {
+		WL_DATA_DEVICE_MANAGER_DND_ACTION_NONE = 0,
+		WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY = 1,
+		WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE = 2,
+		WL_DATA_DEVICE_MANAGER_DND_ACTION_ASK = 4
+	};
+	enum wl_pointer_axis_source {
+		WL_POINTER_AXIS_SOURCE_WHEEL,
+		WL_POINTER_AXIS_SOURCE_FINGER,
+		WL_POINTER_AXIS_SOURCE_CONTINUOUS,
+		WL_POINTER_AXIS_SOURCE_WHEEL_TILT,
+	};
+	enum zwp_fullscreen_shell_v1_present_method {
+		ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_DEFAULT,
+		ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_CENTER,
+		ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_ZOOM,
+		ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_ZOOM_CROP,
+		ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_STRETCH,
+	};
+	enum zwlr_layer_surface_v1_keyboard_interactivity {
+		ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE,
+		ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE,
+		ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_ON_DEMAND,
+	};
+	enum zwlr_layer_shell_v1_layer {
+		ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND,
+		ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM,
+		ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+		ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+	};
+	enum zwlr_output_power_v1_mode {
+		ZWLR_OUTPUT_POWER_V1_MODE_OFF,
+		ZWLR_OUTPUT_POWER_V1_MODE_ON,
+	};
+	enum wl_pointer_axis_relative_direction {
+		WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL,
+		WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED,
+	};
+	enum zwp_pointer_constraints_v1_lifetime {
+		ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_ONESHOT = 1,
+		ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT = 2,
+	};
+	enum wp_tearing_control_v1_presentation_hint {
+		WP_TEARING_CONTROL_V1_PRESENTATION_HINT_VSYNC,
+		WP_TEARING_CONTROL_V1_PRESENTATION_HINT_ASYNC,
+	};
+	enum xdg_positioner_anchor {
+		XDG_POSITIONER_ANCHOR_NONE = 0,
+		XDG_POSITIONER_ANCHOR_TOP = 1,
+		XDG_POSITIONER_ANCHOR_BOTTOM = 2,
+		XDG_POSITIONER_ANCHOR_LEFT = 3,
+		XDG_POSITIONER_ANCHOR_RIGHT = 4,
+		XDG_POSITIONER_ANCHOR_TOP_LEFT = 5,
+		XDG_POSITIONER_ANCHOR_BOTTOM_LEFT = 6,
+		XDG_POSITIONER_ANCHOR_TOP_RIGHT = 7,
+		XDG_POSITIONER_ANCHOR_BOTTOM_RIGHT = 8,
+	};
+	enum xdg_positioner_gravity {
+		XDG_POSITIONER_GRAVITY_NONE = 0,
+		XDG_POSITIONER_GRAVITY_TOP = 1,
+		XDG_POSITIONER_GRAVITY_BOTTOM = 2,
+		XDG_POSITIONER_GRAVITY_LEFT = 3,
+		XDG_POSITIONER_GRAVITY_RIGHT = 4,
+		XDG_POSITIONER_GRAVITY_TOP_LEFT = 5,
+		XDG_POSITIONER_GRAVITY_BOTTOM_LEFT = 6,
+		XDG_POSITIONER_GRAVITY_TOP_RIGHT = 7,
+		XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT = 8,
+	};
+	enum xdg_positioner_constraint_adjustment {
+		XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_NONE = 0,
+		XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X = 1,
+		XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y = 2,
+		XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X = 4,
+		XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y = 8,
+		XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_RESIZE_X = 16,
+		XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_RESIZE_Y = 32,
+	};
 	/*
 	* Copyright © 2008 Kristian Høgsberg
 	*
@@ -27,6 +311,9 @@ ffi.cdef [[
 	* CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	* SOFTWARE.
 	*/
+	typedef signed int pid_t;
+	typedef unsigned int uid_t;
+	typedef unsigned int gid_t;
 	// https://gitlab.freedesktop.org/wayland/wayland/-/blob/main/src/wayland-util.h
 	struct wl_object;
 	struct wl_message {
@@ -74,7 +361,7 @@ ffi.cdef [[
 		int32_t h;
 	};
 	typedef int (*wl_dispatcher_func_t)(const void *user_data, void *target, uint32_t opcode, const struct wl_message *msg, union wl_argument *args);
-	typedef void (*wl_log_func_t)(const char *fmt, va_list args) WL_PRINTF(1, 0);
+	typedef void (*wl_log_func_t)(const char *fmt, va_list args); // WL_PRINTF(1, 0);
 	enum wl_iterator_result {
 			WL_ITERATOR_STOP,
 			WL_ITERATOR_CONTINUE
@@ -141,11 +428,6 @@ ffi.cdef [[
 	struct wl_list *wl_display_get_client_list(struct wl_display *display);
 	struct wl_list *wl_client_get_link(struct wl_client *client);
 	struct wl_client *wl_client_from_link(struct wl_list *link);
-	/** Iterate over a list of clients. */
-	#define wl_client_for_each(client, list)				\
-		for (client = wl_client_from_link((list)->next);	\
-				 wl_client_get_link(client) != (list);			\
-				 client = wl_client_from_link(wl_client_get_link(client)->next))
 	void wl_client_destroy(struct wl_client *client);
 	void wl_client_flush(struct wl_client *client);
 	void wl_client_get_credentials(struct wl_client *client, pid_t *pid, uid_t *uid, gid_t *gid);
@@ -156,7 +438,7 @@ ffi.cdef [[
 	struct wl_listener *wl_client_get_destroy_late_listener(struct wl_client *client,wl_notify_func_t notify);
 	struct wl_resource *wl_client_get_object(struct wl_client *client, uint32_t id);
 	void wl_client_post_no_memory(struct wl_client *client);
-	void wl_client_post_implementation_error(struct wl_client *client, const char* msg, ...) WL_PRINTF(2,3);
+	void wl_client_post_implementation_error(struct wl_client *client, const char* msg, ...); // WL_PRINTF(2,3);
 	void 	wl_client_add_resource_created_listener(struct wl_client *client, struct wl_listener *listener);
 	typedef enum wl_iterator_result (*wl_client_for_each_resource_iterator_func_t)(struct wl_resource *resource, void *user_data);
 	void wl_client_for_each_resource(struct wl_client *client, wl_client_for_each_resource_iterator_func_t iterator, void *user_data);
@@ -178,7 +460,7 @@ ffi.cdef [[
 	void wl_resource_queue_event(struct wl_resource *resource, uint32_t opcode, ...);
 	void wl_resource_queue_event_array(struct wl_resource *resource, uint32_t opcode, union wl_argument *args);
 	/* msg is a printf format string, variable args are its args. */
-	void 	wl_resource_post_error(struct wl_resource *resource, uint32_t code, const char *msg, ...) WL_PRINTF(3, 4);
+	void 	wl_resource_post_error(struct wl_resource *resource, uint32_t code, const char *msg, ...); // WL_PRINTF(3, 4);
 	void wl_resource_post_no_memory(struct wl_resource *resource);
 	struct wl_display *wl_client_get_display(struct wl_client *client);
 	struct wl_resource *wl_resource_create(struct wl_client *client, const struct wl_interface *interface, int version, uint32_t id);
@@ -255,8 +537,14 @@ mod.wl_fixed_from_int = function(i) return i * 256 end
 		struct wl_listener *l, *next;
 		wl_list_for_each_safe(l, next, &signal->listener_list, link) l->notify(l, data);
 	}
+	#define wl_client_for_each(client, list)				\
+		for (client = wl_client_from_link((list)->next);	\
+				 wl_client_get_link(client) != (list);			\
+				 client = wl_client_from_link(wl_client_get_link(client)->next))
 ]]
 
+
 --[[@type wayland_ffi]]
-return setmetatable(mod, ffi.load("wayland"))
+return ffi.load("wayland-server")
+
 --[[@class wayland_ffi]]

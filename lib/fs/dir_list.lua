@@ -20,7 +20,7 @@ if ffi.os == "Linux" then
 	if ffi.arch == "x64" then
 		ffi.cdef [[
 			typedef unsigned int ino_t;
-			typedef int off_t;
+			// typedef int off_t;
 			// https://elixir.bootlin.com/linux/latest/source/tools/include/nolibc/std.h
 			typedef unsigned /* int */ long dev_t;
 			typedef unsigned long ino_t;
@@ -175,8 +175,9 @@ if ffi.os == "Linux" then
 
 		local stat = ffi.new("struct statx[1]") --[[@type { [0]: statx_c }]]
 
-		--[[@return file_info? entry, string? error]] --[[@param self { dir: dir_c, path: string }]]
-		local dir_list_iter = function (self)
+		--[[@return file_info? entry, string? error]]
+		--[[@param self { dir: dir_c, path: string }]]
+		local dir_list_iter = function(self)
 			local entry = dir_list_ffi.readdir(self.dir)
 			if entry == nil then
 				local err = dir_list_ffi.closedir(self.dir)
@@ -189,7 +190,8 @@ if ffi.os == "Linux" then
 			--[[https://codebrowser.dev/glibc/glibc/io/bits/statx-generic.h.html#_M/STATX_ALL]]
 			local err = dir_list_ffi.statx(-100 --[[AT_FDCWD]], file_path, 0, 0xfff --[[STATX_ALL]], stat)
 			return {
-				name = file_name, path = file_path,
+				name = file_name,
+				path = file_path,
 				--[[https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/stat.h#L23]]
 				is_dir = bit.band(stat[0].stx_mode, 0xf000) == 0x4000,
 				size = err == 0 and tonumber(stat[0].stx_size) or 0,
@@ -200,7 +202,7 @@ if ffi.os == "Linux" then
 
 		--[[@return (fun(self: { dir: dir_c, path: string }): file_info)? iterator, dir_c|string state_or_error]]
 		--[[@param path string]]
-		mod.dir_list = function (path)
+		mod.dir_list = function(path)
 			path = path or "."
 			if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
 			local dir = dir_list_ffi.opendir(path)
@@ -211,8 +213,9 @@ if ffi.os == "Linux" then
 			return dir_list_iter, { dir = dir, path = path }
 		end
 
-		--[[@return file_info? info, string? error]] --[[@param path string]]
-		mod.dir_info = function (path)
+		--[[@return file_info? info, string? error]]
+		--[[@param path string]]
+		mod.dir_info = function(path)
 			path = path or "."
 			if type(path) ~= "string" then return nil, "dir_info: path must be a string" end
 			local dir = dir_list_ffi.opendir(path)
@@ -293,8 +296,9 @@ elseif ffi.os == "Windows" then
 	local err_buf = ffi.new("char[512]")
 	local entry = ffi.new("WIN32_FIND_DATA[1]") --[[@type ptr_c<win32_find_data_c>]]
 
-	--[[@return file_info? entry, string? error]] --[[@param self { dir: win32_find_file_handle_c, path: string }]]
-	local dir_list_iter = function (self)
+	--[[@return file_info? entry, string? error]]
+	--[[@param self { dir: win32_find_file_handle_c, path: string }]]
+	local dir_list_iter = function(self)
 		local success = dir_list_ffi.FindNextFileA(self.dir, entry)
 		if not success then
 			local err = dir_list_ffi.GetLastError()
@@ -313,14 +317,16 @@ elseif ffi.os == "Windows" then
 			path = self.path .. "\\" .. file_name,
 			is_dir = bit.band(entry[0].dwFileAttributes, 0x10 --[[FILE_ATTRIBUTE_DIRECTORY]]) ~= 0,
 			size = tonumber(entry[0].nFileSizeHigh * 0x100000000 + entry[0].nFileSizeLow),
-			created = tonumber((entry[0].ftCreationTime.dwHighDateTime * 0x100000000ULL + entry[0].ftCreationTime.dwLowDateTime) / 10000000ULL - 11644473600ULL),
-			modified = tonumber((entry[0].ftLastAccessTime.dwHighDateTime * 0x100000000ULL + entry[0].ftLastAccessTime.dwLowDateTime) / 10000000ULL - 11644473600ULL),
+			created = tonumber((entry[0].ftCreationTime.dwHighDateTime * 0x100000000ULL + entry[0].ftCreationTime.dwLowDateTime) /
+			10000000ULL - 11644473600ULL),
+			modified = tonumber((entry[0].ftLastAccessTime.dwHighDateTime * 0x100000000ULL + entry[0].ftLastAccessTime.dwLowDateTime) /
+			10000000ULL - 11644473600ULL),
 		}
 	end
 
 	--[[@return (fun(self: { dir: dir_c, path: string }): file_info)? iterator, dir_c|string state_or_error]]
 	--[[@param path string]]
-	mod.dir_list = function (path)
+	mod.dir_list = function(path)
 		path = path or "."
 		if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
 		local dir = dir_list_ffi.FindFirstFileA(path .. "\\*", entry)
@@ -329,8 +335,9 @@ elseif ffi.os == "Windows" then
 		return dir_list_iter, { dir = dir, path = path }
 	end
 
-	--[[@return file_info? info, string? error]] --[[@param path string]]
-	mod.dir_info = function (path)
+	--[[@return file_info? info, string? error]]
+	--[[@param path string]]
+	mod.dir_info = function(path)
 		path = path or "."
 		if type(path) ~= "string" then return nil, "dir_list: path must be a string" end
 		local dir = dir_list_ffi.FindFirstFileA(path .. "\\*", entry)
@@ -343,9 +350,11 @@ elseif ffi.os == "Windows" then
 	end
 end
 
---[[@return file_info[]? entries, string? error]] --[[@param path string]]
-mod.dir_list = mod.dir_list or function (path) return nil, "dir_list: os/processor not supported" end
---[[@return file_info? info, string? error]] --[[@param path string]]
-mod.dir_info = mod.dir_info or function (path) return nil, "dir_info: dir_info: os/processor not supported" end
+--[[@return file_info[]? entries, string? error]]
+--[[@param path string]]
+mod.dir_list = mod.dir_list or function(path) return nil, "dir_list: os/processor not supported" end
+--[[@return file_info? info, string? error]]
+--[[@param path string]]
+mod.dir_info = mod.dir_info or function(path) return nil, "dir_info: dir_info: os/processor not supported" end
 
 return mod

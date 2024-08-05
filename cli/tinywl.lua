@@ -8,7 +8,7 @@ end
 
 local ffi = require("ffi")
 local wlr = require("dep.wlroots")
-local wl = require("dep.wayland")
+local wl = require("dep.wayland_server")
 
 --[[@enum tinywl_cursor_mode]]
 local tinywl_cursor_mode = { passthrough = 0, move = 1, resize = 2 }
@@ -91,7 +91,6 @@ ffi.cdef [[
 		struct wl_list link;
 		struct tinywl_server *server;
 		struct wlr_keyboard *wlr_keyboard;
-	
 		struct wl_listener modifiers;
 		struct wl_listener key;
 		struct wl_listener destroy;
@@ -727,7 +726,7 @@ mod.xdg_popup_destroy = function(listener, data)
 	local popup = wl.wl_container_of(listener, popup, destroy)
 	wl.wl_list_remove(popup[0].commit.link)
 	wl.wl_list_remove(popup[0].destroy.link)
-	free(popup)
+	ffi.C.free(popup)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
@@ -748,7 +747,7 @@ end
 
 mod.run = function()
 	wlr.wlr_log_init(wlr.WLR_DEBUG, nil)
-	local server = ffi.new("tinywl_server") --[[@type tinywl_server]]
+	local server = ffi.new("struct tinywl_server") --[[@type tinywl_server]]
 	server.wl_display = wl.wl_display_create()
 	server.backend = wlr.wlr_backend_autocreate(wl.wl_display_get_event_loop(server.wl_display), nil)
 	if server.backend == nil then
