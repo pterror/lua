@@ -1,15 +1,12 @@
 local ffi = require("ffi")
-require("dep.wayland_server")
+require("dep.xkbcommon") --[[xkb types]]
+require("dep.wayland_server") --[[wl types]]
 
 --[[@class wlroots_ffi]]
 ffi.cdef [[
 	typedef signed long off_t;
 	typedef unsigned /* int */ long dev_t;
 	typedef signed long time_t;
-	typedef uint32_t xkb_mod_mask_t;
-	typedef uint32_t xkb_mod_index_t;
-	typedef uint32_t xkb_layout_index_t;
-	typedef uint32_t xkb_led_index_t;
 	typedef uint32_t xcb_pixmap_t;
 	typedef uint32_t xcb_window_t;
 	typedef uint32_t xcb_atom_t;

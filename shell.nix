@@ -5,6 +5,7 @@ mkShell rec {
     python3
   ];
   buildInputs = [
+    libxkbcommon # compositor
     wayland # compositor
     wlroots # compositor
   ];

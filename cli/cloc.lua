@@ -24,7 +24,7 @@ local dir_list = require("lib.fs.dir_list").dir_list
 local infos = {} --[[@type table<string, cloc_info>]]
 local info_arr = {} --[[@type cloc_info[] ]]
 
--- TODO: vim, sqls, 
+-- TODO: vim, sqls,
 
 local filename_is_text = {
 	license = true, readme = true,
@@ -159,6 +159,7 @@ handle_dir = function (path, top) --[[@param path string]] --[[@param top? boole
 		return
 	end
 	for f in iter, state do
+		--[[FIXME: skip pipes]]
 		if f.is_dir then
 			if not ignore_dir[f.name] then handle_dir(path .. "/" .. f.name) end
 		else handle_file(path .. "/" .. f.name) end

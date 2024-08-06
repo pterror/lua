@@ -19,12 +19,10 @@ local mod = {}
 if ffi.os == "Linux" then
 	if ffi.arch == "x64" then
 		ffi.cdef [[
-			typedef unsigned int ino_t;
-			// typedef int off_t;
 			// https://elixir.bootlin.com/linux/latest/source/tools/include/nolibc/std.h
-			typedef unsigned /* int */ long dev_t;
+			typedef unsigned long dev_t;
 			typedef unsigned long ino_t;
-			typedef unsigned /* int */ long mode_t;
+			typedef unsigned long mode_t;
 			typedef signed int pid_t;
 			typedef unsigned int uid_t;
 			typedef unsigned int gid_t;
@@ -40,7 +38,6 @@ if ffi.os == "Linux" then
 				off_t d_off;
 				unsigned short d_reclen;
 				unsigned char d_type;
-				char _padding[8]; // TODO: why? probably reclen and type need more padding
 				char d_name[256];
 			};
 			// https://codebrowser.dev/glibc/glibc/sysdeps/unix/sysv/linux/x86/bits/struct_stat.h.html#stat
@@ -104,7 +101,7 @@ if ffi.os == "Linux" then
 				uint32_t stx_dev_minor;
 				uint64_t __statx_pad2[14];
 			};
-			
+
 			DIR *opendir(const char *name);
 			struct dirent *readdir(DIR *dirp);
 			int closedir(DIR *dirp);

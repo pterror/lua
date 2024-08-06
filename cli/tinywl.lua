@@ -8,8 +8,10 @@ end
 
 --[[TODO: libxkbcommon]]
 local ffi = require("ffi")
-local wlr = require("dep.wlroots")
+local xkb = require("dep.xkbcommon")
 local wl = require("dep.wayland_server")
+local wlr = require("dep.wlroots")
+local keysym = require("dep.x11_keysym_basic").keysym
 
 --[[@enum tinywl_cursor_mode]]
 local tinywl_cursor_mode = { passthrough = 0, move = 1, resize = 2 }
@@ -161,14 +163,13 @@ end
 --[[@return boolean]]
 mod.handle_keybinding = function(server, sym)
 	--[[alt was presse, try to handle shortcut]]
-	if sym == xkb_key.escape then
+	if sym == keysym.escape then
 		wl.wl_display_terminate(server[0].wl_display)
-	elseif sym == xkb_key.f1 then
+	elseif sym == keysym.f1 then
 		--[[Cycle to the next toplevel]]
 		if wl.wl_list_length(server[0].toplevels) >= 2 then
-			local next_toplevel =
-					wl.wl_container_of(server[0].toplevels.prev, "tinywl_toplevel", "link")
-			focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
+			local next_toplevel = wl.wl_container_of(server[0].toplevels.prev, "tinywl_toplevel", "link")
+			mod.focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
 		end
 	else
 		return false
@@ -185,7 +186,7 @@ mod.keyboard_handle_key = function(listener, data)
 	local seat = server[0].seat
 	local keycode = event[0].keycode + 8
 	local syms --[[@type ptr_c<xkb_keysym_t>]]
-	local nsyms = xkb_state_key_get_syms(keyboard[0].wlr_keyboard[0].xkb_state, keycode, syms)
+	local nsyms = xkb.xkb_state_key_get_syms(keyboard[0].wlr_keyboard[0].xkb.xkb_state, keycode, syms)
 	local handled = false
 	local modifiers = wlr.wlr_keyboard_get_modifiers(keyboard[0].wlr_keyboard)
 	if bit.band(modifiers, wlr.WLR_MODIFIER_ALT) ~= 0 and event[0].state == wl.WL_KEYBOARD_KEY_STATE_PRESSED then
@@ -219,11 +220,11 @@ mod.server_new_keyboard = function(server, device)
 	local keyboard = ffi.new("tinywl_keyboard [1]") --[[@type ptr_c<tinywl_keyboard>]]
 	keyboard[0].server = server
 	keyboard[0].wlr_keyboard = wlr_keyboard
-	local context = xkb_context_new(XKB_CONTEXT_NO_FLAGS)
-	local keymap = xkb_keymap_new_from_names(context, nil, XKB_KEYMAP_COMPILE_NO_FLAGS)
+	local context = xkb.xkb_context_new(xkb.XKB_CONTEXT_NO_FLAGS)
+	local keymap = xkb.xkb_keymap_new_from_names(context, nil, xkb.XKB_KEYMAP_COMPILE_NO_FLAGS)
 	wlr.wlr_keyboard_set_keymap(wlr_keyboard, keymap)
-	xkb_keymap_unref(keymap)
-	xkb_context_unref(context)
+	xkb.xkb_keymap_unref(keymap)
+	xkb.xkb_context_unref(context)
 	wlr.wlr_keyboard_set_repeat_info(wlr_keyboard, 25, 600)
 	keyboard[0].modifiers.notify = mod.keyboard_handle_modifiers
 	wl.wl_signal_add(wlr_keyboard[0].events.modifiers, keyboard[0].modifiers)

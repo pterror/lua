@@ -95,6 +95,7 @@ mod.keysym = {
 	kp_7 = 0xffb7,
 	kp_8 = 0xffb8,
 	kp_9 = 0xffb9,
+	f1 = 0xffbe,
 	f2 = 0xffbf,
 	f3 = 0xffc0,
 	f4 = 0xffc1,
