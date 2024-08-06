@@ -1,8 +1,10 @@
 #!/usr/bin/env luajit
 local arg = arg --[[@type unknown[] ]]
+local here = nil --[[@type string?]]
 if pcall(debug.getlocal, 4, 1) then
 	arg = { ... }
 else
+	here = arg[0]
 	package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path
 end
 
@@ -10,14 +12,58 @@ local ffi = require("ffi")
 local xkb = require("dep.xkbcommon")
 local wl = require("dep.wayland_server")
 local wlr = require("dep.wlroots")
-local keysym = require("dep.x11_keysym_basic").keysym
+local keysym = require("dep.x11_keysym").keysym
+local keysym_rev = {} --[[@type table<integer, string>]]
+for k, v in pairs(keysym) do
+	if #k == 1 then
+		v = keysym[k == k:lower() and k:upper() or k:lower()]
+	end
+	keysym_rev[v] = k
+end
 
---[[@enum tinywl_cursor_mode]]
-local tinywl_cursor_mode = { passthrough = 0, move = 1, resize = 2 }
+--[[TODO: consider hook for on_key]]
+
+local arg_long = { c = "config" }
+local arg_count = { config = 1 }
+local arg_name = nil --[[@type string?]]
+local count_left = 0
+local args = { [""] = {} } --[[@type table<string, boolean|string|string[]>]]
+for _, arg_ in ipairs(arg) do
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
+	local arg_s = arg_ --[[@type string]]
+	if count_left > 0 and arg_name then
+		if arg_count[arg_name] > 1 then
+			args[arg_name] = args[arg_name] or {}
+			args[arg_name][#args[arg_name] + 1] = arg_s
+		else
+			args[arg_name] = arg_s
+		end
+		count_left = count_left - 1
+	elseif arg_s:sub(1, 1) == "-" then
+		local name = arg_s:sub(2)
+		if arg_s:sub(1, 2) == "--" then
+			name = arg_s:sub(3)
+		end
+		name = arg_long[name] or name
+		local count = arg_count[name]
+		if count == 0 or not count then
+			args[name] = true
+		else
+			arg_name = name
+			count_left = count
+		end
+	else
+		args[""][#args[""] + 1] = arg_s
+	end
+end
+
+--[[@enum composter_cursor_mode]]
+local composter_cursor_mode = { passthrough = 0, move = 1, resize = 2 }
 
 ffi.cdef [[
 	void free(void *ptr);
 	int setenv(const char *name, const char *value, int overwrite);
+	typedef int pid_t;
 	typedef int clockid_t;
 	// https://github.com/bminor/glibc/blob/master/time/bits/types/struct_timespec.h
 	// struct timespec {
@@ -25,14 +71,17 @@ ffi.cdef [[
 	// 	int64_t /*__syscall_slong_t*/ tv_nsec;
 	// };
 	int clock_gettime(clockid_t clk_id, struct timespec *tp);
+	pid_t fork(void);
+	int execvp(const char *file, const char *argv[]);
+	void perror(const char *s);
 
-	enum tinywl_cursor_mode {
+	enum composter_cursor_mode {
 		TINYWL_CURSOR_PASSTHROUGH,
 		TINYWL_CURSOR_MOVE,
 		TINYWL_CURSOR_RESIZE,
 	};
 	
-	struct tinywl_server {
+	struct composter_server {
 		struct wl_display *wl_display;
 		struct wlr_backend *backend;
 		struct wlr_renderer *renderer;
@@ -58,8 +107,8 @@ ffi.cdef [[
 		struct wl_listener request_cursor;
 		struct wl_listener request_set_selection;
 		struct wl_list keyboards;
-		enum tinywl_cursor_mode cursor_mode;
-		struct tinywl_toplevel *grabbed_toplevel;
+		enum composter_cursor_mode cursor_mode;
+		struct composter_toplevel *grabbed_toplevel;
 		double grab_x, grab_y;
 		struct wlr_box grab_geobox;
 		uint32_t resize_edges;
@@ -69,18 +118,18 @@ ffi.cdef [[
 		struct wl_listener new_output;
 	};
 	
-	struct tinywl_output {
+	struct composter_output {
 		struct wl_list link;
-		struct tinywl_server *server;
+		struct composter_server *server;
 		struct wlr_output *wlr_output;
 		struct wl_listener frame;
 		struct wl_listener request_state;
 		struct wl_listener destroy;
 	};
 	
-	struct tinywl_toplevel {
+	struct composter_toplevel {
 		struct wl_list link;
-		struct tinywl_server *server;
+		struct composter_server *server;
 		struct wlr_xdg_toplevel *xdg_toplevel;
 		struct wlr_scene_tree *scene_tree;
 		struct wl_listener map;
@@ -93,15 +142,15 @@ ffi.cdef [[
 		struct wl_listener request_fullscreen;
 	};
 
-	struct tinywl_popup {
+	struct composter_popup {
 		struct wlr_xdg_popup *xdg_popup;
 		struct wl_listener commit;
 		struct wl_listener destroy;
 	};
 	
-	struct tinywl_keyboard {
+	struct composter_keyboard {
 		struct wl_list link;
-		struct tinywl_server *server;
+		struct composter_server *server;
 		struct wlr_keyboard *wlr_keyboard;
 		struct wl_listener modifiers;
 		struct wl_listener key;
@@ -111,7 +160,52 @@ ffi.cdef [[
 
 local mod = {}
 
---[[@param toplevel ptr_c<tinywl_toplevel>]]
+mod.variables = {}
+
+mod.keybinds = {} --[[@type table<string, fun(server: composter_server)>]]
+
+mod.hooks = {}
+mod.hooks.on_startup = function() end
+--[[@param server composter_server]]
+mod.hooks.on_exit = function(server) end
+
+mod.functions = {}
+--[[@param ... string]]
+mod.functions.exec = function(...)
+	local pid = ffi.C.fork()
+	if pid == 0 then
+		local count = select("#", ...)
+		local exec_args = ffi.new("const char *[?]", count + 1, { ... })
+		exec_args[count] = nil
+		local ret = ffi.C.execvp(select(1, ...), exec_args)
+		if ret < 0 then
+			ffi.C.perror("\x1b[33merr\x1b[0m: composter: exec failed")
+		end
+		os.exit(ret)
+	end
+end
+--[[@param exec_args string|string[] ]]
+mod.functions.exec1 = function(exec_args)
+	if type(exec_args) == "string" then
+		mod.functions.exec(exec_args)
+	else
+		mod.functions.exec(unpack(exec_args))
+	end
+end
+--[[@param server composter_server]]
+mod.functions.exit = function(server)
+	mod.hooks.on_exit(server)
+	wl.wl_display_terminate(server.wl_display)
+end
+--[[@param server composter_server]]
+mod.functions.next_toplevel = function(server)
+	if wl.wl_list_length(server.toplevels) >= 2 then
+		local next_toplevel = wl.wl_container_of(server.toplevels.prev, "struct composter_toplevel", "link")
+		mod.focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
+	end
+end
+
+--[[@param toplevel ptr_c<composter_toplevel>]]
 --[[@param surface ptr_c<wlr_surface>]]
 mod.focus_toplevel = function(toplevel, surface)
 	if toplevel == nil then return end
@@ -139,36 +233,16 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.keyboard_handle_modifiers = function(listener, data)
-	local keyboard = wl.wl_container_of(listener, "struct tinywl_keyboard", "modifiers")
+	local keyboard = wl.wl_container_of(listener, "struct composter_keyboard", "modifiers")
 	wlr.wlr_seat_set_keyboard(keyboard[0].server[0].seat, keyboard[0].wlr_keyboard)
 	wlr.wlr_seat_keyboard_notify_modifiers(keyboard[0].server[0].seat,
 		keyboard[0].wlr_keyboard[0].modifiers)
 end
 
---[[FIXME: have a table of keybinds, allow arbitrary modifiers]]
---[[@param server ptr_c<tinywl_server>]]
---[[@param sym xkb_keysym_t]]
---[[@return boolean]]
-mod.handle_keybinding = function(server, sym)
-	--[[alt was presse, try to handle shortcut]]
-	if sym == keysym.escape then
-		wl.wl_display_terminate(server[0].wl_display)
-	elseif sym == keysym.f1 then
-		--[[Cycle to the next toplevel]]
-		if wl.wl_list_length(server[0].toplevels) >= 2 then
-			local next_toplevel = wl.wl_container_of(server[0].toplevels.prev, "struct tinywl_toplevel", "link")
-			mod.focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
-		end
-	else
-		return false
-	end
-	return true
-end
-
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.keyboard_handle_key = function(listener, data)
-	local keyboard = wl.wl_container_of(listener, "struct tinywl_keyboard", "key")
+	local keyboard = wl.wl_container_of(listener, "struct composter_keyboard", "key")
 	local server = keyboard[0].server
 	local event = ffi.cast("struct wlr_keyboard_key_event *", data) --[[@type ptr_c<wlr_keyboard_key_event>]]
 	local seat = server[0].seat
@@ -177,15 +251,26 @@ mod.keyboard_handle_key = function(listener, data)
 	local nsyms = xkb.xkb_state_key_get_syms(keyboard[0].wlr_keyboard[0].xkb_state, keycode, syms)
 	local handled = false
 	local modifiers = wlr.wlr_keyboard_get_modifiers(keyboard[0].wlr_keyboard)
-	if bit.band(modifiers, wlr.WLR_MODIFIER_ALT) ~= 0 and event[0].state == wl.WL_KEYBOARD_KEY_STATE_PRESSED then
+	local mod_str = ""
+	if event[0].state == wl.WL_KEYBOARD_KEY_STATE_PRESSED then
+		if bit.band(modifiers, wlr.WLR_MODIFIER_CTRL) ~= 0 then mod_str = mod_str .. "ctrl+" end
+		if bit.band(modifiers, wlr.WLR_MODIFIER_SHIFT) ~= 0 then mod_str = mod_str .. "shift+" end
+		if bit.band(modifiers, wlr.WLR_MODIFIER_ALT) ~= 0 then mod_str = mod_str .. "alt+" end
+		if bit.band(modifiers, wlr.WLR_MODIFIER_LOGO) ~= 0 then mod_str = mod_str .. "meta+" end
 		for i = 0, nsyms - 1 do
-			handled = mod.handle_keybinding(server, syms[0][i])
+			local key_str = mod_str .. keysym_rev[syms[0][i]]
+			local keybind = mod.keybinds[key_str]
+			if keybind then
+				handled = keybind(server[0])
+				if handled == nil then handled = true end
+			end
 		end
 	end
 
 	if not handled then
 		wlr.wlr_seat_set_keyboard(seat, keyboard[0].wlr_keyboard)
 		wlr.wlr_seat_keyboard_notify_key(seat, event[0].time_msec, event[0].keycode, event[0].state)
+		--[[TODO: flow is reaching here but keyboard events are not appearing in terminal]]
 	end
 end
 
@@ -200,11 +285,11 @@ mod.keyboard_handle_destroy = function(listener, data)
 	ffi.C.free(keyboard)
 end
 
---[[@param server ptr_c<tinywl_server>]]
+--[[@param server ptr_c<composter_server>]]
 --[[@param device ptr_c<wlr_input_device>]]
 mod.server_new_keyboard = function(server, device)
 	local wlr_keyboard = wlr.wlr_keyboard_from_input_device(device)
-	local keyboard = ffi.new("struct tinywl_keyboard [1]") --[[@type ptr_c<tinywl_keyboard>]]
+	local keyboard = ffi.new("struct composter_keyboard [1]") --[[@type ptr_c<composter_keyboard>]]
 	keyboard[0].server = server
 	keyboard[0].wlr_keyboard = wlr_keyboard
 	local context = xkb.xkb_context_new(xkb.XKB_CONTEXT_NO_FLAGS)
@@ -223,7 +308,7 @@ mod.server_new_keyboard = function(server, device)
 	wl.wl_list_insert(server[0].keyboards, keyboard[0].link)
 end
 
---[[@param server ptr_c<tinywl_server>]]
+--[[@param server ptr_c<composter_server>]]
 --[[@param pointer ptr_c<wlr_input_device>]]
 mod.server_new_pointer = function(server, device)
 	wlr.wlr_cursor_attach_input_device(server[0].cursor, device)
@@ -232,7 +317,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_new_input = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "new_input")
+	local server = wl.wl_container_of(listener, "struct composter_server", "new_input")
 	local device = ffi.cast("struct wlr_input_device *", data) --[[@type ptr_c<wlr_input_device>]]
 	if device[0].type == wlr.WLR_INPUT_DEVICE_KEYBOARD then
 		mod.server_new_keyboard(server, device)
@@ -249,7 +334,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.seat_request_cursor = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "request_cursor")
+	local server = wl.wl_container_of(listener, "struct composter_server", "request_cursor")
 	local event = ffi.cast("struct wlr_seat_pointer_request_set_cursor_event *", data) --[[@type optr_c<wlr_seat_pointer_request_set_cursor_event>]]
 	local focused_client = server[0].seat[0].pointer_state.focused_client
 	if focused_client == event[0].seat_client then
@@ -260,41 +345,39 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.seat_request_set_selection = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "request_set_selection")
+	local server = wl.wl_container_of(listener, "struct composter_server", "request_set_selection")
 	local event = ffi.cast("struct wlr_seat_request_set_selection_event *", data) --[[@type ptr_c<wlr_seat_request_set_selection_event>]]
 	wlr.wlr_seat_set_selection(server[0].seat, event[0].source, event[0].serial)
 end
 
---[[@param server ptr_c<tinywl_server>]]
+--[[@param server ptr_c<composter_server>]]
 --[[@param lx number]]
 --[[@param ly number]]
 --[[@param surface ptr_c<ptr_c<wlr_surface>>]]
 --[[@param sx ptr_c<number>]]
 --[[@param sy ptr_c<number>]]
---[[@return ptr_c<tinywl_toplevel>?]]
-mod.desktop_toplevel_at = function(server, lx, ly,
-																	 surface, sx, sy)
+--[[@return ptr_c<composter_toplevel>?]]
+mod.desktop_toplevel_at = function(server, lx, ly, surface, sx, sy)
 	local node = wlr.wlr_scene_node_at(server[0].scene[0].tree.node, lx, ly, sx, sy)
 	if node == nil or node[0].type ~= wlr.WLR_SCENE_NODE_BUFFER then return nil end
 	local scene_buffer = wlr.wlr_scene_buffer_from_node(node)
-	local scene_surface =
-			wlr.wlr_scene_surface_try_from_buffer(scene_buffer)
-	if not scene_surface then return nil end
-	surface[0] = scene_surface[0].surface
+	local scene_surface = wlr.wlr_scene_surface_try_from_buffer(scene_buffer)
+	if scene_surface == nil then return nil end
+	surface[0] = scene_surface[0].surface[0]
 	local tree = node[0].parent
 	while tree ~= nil and tree[0].node.data == nil do
 		tree = tree[0].node.parent
 	end
-	return tree[0].node.data
+	return ffi.cast("struct composter_toplevel *", tree[0].node.data)
 end
 
---[[@param server ptr_c<tinywl_server>]]
+--[[@param server ptr_c<composter_server>]]
 mod.reset_cursor_mode = function(server)
-	server[0].cursor_mode = tinywl_cursor_mode.passthrough
+	server[0].cursor_mode = composter_cursor_mode.passthrough
 	server[0].grabbed_toplevel = nil
 end
 
---[[@param server ptr_c<tinywl_server>]]
+--[[@param server ptr_c<composter_server>]]
 --[[@param time integer]]
 mod.process_cursor_move = function(server, time)
 	local toplevel = server[0].grabbed_toplevel
@@ -303,7 +386,7 @@ mod.process_cursor_move = function(server, time)
 		server[0].cursor[0].y - server[0].grab_y)
 end
 
---[[@param server ptr_c<tinywl_server>]]
+--[[@param server ptr_c<composter_server>]]
 --[[@param time integer]]
 mod.process_cursor_resize = function(server, time)
 	local toplevel = server[0].grabbed_toplevel
@@ -336,27 +419,27 @@ mod.process_cursor_resize = function(server, time)
 	wlr.wlr_xdg_toplevel_set_size(toplevel[0].xdg_toplevel, new_width, new_height)
 end
 
---[[@param server ptr_c<tinywl_server>]]
+--[[@param server ptr_c<composter_server>]]
 --[[@param time integer]]
 mod.process_cursor_motion = function(server, time)
-	if server[0].cursor_mode == tinywl_cursor_mode.move then
+	if server[0].cursor_mode == composter_cursor_mode.move then
 		mod.process_cursor_move(server, time)
 		return
-	elseif server[0].cursor_mode == tinywl_cursor_mode.resize then
+	elseif server[0].cursor_mode == composter_cursor_mode.resize then
 		mod.process_cursor_resize(server, time)
 		return
 	end
-	local sx --[[@type number]]
-	local sy --[[@type number]]
+	local sx = ffi.new("double[1]") --[[@type ptr_c<number>]]
+	local sy = ffi.new("double[1]") --[[@type ptr_c<number>]]
 	local seat = server[0].seat
-	local surface = nil
+	local surface = ffi.new("struct wlr_surface*[1]") --[[@type ptr_c<wlr_surface>]]
 	local toplevel = mod.desktop_toplevel_at(server, server[0].cursor[0].x, server[0].cursor[0].y, surface, sx, sy)
-	if not toplevel then
+	if toplevel == nil then
 		wlr.wlr_cursor_set_xcursor(server[0].cursor, server[0].cursor_mgr, "default")
 	end
-	if surface ~= nil then
-		wlr.wlr_seat_pointer_notify_enter(seat, surface, sx, sy)
-		wlr.wlr_seat_pointer_notify_motion(seat, time, sx, sy)
+	if surface[0] ~= nil then
+		wlr.wlr_seat_pointer_notify_enter(seat, surface[0], sx[0], sy[0])
+		wlr.wlr_seat_pointer_notify_motion(seat, time, sx[0], sy[0])
 	else
 		wlr.wlr_seat_pointer_clear_focus(seat)
 	end
@@ -365,7 +448,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_motion = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "cursor_motion")
+	local server = wl.wl_container_of(listener, "struct composter_server", "cursor_motion")
 	local event = ffi.cast("struct wlr_pointer_motion_event *", data) --[[@type ptr_c<wlr_pointer_motion_event>]]
 	wlr.wlr_cursor_move(server[0].cursor, event[0].pointer[0].base,
 		event[0].delta_x, event[0].delta_y)
@@ -375,7 +458,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_motion_absolute = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "cursor_motion_absolute")
+	local server = wl.wl_container_of(listener, "struct composter_server", "cursor_motion_absolute")
 	local event = ffi.cast("struct wlr_pointer_motion_absolute_event *", data) --[[@type ptr_c<wlr_pointer_motion_absolute_event>]]
 	wlr.wlr_cursor_warp_absolute(server[0].cursor, event[0].pointer[0].base, event[0].x,
 		event[0].y)
@@ -385,50 +468,44 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_button = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "cursor_button")
+	local server = wl.wl_container_of(listener, "struct composter_server", "cursor_button")
 	local event = ffi.cast("struct wlr_pointer_button_event *", data) --[[@type ptr_c<wlr_pointer_button_event>]]
-	wlr.wlr_seat_pointer_notify_button(server[0].seat,
-		event[0].time_msec, event[0].button, event[0].state)
-	local sx --[[@type number]]
-	local sy --[[@type number]]
-	local surface = nil
+	wlr.wlr_seat_pointer_notify_button(server[0].seat, event[0].time_msec, event[0].button, event[0].state)
+	local sx = ffi.new("double[1]") --[[@type ptr_c<number>]]
+	local sy = ffi.new("double[1]") --[[@type ptr_c<number>]]
+	local surface = ffi.new("struct wlr_surface*[1]") --[[@type ptr_c<wlr_surface>]]
 	local toplevel = mod.desktop_toplevel_at(server, server[0].cursor[0].x, server[0].cursor[0].y, surface, sx, sy)
 	if event[0].state == wl.WL_POINTER_BUTTON_STATE_RELEASED then
 		mod.reset_cursor_mode(server)
 	else
-		mod.focus_toplevel(toplevel, surface)
+		mod.focus_toplevel(toplevel, surface[0])
 	end
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_axis = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "cursor_axis")
+	local server = wl.wl_container_of(listener, "struct composter_server", "cursor_axis")
 	local event = ffi.cast("struct wlr_pointer_axis_event *", data) --[[@type ptr_c<wlr_pointer_axis_event>]]
-	wlr.wlr_seat_pointer_notify_axis(server[0].seat,
-		event[0].time_msec, event[0].orientation, event[0].delta,
+	wlr.wlr_seat_pointer_notify_axis(server[0].seat, event[0].time_msec, event[0].orientation, event[0].delta,
 		event[0].delta_discrete, event[0].source, event[0].relative_direction)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_cursor_frame = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "cursor_frame")
+	local server = wl.wl_container_of(listener, "struct composter_server", "cursor_frame")
 	wlr.wlr_seat_pointer_notify_frame(server[0].seat)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.output_frame = function(listener, data)
-	local output = wl.wl_container_of(listener, "struct tinywl_output", "frame")
+	local output = wl.wl_container_of(listener, "struct composter_output", "frame")
 	local scene = output[0].server[0].scene
-
-	local scene_output = wlr.wlr_scene_get_scene_output(
-		scene, output[0].wlr_output)
-
+	local scene_output = wlr.wlr_scene_get_scene_output(scene, output[0].wlr_output)
 	wlr.wlr_scene_output_commit(scene_output, nil)
-	local now = ffi.new("struct timespec *") --[[@type ptr_c<timespec_c>]]
-	--[[FIXME: call gettime]]
+	local now = ffi.new("struct timespec[1]") --[[@type ptr_c<timespec_c>]]
 	ffi.C.clock_gettime(1 --[[CLOCK_MONOTONIC]], now)
 	wlr.wlr_scene_output_send_frame_done(scene_output, now)
 end
@@ -436,7 +513,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.output_request_state = function(listener, data)
-	local output = wl.wl_container_of(listener, "struct tinywl_output", "request_state")
+	local output = wl.wl_container_of(listener, "struct composter_output", "request_state")
 	local event = ffi.cast("struct wlr_output_event_request_state *", data) --[[@type ptr_c<wlr_output_event_request_state>]]
 	wlr.wlr_output_commit_state(output[0].wlr_output, event[0].state)
 end
@@ -444,7 +521,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.output_destroy = function(listener, data)
-	local output = wl.wl_container_of(listener, "struct tinywl_output", "destroy")
+	local output = wl.wl_container_of(listener, "struct composter_output", "destroy")
 	wl.wl_list_remove(output[0].frame.link)
 	wl.wl_list_remove(output[0].request_state.link)
 	wl.wl_list_remove(output[0].destroy.link)
@@ -455,7 +532,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_new_output = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "new_output")
+	local server = wl.wl_container_of(listener, "struct composter_server", "new_output")
 	local wlr_output = ffi.cast("struct wlr_output *", data) --[[@type ptr_c<wlr_output>]]
 	wlr.wlr_output_init_render(wlr_output, server[0].allocator, server[0].renderer)
 	local state = ffi.new("struct wlr_output_state") --[[@type wlr_output_state]]
@@ -465,7 +542,7 @@ mod.server_new_output = function(listener, data)
 	if mode ~= nil then wlr.wlr_output_state_set_mode(state, mode) end
 	wlr.wlr_output_commit_state(wlr_output, state)
 	wlr.wlr_output_state_finish(state)
-	local output = ffi.new("struct tinywl_output") --[[@type tinywl_output]]
+	local output = ffi.new("struct composter_output") --[[@type composter_output]]
 	output.wlr_output = wlr_output
 	output.server = server
 	output.frame.notify = mod.output_frame
@@ -483,19 +560,19 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_map = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "map")
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "map")
 
 	wl.wl_list_insert(toplevel[0].server[0].toplevels, toplevel[0].link)
 
-	focus_toplevel(toplevel, toplevel[0].xdg_toplevel[0].base[0].surface)
+	mod.focus_toplevel(toplevel, toplevel[0].xdg_toplevel[0].base[0].surface)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_unmap = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "unmap")
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "unmap")
 	if toplevel == toplevel[0].server[0].grabbed_toplevel then
-		reset_cursor_mode(toplevel[0].server)
+		mod.reset_cursor_mode(toplevel[0].server)
 	end
 	wl.wl_list_remove(toplevel[0].link)
 end
@@ -503,7 +580,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_commit = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "commit")
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "commit")
 	if toplevel[0].xdg_toplevel[0].base[0].initial_commit then
 		wlr.wlr_xdg_toplevel_set_size(toplevel[0].xdg_toplevel, 0, 0)
 	end
@@ -513,7 +590,7 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_destroy = function(listener, data)
 	--[[Called when the xdg_toplevel is destroyed.]]
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "destroy")
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "destroy")
 	wl.wl_list_remove(toplevel[0].map.link)
 	wl.wl_list_remove(toplevel[0].unmap.link)
 	wl.wl_list_remove(toplevel[0].commit.link)
@@ -525,8 +602,8 @@ mod.xdg_toplevel_destroy = function(listener, data)
 	ffi.C.free(toplevel)
 end
 
---[[@param toplevel ptr_c<tinywl_toplevel>]]
---[[@param mode tinywl_cursor_mode]]
+--[[@param toplevel ptr_c<composter_toplevel>]]
+--[[@param mode composter_cursor_mode]]
 --[[@param edges integer]]
 mod.begin_interactive = function(toplevel, mode, edges)
 	local server = toplevel[0].server
@@ -537,7 +614,7 @@ mod.begin_interactive = function(toplevel, mode, edges)
 	end
 	server[0].grabbed_toplevel = toplevel
 	server[0].cursor_mode = mode
-	if mode == tinywl_cursor_mode.move then
+	if mode == composter_cursor_mode.move then
 		server[0].grab_x = server[0].cursor[0].x - toplevel[0].scene_tree[0].node.x
 		server[0].grab_y = server[0].cursor[0].y - toplevel[0].scene_tree[0].node.y
 	else
@@ -559,22 +636,22 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_move = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "request_move")
-	mod.begin_interactive(toplevel, tinywl_cursor_mode.move, 0)
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "request_move")
+	mod.begin_interactive(toplevel, composter_cursor_mode.move, 0)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_resize = function(listener, data)
 	local event = ffi.cast("wlr_xdg_toplevel_resize_event *", data) --[[@type ptr_c<wlr_xdg_toplevel_resize_event>]]
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "request_resize")
-	mod.begin_interactive(toplevel, tinywl_cursor_mode.resize, event[0].edges)
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "request_resize")
+	mod.begin_interactive(toplevel, composter_cursor_mode.resize, event[0].edges)
 end
 
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_maximize = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "request_maximize")
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "request_maximize")
 	if toplevel[0].xdg_toplevel[0].base[0].initialized then
 		wlr.wlr_xdg_surface_schedule_configure(toplevel[0].xdg_toplevel[0].base)
 	end
@@ -584,7 +661,7 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_request_fullscreen = function(listener, data)
 	--[[Just as with request_maximize, we must send a configure here.]]
-	local toplevel = wl.wl_container_of(listener, "struct tinywl_toplevel", "request_fullscreen")
+	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "request_fullscreen")
 	if toplevel[0].xdg_toplevel[0].base[0].initialized then
 		wlr.wlr_xdg_surface_schedule_configure(toplevel[0].xdg_toplevel[0].base)
 	end
@@ -593,9 +670,9 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.server_new_xdg_toplevel = function(listener, data)
-	local server = wl.wl_container_of(listener, "struct tinywl_server", "new_xdg_toplevel")
+	local server = wl.wl_container_of(listener, "struct composter_server", "new_xdg_toplevel")
 	local xdg_toplevel = ffi.cast("struct wlr_xdg_toplevel *", data) --[[@type ptr_c<wlr_xdg_toplevel>]]
-	local toplevel = ffi.new("struct tinywl_toplevel [1]") --[[@type ptr_c<tinywl_toplevel>]]
+	local toplevel = ffi.new("struct composter_toplevel [1]") --[[@type ptr_c<composter_toplevel>]]
 	toplevel[0].server = server
 	toplevel[0].xdg_toplevel = xdg_toplevel
 	toplevel[0].scene_tree = wlr.wlr_scene_xdg_surface_create(toplevel[0].server[0].scene[0].tree, xdg_toplevel[0].base)
@@ -623,7 +700,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_popup_commit = function(listener, data)
-	local popup = wl.wl_container_of(listener, "struct tinywl_popup", "commit")
+	local popup = wl.wl_container_of(listener, "struct composter_popup", "commit")
 	if popup[0].xdg_popup[0].base[0].initial_commit then
 		wlr.wlr_xdg_surface_schedule_configure(popup[0].xdg_popup[0].base)
 	end
@@ -632,7 +709,7 @@ end
 --[[@param listener ptr_c<wl_listener>]]
 --[[@param data ptr_c<unknown>]]
 mod.xdg_popup_destroy = function(listener, data)
-	local popup = wl.wl_container_of(listener, "struct tinywl_popup", "destroy")
+	local popup = wl.wl_container_of(listener, "struct composter_popup", "destroy")
 	wl.wl_list_remove(popup[0].commit.link)
 	wl.wl_list_remove(popup[0].destroy.link)
 	ffi.C.free(popup)
@@ -642,7 +719,7 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.server_new_xdg_popup = function(listener, data)
 	local xdg_popup = ffi.cast("struct wlr_xdg_popup *", data) --[[@type ptr_c<wlr_xdg_popup>]]
-	local popup = ffi.new("struct tinywl_popup[1]") --[[@type ptr_c<tinywl_popup>]]
+	local popup = ffi.new("struct composter_popup[1]") --[[@type ptr_c<composter_popup>]]
 	popup[0].xdg_popup = xdg_popup
 	local parent = wlr.wlr_xdg_surface_try_from_wlr_surface(xdg_popup[0].parent)
 	assert(parent ~= nil)
@@ -656,7 +733,7 @@ end
 
 mod.run = function()
 	wlr.wlr_log_init(wlr.WLR_DEBUG, nil)
-	local server = ffi.new("struct tinywl_server") --[[@type tinywl_server]]
+	local server = ffi.new("struct composter_server") --[[@type composter_server]]
 	server.wl_display = wl.wl_display_create()
 	server.backend = wlr.wlr_backend_autocreate(wl.wl_display_get_event_loop(server.wl_display), nil)
 	if server.backend == nil then
@@ -692,7 +769,7 @@ mod.run = function()
 	server.cursor = wlr.wlr_cursor_create()
 	wlr.wlr_cursor_attach_output_layout(server.cursor, server.output_layout)
 	server.cursor_mgr = wlr.wlr_xcursor_manager_create(nil, 24)
-	server.cursor_mode = tinywl_cursor_mode.passthrough
+	server.cursor_mode = composter_cursor_mode.passthrough
 	server.cursor_motion.notify = mod.server_cursor_motion
 	wl.wl_signal_add(server.cursor[0].events.motion, server.cursor_motion)
 	server.cursor_motion_absolute.notify = mod.server_cursor_motion_absolute
@@ -725,10 +802,7 @@ mod.run = function()
 		return 1
 	end
 	ffi.C.setenv("WAYLAND_DISPLAY", socket, true)
-	-- if fork() == 0 then
-	-- 	--[[TODO: run startup_cmd here]]
-	-- 	-- execl("/bin/sh", "/bin/sh", "-c", startup_cmd, nil)
-	-- end
+	mod.hooks.on_startup()
 	wlr._wlr_log(wlr.WLR_INFO, "Running Wayland compositor on WAYLAND_DISPLAY=%s", socket)
 	wl.wl_display_run(server.wl_display)
 	wl.wl_display_destroy_clients(server.wl_display)
@@ -742,9 +816,30 @@ mod.run = function()
 	return 0
 end
 
-if pcall(debug.getlocal, 4, 1) then return mod else mod.run() end
+if pcall(debug.getlocal, 4, 1) then
+	return mod
+else
+	--[[@diagnostic disable-next-line: lowercase-global]]
+	composter = mod
+	local config = {}
+	local config_path = args.config
+	if config_path then
+		config = dofile(tostring(config_path))
+	else
+		local success
+		success, config = pcall(dofile, tostring(os.getenv("HOME") .. "/.config/composter/config.lua"))
+		if not success then
+			local default_config_path = assert(here):gsub("/composter.lua$", "/composter/default_config.lua")
+			io.stderr:write(
+				"\x1b[33mwarn\x1b[0m: composter: config not found at ~/.config/composter/config.lua, using default config at ",
+				default_config_path:gsub(os.getenv("HOME") or "", "~"), "\n")
+			config = dofile(default_config_path)
+		end
+	end
+	mod.run()
+end
 
---[[@class tinywl_server]]
+--[[@class composter_server]]
 --[[@field wl_display ptr_c<wl_display>]]
 --[[@field backend ptr_c<wlr_backend>]]
 --[[@field renderer ptr_c<wlr_renderer>]]
@@ -767,8 +862,8 @@ if pcall(debug.getlocal, 4, 1) then return mod else mod.run() end
 --[[@field request_cursor wl_listener]]
 --[[@field request_set_selection wl_listener]]
 --[[@field keyboards wl_list]]
---[[@field cursor_mode tinywl_cursor_mode]]
---[[@field grabbed_toplevel? ptr_c<tinywl_toplevel>]]
+--[[@field cursor_mode composter_cursor_mode]]
+--[[@field grabbed_toplevel? ptr_c<composter_toplevel>]]
 --[[@field grab_x number]]
 --[[@field grab_y number]]
 --[[@field grab_geobox wlr_box]]
@@ -777,17 +872,17 @@ if pcall(debug.getlocal, 4, 1) then return mod else mod.run() end
 --[[@field outputs wl_list]]
 --[[@field new_output wl_listener]]
 
---[[@class tinywl_output]]
+--[[@class composter_output]]
 --[[@field link wl_list]]
---[[@field server ptr_c<tinywl_server>]]
+--[[@field server ptr_c<composter_server>]]
 --[[@field wlr_output ptr_c<wlr_output>]]
 --[[@field frame wl_listener]]
 --[[@field request_state wl_listener]]
 --[[@field destroy wl_listener]]
 
---[[@class tinywl_toplevel]]
+--[[@class composter_toplevel]]
 --[[@field link wl_list]]
---[[@field server ptr_c<tinywl_server>]]
+--[[@field server ptr_c<composter_server>]]
 --[[@field xdg_toplevel ptr_c<wlr_xdg_toplevel>]]
 --[[@field scene_tree ptr_c<wlr_scene_tree>]]
 --[[@field map wl_listener]]
@@ -799,14 +894,14 @@ if pcall(debug.getlocal, 4, 1) then return mod else mod.run() end
 --[[@field request_maximize wl_listener]]
 --[[@field request_fullscreen wl_listener]]
 
---[[@class tinywl_popup]]
+--[[@class composter_popup]]
 --[[@field xdg_popup ptr_c<wlr_xdg_popup>]]
 --[[@field commit wl_listener]]
 --[[@field destroy wl_listener]]
 
---[[@class tinywl_keyboard]]
+--[[@class composter_keyboard]]
 --[[@field link wl_list]]
---[[@field server ptr_c<tinywl_server>]]
+--[[@field server ptr_c<composter_server>]]
 --[[@field wlr_keyboard ptr_c<wlr_keyboard>]]
 --[[@field modifiers wl_listener]]
 --[[@field key wl_listener]]
