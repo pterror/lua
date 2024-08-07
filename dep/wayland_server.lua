@@ -556,14 +556,5 @@ end
 				 client = wl_client_from_link(wl_client_get_link(client)->next))
 ]]
 
-
 --[[@type wayland_ffi]]
 return setmetatable(mod, { __index = function(_, k) return dl[k] end })
-
---[[@class wayland_ffi]]
-
---[[@class wl_signal]]
---[[@field listener_list unknown]]
-
---[[@class wl_listener]]
---[[@field link unknown]]

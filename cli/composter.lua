@@ -204,6 +204,11 @@ mod.functions.next_toplevel = function(server)
 		mod.focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
 	end
 end
+--[[@param server composter_server]]
+--[[@param cursor "invalid"|"default"|"context-menu"|"help"|"pointer"|"progress"|"wait"|"cell"|"crosshair"|"text"|"vertical-text"|"alias"|"copy"|"move"|"no-drop"|"not-allowed"|"grab"|"grabbing"|"e-resize"|"n-resize"|"ne-resize"|"nw-resize"|"s-resize"|"se-resize"|"sw-resize"|"w-resize"|"ew-resize"|"ns-resize"|"nesw-resize"|"nwse-resize"|"col-resize"|"row-resize"|"all-scroll"|"zoom-in"|"zoom-out")]]
+mod.functions.set_cursor = function(server, cursor)
+	wlr.wlr_cursor_set_xcursor(server.cursor, server.cursor_mgr, cursor)
+end
 
 --[[@param toplevel ptr_c<composter_toplevel>]]
 --[[@param surface ptr_c<wlr_surface>]]
@@ -392,28 +397,27 @@ mod.process_cursor_resize = function(server, time)
 	local toplevel = server[0].grabbed_toplevel
 	local border_x = server[0].cursor[0].x - server[0].grab_x
 	local border_y = server[0].cursor[0].y - server[0].grab_y
-	local new_left = server[0].grab_geobox.x
-	local new_right = server[0].grab_geobox.x + server[0].grab_geobox.width
-	local new_top = server[0].grab_geobox.y
-	local new_bottom = server[0].grab_geobox.y + server[0].grab_geobox.height
-	if bit.band(server[0].resize_edges, wlr_edge.top) ~= 0 then
+	local new_left = server[0].grab_geobox.x --[[@type number]]
+	local new_right = server[0].grab_geobox.x + server[0].grab_geobox.width --[[@type number]]
+	local new_top = server[0].grab_geobox.y --[[@type number]]
+	local new_bottom = server[0].grab_geobox.y + server[0].grab_geobox.height --[[@type number]]
+	if bit.band(server[0].resize_edges, wlr.WLR_EDGE_TOP) ~= 0 then
 		new_top = border_y
 		if new_top >= new_bottom then new_top = new_bottom - 1 end
-	elseif bit.band(server[0].resize_edges, wlr_edge.bottom) ~= 0 then
+	elseif bit.band(server[0].resize_edges, wlr.WLR_EDGE_BOTTOM) ~= 0 then
 		new_bottom = border_y
 		if new_bottom <= new_top then new_bottom = new_top + 1 end
 	end
-	if bit.band(server[0].resize_edges, wlr_edge.left) ~= 0 then
+	if bit.band(server[0].resize_edges, wlr.WLR_EDGE_LEFT) ~= 0 then
 		new_left = border_x
 		if new_left >= new_right then new_left = new_right - 1 end
-	elseif bit.band(server[0].resize_edges, wlr_edge.right) ~= 0 then
+	elseif bit.band(server[0].resize_edges, wlr.WLR_EDGE_RIGHT) ~= 0 then
 		new_right = border_x
 		if new_right <= new_left then new_right = new_left + 1 end
 	end
 	local geo_box
 	wlr.wlr_xdg_surface_get_geometry(toplevel[0].xdg_toplevel[0].base, geo_box)
-	wlr.wlr_scene_node_set_position(toplevel[0].scene_tree[0].node,
-		new_left - geo_box.x, new_top - geo_box.y)
+	wlr.wlr_scene_node_set_position(toplevel[0].scene_tree[0].node, new_left - geo_box.x, new_top - geo_box.y)
 	local new_width = new_right - new_left
 	local new_height = new_bottom - new_top
 	wlr.wlr_xdg_toplevel_set_size(toplevel[0].xdg_toplevel, new_width, new_height)
@@ -561,9 +565,7 @@ end
 --[[@param data ptr_c<unknown>]]
 mod.xdg_toplevel_map = function(listener, data)
 	local toplevel = wl.wl_container_of(listener, "struct composter_toplevel", "map")
-
 	wl.wl_list_insert(toplevel[0].server[0].toplevels, toplevel[0].link)
-
 	mod.focus_toplevel(toplevel, toplevel[0].xdg_toplevel[0].base[0].surface)
 end
 
@@ -815,6 +817,8 @@ mod.run = function()
 	wl.wl_display_destroy(server.wl_display)
 	return 0
 end
+
+mod.functions.desktop_toplevel_at = mod.desktop_toplevel_at
 
 if pcall(debug.getlocal, 4, 1) then
 	return mod

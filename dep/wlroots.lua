@@ -664,9 +664,9 @@ ffi.cdef [[
 	void _wlr_vlog(enum wlr_log_importance verbosity, const char *format, va_list args);
 	// https://github.com/servo/pixman/blob/958bd334b3c17f529c80f2eeef4224f45c62f292/pixman/pixman.h#L497-L523
 	typedef struct pixman_region32_data	pixman_region32_data_t;
-	typedef struct pixman_box32		pixman_box32_t;
+	typedef struct pixman_box32 pixman_box32_t;
 	typedef struct pixman_rectangle32	pixman_rectangle32_t;
-	typedef struct pixman_region32		pixman_region32_t;
+	typedef struct pixman_region32 pixman_region32_t;
 	struct pixman_box32 {
 		int32_t x1, y1, x2, y2;
 	};
@@ -6380,5 +6380,6 @@ ffi.cdef [[
 	bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms, size_t num_atoms, enum atom_name needle);
 	xcb_void_cookie_t xwm_send_event_with_size(xcb_connection_t *c, uint8_t propagate, xcb_window_t destination, uint32_t event_mask, const void *event, uint32_t length);
 ]]
+
 --[[@type wlroots_ffi]]
 return ffi.load("libwlroots-0.18.so")
