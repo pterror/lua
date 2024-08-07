@@ -4862,7 +4862,7 @@ ffi.cdef [[
 	void wlr_xwayland_server_destroy(struct wlr_xwayland_server *server);
 	// https://gitlab.freedesktop.org/wlroots/wlroots/-/blob/master/include/wlr/xwayland/shell.h
 	/* This an unstable interface of wlroots. No guarantees are made regarding the future consistency of this API. */
-	 struct wlr_xwayland_shell_v1 {
+	struct wlr_xwayland_shell_v1 {
 		struct wl_global *global;
 		struct {
 			struct wl_signal destroy;

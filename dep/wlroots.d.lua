@@ -22,6 +22,29 @@
 --[[@field width number]]
 --[[@field height number]]
 
+--[[@class wlr_scene_node_type enum]]
+--[[@class wlr_scene_debug_damage_option enum]]
+
+--[[@class wlr_scene_tree]]
+--[[@field node wlr_scene_node]]
+--[[@field children wl_list]]
+
+--[[@class wlr_addon_set]]
+
+--[[@class wlr_scene_node]]
+--[[@field type wlr_scene_node_type]]
+--[[@field parent ptr_c<wlr_scene_tree>]]
+--[[@field link wl_list]]
+--[[@field enabled boolean]]
+--[[@field x integer]]
+--[[@field y integer]]
+--[[@field events wlr_scene_node_events]]
+--[[@field data ptr_c<unknown>]]
+--[[@field addons wlr_addon_set]]
+
+--[[@class wlr_scene_node_events]]
+--[[@field destroy wl_signal]]
+
 --[[@class wlr_cursor_state]]
 
 --[[@class wlr_cursor]]

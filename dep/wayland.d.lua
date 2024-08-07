@@ -1,4 +1,5 @@
 --[[@class wayland_ffi]]
+--[[@field wl_list_remove fun(list: wl_list)]]
 
 --[[@class wl_resource]]
 --[[@class wl_object]]

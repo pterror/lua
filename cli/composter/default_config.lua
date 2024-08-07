@@ -7,6 +7,8 @@ local screenshot = { "qti", "--path", os.getenv("HOME") .. "/git/qti/app/screens
 c.variables.terminal = terminal
 c.variables.screenshot = screenshot
 c.keybinds["alt+q"] = function() c.functions.exec1(c.variables.terminal or terminal) end
+--[[@param server composter_server]]
+c.keybinds["alt+c"] = function(server) c.functions.close_focused_window(server) end
 --[[TODO: test]]
 c.keybinds["_3270_print_screen"] = function() c.functions.exec1(c.variables.screenshot or screenshot) end
 c.keybinds["alt+m"] = c.functions.exit

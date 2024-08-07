@@ -1,5 +1,6 @@
 local ffi = require("ffi")
 
+--[[@class wayland_ffi]]
 local mod = {}
 
 ffi.cdef [[
@@ -521,11 +522,13 @@ mod.wl_fixed_from_int = function(i) return i * 256 end
 
 local dl = ffi.load("wayland-server")
 
---[[@param type string]]
+--[[@generic t]]
+--[[@param type `t`]]
 --[[@param member string]]
+--[[@return ptr_c<t>]]
 mod.wl_container_of = function(ptr, type, member)
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
-	return ffi.cast(type .. "*", ffi.cast("char *", ptr) - ffi.offsetof(type, member))
+	return ffi.cast("struct " .. type .. "*", ffi.cast("char *", ptr) - ffi.offsetof("struct " .. type, member))
 end
 
 --[[@param signal wl_signal]]
