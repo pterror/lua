@@ -6382,4 +6382,5 @@ ffi.cdef [[
 ]]
 
 --[[@type wlroots_ffi]]
-return ffi.load("libwlroots-0.18.so")
+local ret = ffi.load("libwlroots-0.18.so")
+return ret

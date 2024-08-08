@@ -179,6 +179,14 @@ mod.variables = {}
 mod.keybinds = {} --[[@type table<string, fun(server: composter_server)>]]
 
 mod.hooks = {}
+--[[@param server composter_server]]
+mod.hooks.on_new_toplevel = function(server) mod.functions.focus_window_below_mouse(server) end
+--[[@param server composter_server]]
+mod.hooks.on_press = function(server) end
+--[[@param server composter_server]]
+mod.hooks.on_release = function(server) mod.reset_cursor_mode(server) end
+--[[@param server composter_server]]
+mod.hooks.on_move = function(server) mod.functions.focus_window_below_mouse(server) end
 mod.hooks.on_startup = function() end
 --[[@param server composter_server]]
 mod.hooks.on_exit = function(server) end
@@ -210,6 +218,11 @@ end
 mod.functions.exit = function(server)
 	mod.hooks.on_exit(server)
 	wl.wl_display_terminate(server.wl_display)
+end
+--[[@param server composter_server]]
+mod.functions.focus_window_below_mouse = function(server)
+	local toplevel, surface = mod.desktop_toplevel_at(server, server.cursor[0].x, server.cursor[0].y)
+	mod.focus_toplevel(toplevel, surface)
 end
 --[[@param server composter_server]]
 mod.functions.focus_next_window = function(server)
@@ -279,8 +292,7 @@ end
 mod.keyboard_handle_modifiers = function(listener, data)
 	local keyboard = wl.wl_container_of(listener, "composter_keyboard", "modifiers")[0]
 	wlr.wlr_seat_set_keyboard(keyboard.server[0].seat, keyboard.wlr_keyboard)
-	wlr.wlr_seat_keyboard_notify_modifiers(keyboard.server[0].seat,
-		keyboard.wlr_keyboard[0].modifiers)
+	wlr.wlr_seat_keyboard_notify_modifiers(keyboard.server[0].seat, keyboard.wlr_keyboard[0].modifiers)
 	local m = keyboard.wlr_keyboard[0].modifiers
 end
 
@@ -292,14 +304,18 @@ mod.keyboard_handle_key = function(listener, data)
 	local seat = server.seat[0]
 	local keycode = event.keycode + 8
 	local syms = ffi.cast("const xkb_keysym_t **", ffi.new("xkb_keysym_t *[1]")) --[[@type ptr_c<xkb_keysym_t>]]
-	local nsyms = xkb.xkb_state_key_get_syms(keyboard.wlr_keyboard.xkb_state, keycode, syms)
+	local nsyms = xkb.xkb_state_key_get_syms(keyboard.wlr_keyboard[0].xkb_state, keycode, syms)
 	local handled = false
 	local modifiers = wlr.wlr_keyboard_get_modifiers(keyboard.wlr_keyboard)
 	local mod_str = ""
 	if event.state == wl.WL_KEYBOARD_KEY_STATE_PRESSED then
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
 		if bit.band(modifiers, wlr.WLR_MODIFIER_CTRL) ~= 0 then mod_str = mod_str .. "ctrl+" end
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
 		if bit.band(modifiers, wlr.WLR_MODIFIER_SHIFT) ~= 0 then mod_str = mod_str .. "shift+" end
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
 		if bit.band(modifiers, wlr.WLR_MODIFIER_ALT) ~= 0 then mod_str = mod_str .. "alt+" end
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
 		if bit.band(modifiers, wlr.WLR_MODIFIER_LOGO) ~= 0 then mod_str = mod_str .. "meta+" end
 		for i = 0, nsyms - 1 do
 			local key_str = mod_str .. keysym_rev[syms[0][i]]
@@ -438,16 +454,20 @@ mod.process_cursor_resize = function(server, time)
 	local new_right = server.grab_geobox.x + server.grab_geobox.width --[[@type number]]
 	local new_top = server.grab_geobox.y --[[@type number]]
 	local new_bottom = server.grab_geobox.y + server.grab_geobox.height --[[@type number]]
+	--[[@diagnostic disable-next-line: param-type-mismatch]]
 	if bit.band(server.resize_edges, wlr.WLR_EDGE_TOP) ~= 0 then
 		new_top = border_y
 		if new_top >= new_bottom then new_top = new_bottom - 1 end
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
 	elseif bit.band(server.resize_edges, wlr.WLR_EDGE_BOTTOM) ~= 0 then
 		new_bottom = border_y
 		if new_bottom <= new_top then new_bottom = new_top + 1 end
 	end
+	--[[@diagnostic disable-next-line: param-type-mismatch]]
 	if bit.band(server.resize_edges, wlr.WLR_EDGE_LEFT) ~= 0 then
 		new_left = border_x
 		if new_left >= new_right then new_left = new_right - 1 end
+		--[[@diagnostic disable-next-line: param-type-mismatch]]
 	elseif bit.band(server.resize_edges, wlr.WLR_EDGE_RIGHT) ~= 0 then
 		new_right = border_x
 		if new_right <= new_left then new_right = new_left + 1 end
@@ -481,6 +501,7 @@ mod.process_cursor_motion = function(server, time)
 	else
 		wlr.wlr_seat_pointer_clear_focus(seat)
 	end
+	mod.hooks.on_move(server)
 end
 
 --[[@type wl_notify_func_t]]
@@ -505,11 +526,10 @@ mod.server_cursor_button = function(listener, data)
 	local server = wl.wl_container_of(listener, "composter_server", "cursor_button")[0]
 	local event = cast("wlr_pointer_button_event", data)[0]
 	wlr.wlr_seat_pointer_notify_button(server.seat, event.time_msec, event.button, event.state)
-	local toplevel, surface = mod.desktop_toplevel_at(server, server.cursor[0].x, server.cursor[0].y)
 	if event.state == wl.WL_POINTER_BUTTON_STATE_RELEASED then
-		mod.reset_cursor_mode(server)
+		mod.hooks.on_release(server)
 	else
-		mod.focus_toplevel(toplevel, surface)
+		mod.hooks.on_press(server)
 	end
 end
 
@@ -622,33 +642,35 @@ mod.xdg_toplevel_destroy = function(listener, data)
 	ffi.C.free(toplevel)
 end
 
---[[@param toplevel ptr_c<composter_toplevel>]]
+--[[@param toplevel composter_toplevel]]
 --[[@param mode composter_cursor_mode]]
 --[[@param edges integer]]
 mod.begin_interactive = function(toplevel, mode, edges)
-	local server = toplevel[0].server
-	local focused_surface = server[0].seat[0].pointer_state.focused_surface
-	if toplevel[0].xdg_toplevel[0].base[0].surface ~= wlr.wlr_surface_get_root_surface(focused_surface) then
+	local server = toplevel.server[0]
+	local focused_surface = server.seat[0].pointer_state.focused_surface
+	if toplevel.xdg_toplevel[0].base[0].surface ~= wlr.wlr_surface_get_root_surface(focused_surface) then
 		return
 	end
-	server[0].grabbed_toplevel = toplevel
-	server[0].cursor_mode = mode
+	server.grabbed_toplevel = toplevel
+	server.cursor_mode = mode
 	if mode == composter_cursor_mode.move then
-		server[0].grab_x = server[0].cursor[0].x - toplevel[0].scene_tree[0].node.x
-		server[0].grab_y = server[0].cursor[0].y - toplevel[0].scene_tree[0].node.y
+		server.grab_x = server.cursor[0].x - toplevel.scene_tree[0].node.x
+		server.grab_y = server.cursor[0].y - toplevel.scene_tree[0].node.y
 	else
 		local geo_box = ffi.new("struct wlr_box *")[0] --[[@type wlr_box]]
-		wlr.wlr_xdg_surface_get_geometry(toplevel[0].xdg_toplevel[0].base, geo_box)
-		local border_x = (toplevel[0].scene_tree[0].node.x + geo_box.x) +
+		wlr.wlr_xdg_surface_get_geometry(toplevel.xdg_toplevel[0].base, geo_box)
+		local border_x = (toplevel.scene_tree[0].node.x + geo_box.x) +
+				--[[@diagnostic disable-next-line: param-type-mismatch]]
 				(bit.band(edges, wlr.WLR_EDGE_RIGHT) ~= 0 and geo_box.width or 0)
-		local border_y = (toplevel[0].scene_tree[0].node.y + geo_box.y) +
+		local border_y = (toplevel.scene_tree[0].node.y + geo_box.y) +
+				--[[@diagnostic disable-next-line: param-type-mismatch]]
 				(bit.band(edges, wlr.WLR_EDGE_BOTTOM) ~= 0 and geo_box.height or 0)
-		server[0].grab_x = server[0].cursor[0].x - border_x
-		server[0].grab_y = server[0].cursor[0].y - border_y
-		server[0].grab_geobox = geo_box
-		server[0].grab_geobox.x = server[0].grab_geobox.x + toplevel[0].scene_tree[0].node.x
-		server[0].grab_geobox.y = server[0].grab_geobox.y + toplevel[0].scene_tree[0].node.y
-		server[0].resize_edges = edges
+		server.grab_x = server.cursor[0].x - border_x
+		server.grab_y = server.cursor[0].y - border_y
+		server.grab_geobox = geo_box
+		server.grab_geobox.x = server.grab_geobox.x + toplevel.scene_tree[0].node.x
+		server.grab_geobox.y = server.grab_geobox.y + toplevel.scene_tree[0].node.y
+		server.resize_edges = edges
 	end
 end
 
@@ -716,6 +738,7 @@ mod.server_new_xdg_toplevel = function(listener, data)
 	wl.wl_signal_add(xdg_toplevel.events.request_maximize, toplevel.request_maximize)
 	toplevel.request_fullscreen.notify = mod.xdg_toplevel_request_fullscreen
 	wl.wl_signal_add(xdg_toplevel.events.request_fullscreen, toplevel.request_fullscreen)
+	mod.hooks.on_new_toplevel(server)
 end
 
 --[[@type wl_notify_func_t]]
@@ -867,75 +890,3 @@ else
 	end
 	mod.run()
 end
-
---[[@class composter_server]]
---[[@field wl_display ptr_c<wl_display>]]
---[[@field backend ptr_c<wlr_backend>]]
---[[@field renderer ptr_c<wlr_renderer>]]
---[[@field allocator ptr_c<wlr_allocator>]]
---[[@field scene ptr_c<wlr_scene>]]
---[[@field scene_layout ptr_c<wlr_scene_output_layout>]]
---[[@field focused_toplevel ptr_c<composter_toplevel>]]
---[[@field xdg_shell ptr_c<wlr_xdg_shell>]]
---[[@field new_xdg_toplevel wl_listener]]
---[[@field new_xdg_popup wl_listener]]
---[[@field toplevels wl_list]]
---[[@field xwayland ptr_c<wlr_xwayland>]]
---[[@field new_xwayland_surface wl_listener]]
---[[@field cursor ptr_c<wlr_cursor>]]
---[[@field cursor_mgr ptr_c<wlr_xcursor_manager>]]
---[[@field cursor_motion wl_listener]]
---[[@field cursor_motion_absolute wl_listener]]
---[[@field cursor_button wl_listener]]
---[[@field cursor_axis wl_listener]]
---[[@field cursor_frame wl_listener]]
---[[@field seat ptr_c<wlr_seat>]]
---[[@field new_input wl_listener]]
---[[@field request_cursor wl_listener]]
---[[@field request_set_selection wl_listener]]
---[[@field keyboards wl_list]]
---[[@field cursor_mode composter_cursor_mode]]
---[[@field grabbed_toplevel? ptr_c<composter_toplevel>]]
---[[@field grab_x number]]
---[[@field grab_y number]]
---[[@field grab_geobox wlr_box]]
---[[@field resize_edges integer]]
---[[@field output_layout ptr_c<wlr_output_layout>]]
---[[@field outputs wl_list]]
---[[@field new_output wl_listener]]
-
---[[@class composter_output]]
---[[@field link wl_list]]
---[[@field server ptr_c<composter_server>]]
---[[@field wlr_output ptr_c<wlr_output>]]
---[[@field frame wl_listener]]
---[[@field request_state wl_listener]]
---[[@field destroy wl_listener]]
-
---[[@class composter_toplevel]]
---[[@field link wl_list]]
---[[@field server ptr_c<composter_server>]]
---[[@field xwayland_surface ptr_c<wlr_xwayland_surface>]]
---[[@field xdg_toplevel ptr_c<wlr_xdg_toplevel>]]
---[[@field scene_tree ptr_c<wlr_scene_tree>]]
---[[@field map wl_listener]]
---[[@field unmap wl_listener]]
---[[@field commit wl_listener]]
---[[@field destroy wl_listener]]
---[[@field request_move wl_listener]]
---[[@field request_resize wl_listener]]
---[[@field request_maximize wl_listener]]
---[[@field request_fullscreen wl_listener]]
-
---[[@class composter_popup]]
---[[@field xdg_popup ptr_c<wlr_xdg_popup>]]
---[[@field commit wl_listener]]
---[[@field destroy wl_listener]]
-
---[[@class composter_keyboard]]
---[[@field link wl_list]]
---[[@field server ptr_c<composter_server>]]
---[[@field wlr_keyboard ptr_c<wlr_keyboard>]]
---[[@field modifiers wl_listener]]
---[[@field key wl_listener]]
---[[@field destroy wl_listener]]
