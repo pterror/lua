@@ -1,0 +1,13 @@
+--[[@class xkb_context]]
+--[[@class xkb_keymap]]
+--[[@class xkb_state]]
+
+--[[@class xkb_keycode_t: integer]]
+--[[@class xkb_keysym_t: integer]]
+--[[@class xkb_layout_index_t: integer]]
+--[[@class xkb_layout_mask_t: integer]]
+--[[@class xkb_level_index_t: integer]]
+--[[@class xkb_mod_index_t: integer]]
+--[[@class xkb_mod_mask_t: integer]]
+--[[@class xkb_led_index_t: integer]]
+--[[@class xkb_led_mask_t: integer]]

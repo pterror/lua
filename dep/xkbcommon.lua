@@ -2,9 +2,6 @@ local ffi = require("ffi")
 
 ffi.cdef [[
 	typedef struct FILE FILE;
-	// #include <xkbcommon/xkbcommon-names.h>
-	// #include <xkbcommon/xkbcommon-keysyms.h>
-	// #include <xkbcommon/xkbcommon-compat.h>
 	struct xkb_context;
 	struct xkb_keymap;
 	struct xkb_state;
@@ -17,15 +14,6 @@ ffi.cdef [[
 	typedef uint32_t xkb_mod_mask_t;
 	typedef uint32_t xkb_led_index_t;
 	typedef uint32_t xkb_led_mask_t;
-	// #define XKB_KEYCODE_INVALID (0xffffffff)
-	// #define XKB_LAYOUT_INVALID  (0xffffffff)
-	// #define XKB_LEVEL_INVALID   (0xffffffff)
-	// #define XKB_MOD_INVALID     (0xffffffff)
-	// #define XKB_LED_INVALID     (0xffffffff)
-	// #define XKB_KEYCODE_MAX     (0xffffffff - 1)
-	// #define XKB_KEYSYM_MAX      0x1fffffff
-	// #define xkb_keycode_is_legal_ext(key) (key <= XKB_KEYCODE_MAX)
-	// #define xkb_keycode_is_legal_x11(key) (key >= 8 && key <= 255)
 	struct xkb_rule_names {
 		const char *rules;
 		const char *model;

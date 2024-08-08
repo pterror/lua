@@ -155,6 +155,7 @@ mod.keysym = {
 	r14 = 0xffdf,
 	f35 = 0xffe0,
 	r15 = 0xffe0,
+	shift_l = 0xffe1,
 	shift_r = 0xffe2,
 	control_l = 0xffe3,
 	control_r = 0xffe4,
