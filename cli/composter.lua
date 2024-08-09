@@ -486,7 +486,7 @@ mod.process_cursor_motion = function(server, time)
 		mod.process_cursor_resize(server, time)
 		return
 	end
-	local seat = server.seat
+	local seat = server.seat[0]
 	local toplevel, surface, sx, sy = mod.desktop_toplevel_at(server, server.cursor[0].x, server.cursor[0].y)
 	if toplevel == nil then
 		wlr.wlr_cursor_set_xcursor(server.cursor, server.cursor_manager, "default")
@@ -760,7 +760,7 @@ mod.server_new_xdg_popup = function(listener, data)
 	popup.xdg_popup = xdg_popup
 	local parent = wlr.wlr_xdg_surface_try_from_wlr_surface(xdg_popup.parent)[0]
 	assert(parent ~= nil, "composter: server_new_xdg_popup: parent must not be NULL")
-	local parent_tree = parent.data
+	local parent_tree = parent.data[0]
 	xdg_popup.base[0].data = wlr.wlr_scene_xdg_surface_create(parent_tree, xdg_popup.base)
 	popup.commit.notify = mod.xdg_popup_commit
 	wl.wl_signal_add(xdg_popup.base[0].surface[0].events.commit, popup.commit)
@@ -770,7 +770,7 @@ end
 
 mod.run = function()
 	wlr.wlr_log_init(wlr.WLR_ERROR, nil)
-	local server = new("composter_server") --[[@type composter_server]]
+	local server = new("composter_server")
 	server.wl_display = wl.wl_display_create()
 	server.backend = wlr.wlr_backend_autocreate(wl.wl_display_get_event_loop(server.wl_display), nil)
 	if server.backend == nil then

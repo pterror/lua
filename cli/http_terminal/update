@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-# FIXME: download to this directory no matter where script is executed from
-mkdir -p static
-curl https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js -o static/xterm.js
-curl https://cdn.jsdelivr.net/npm/xterm/lib/xterm.css -o static/xterm.css
-curl https://cdn.jsdelivr.net/npm/xterm/lib/xterm.d.ts -o static/xterm.d.ts
-sed -i "s/declare module 'xterm'/export {};\ndeclare global/" static/xterm.d.ts

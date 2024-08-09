@@ -1,1 +1,2 @@
 - [ ] make `replx.lua` generic enough that it can be used on the web over websocket
+- [ ] torrent client, comic reader, audio generator, booru, forum, sqlite browser, background changer
