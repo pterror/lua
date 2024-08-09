@@ -6381,6 +6381,8 @@ ffi.cdef [[
 	xcb_void_cookie_t xwm_send_event_with_size(xcb_connection_t *c, uint8_t propagate, xcb_window_t destination, uint32_t event_mask, const void *event, uint32_t length);
 ]]
 
+--[[@class wlroots_ffi: { [string]: function }]]
+
 --[[@type wlroots_ffi]]
 local ret = ffi.load("libwlroots-0.18.so")
 return ret

@@ -5,12 +5,13 @@ local terminal = "kitty"
 local screenshot = { "qti", "--path", os.getenv("HOME") .. "/git/qti/app/screenshot-editor/screenshot-editor.qml" }
 
 --[[default values]]
+c.variables.default_server_decoration_mode = "none"
 c.variables.cursor_name = nil
 c.variables.cursor_size_px = 24
 c.variables.key_repeats_per_sec = 25
 c.variables.key_repeat_delay_ms = 600
 --[[@param server composter_server]]
-c.hooks.on_new_toplevel = function(server) c.functions.focus_window_below_mouse(server) end
+c.hooks.on_new_toplevel = function(server) end
 --[[@param server composter_server]]
 c.hooks.on_press = function(server) end
 --[[@param server composter_server]]

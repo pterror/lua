@@ -98,6 +98,9 @@ ffi.cdef [[
 		struct wlr_xwayland *xwayland;
 		struct wl_listener new_xwayland_surface;
 		struct wl_list toplevels;
+
+		struct wlr_xdg_decoration_manager_v1 *xdg_decoration_manager;
+		struct wl_listener new_toplevel_decoration;
 	
 		struct wlr_cursor *cursor;
 		struct wlr_xcursor_manager *cursor_manager;
@@ -162,9 +165,16 @@ ffi.cdef [[
 		struct wl_listener key;
 		struct wl_listener destroy;
 	};
+
+	struct composter_decoration {
+		struct wlr_xdg_toplevel_decoration_v1 *xdg_decoration;
+		struct wl_listener destroy;
+		struct wl_listener request_mode;
+	};
 ]]
 
 local permanent = {}
+local queue_free = function(obj) permanent[obj] = nil end
 
 --[[@generic t]]
 --[[@param type `t`]]
@@ -180,7 +190,20 @@ end
 --[[@return ptr_c<t>]]
 local cast = function(type, data) return ffi.cast("struct " .. type .. " *", data) end
 
+local server_decoration_mode_by_name = {
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
+	none = wlr.WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_NONE,
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
+	client = wlr.WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE,
+	--[[@diagnostic disable-next-line: assign-type-mismatch]]
+	server = wlr.WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE,
+}
+
+--[[@type table<string, wlr_xdg_toplevel_decoration_v1_mode>]]
+server_decoration_mode_by_name = server_decoration_mode_by_name
+
 mod.variables = {}
+mod.variables.default_server_decoration_mode = "none" --[[@type "none"|"client"|"server"]]
 mod.variables.seat_name = "seat0"
 mod.variables.cursor_name = nil --[[@type string?]]
 mod.variables.cursor_size_px = 24
@@ -191,7 +214,7 @@ mod.keybinds = {} --[[@type table<string, fun(server: composter_server)>]]
 
 mod.hooks = {}
 --[[@param server composter_server]]
-mod.hooks.on_new_toplevel = function(server) mod.functions.focus_window_below_mouse(server) end
+mod.hooks.on_new_toplevel = function(server) end
 --[[@param server composter_server]]
 mod.hooks.on_press = function(server) end
 --[[@param server composter_server]]
@@ -243,7 +266,7 @@ end
 --[[@param server composter_server]]
 mod.functions.focus_next_window = function(server)
 	if wl.wl_list_length(server.toplevels) < 2 then return end
-	local next_toplevel = wl.wl_container_of(server.toplevels.prev, "composter_toplevel", "link")
+	local next_toplevel = wl.wl_container_of(server.toplevels.prev, "composter_toplevel", "link")[0]
 	mod.focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
 end
 --[[@param server composter_server]]
@@ -354,7 +377,7 @@ mod.keyboard_handle_destroy = function(listener, data)
 	wl.wl_list_remove(keyboard.key.link)
 	wl.wl_list_remove(keyboard.destroy.link)
 	wl.wl_list_remove(keyboard.link)
-	ffi.C.free(keyboard)
+	queue_free(keyboard)
 end
 
 --[[@param server composter_server]]
@@ -577,12 +600,12 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.output_destroy = function(listener, data)
-	local output = wl.wl_container_of(listener, "composter_output", "destroy")
-	wl.wl_list_remove(output[0].frame.link)
-	wl.wl_list_remove(output[0].request_state.link)
-	wl.wl_list_remove(output[0].destroy.link)
-	wl.wl_list_remove(output[0].link)
-	ffi.C.free(output)
+	local output = wl.wl_container_of(listener, "composter_output", "destroy")[0]
+	wl.wl_list_remove(output.frame.link)
+	wl.wl_list_remove(output.request_state.link)
+	wl.wl_list_remove(output.destroy.link)
+	wl.wl_list_remove(output.link)
+	queue_free(output)
 end
 
 --[[@type wl_notify_func_t]]
@@ -647,7 +670,7 @@ mod.xdg_toplevel_destroy = function(listener, data)
 	wl.wl_list_remove(toplevel.request_resize.link)
 	wl.wl_list_remove(toplevel.request_maximize.link)
 	wl.wl_list_remove(toplevel.request_fullscreen.link)
-	ffi.C.free(toplevel)
+	queue_free(toplevel)
 end
 
 --[[@param toplevel composter_toplevel]]
@@ -712,15 +735,6 @@ mod.xdg_toplevel_request_fullscreen = function(listener, data)
 end
 
 --[[@type wl_notify_func_t]]
-mod.server_new_xwayland_surface = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "new_xwayland_surface")[0]
-	local xwayland_surface = cast("wlr_xwayland_surface", data)[0]
-	local toplevel = new("composter_toplevel")
-	toplevel.server = server
-	toplevel.xwayland_surface = xwayland_surface
-end
-
---[[@type wl_notify_func_t]]
 mod.server_new_xdg_toplevel = function(listener, data)
 	local server = wl.wl_container_of(listener, "composter_server", "new_xdg_toplevel")[0]
 	local xdg_toplevel = cast("wlr_xdg_toplevel", data)[0]
@@ -763,7 +777,7 @@ mod.xdg_popup_destroy = function(listener, data)
 	local popup = wl.wl_container_of(listener, "composter_popup", "destroy")[0]
 	wl.wl_list_remove(popup.commit.link)
 	wl.wl_list_remove(popup.destroy.link)
-	ffi.C.free(popup)
+	queue_free(popup)
 end
 
 --[[@type wl_notify_func_t]]
@@ -781,10 +795,62 @@ mod.server_new_xdg_popup = function(listener, data)
 	wl.wl_signal_add(xdg_popup.events.destroy, popup.destroy)
 end
 
+--[[@type wl_notify_func_t]]
+mod.server_new_xwayland_surface = function(listener, data)
+	local server = wl.wl_container_of(listener, "composter_server", "new_xwayland_surface")[0]
+	local xwayland_surface = cast("wlr_xwayland_surface", data)[0]
+	local toplevel = new("composter_toplevel")
+	toplevel.server = server
+	toplevel.xwayland_surface = xwayland_surface
+	toplevel.destroy.notify = mod.xdg_toplevel_destroy
+	wl.wl_signal_add(xwayland_surface.events.destroy, toplevel.destroy)
+	toplevel.request_move.notify = mod.xdg_toplevel_request_move
+	wl.wl_signal_add(xwayland_surface.events.request_move, toplevel.request_move)
+	toplevel.request_resize.notify = mod.xdg_toplevel_request_resize
+	wl.wl_signal_add(xwayland_surface.events.request_resize, toplevel.request_resize)
+	toplevel.request_maximize.notify = mod.xdg_toplevel_request_maximize
+	wl.wl_signal_add(xwayland_surface.events.request_maximize, toplevel.request_maximize)
+	toplevel.request_fullscreen.notify = mod.xdg_toplevel_request_fullscreen
+	wl.wl_signal_add(xwayland_surface.events.request_fullscreen, toplevel.request_fullscreen)
+end
+
+--[[@type wl_notify_func_t]]
+mod.xdg_decoration_request_mode = function(listener, data)
+	local decoration = wl.wl_container_of(listener, "composter_decoration", "request_mode")[0]
+	wlr.wlr_xdg_toplevel_decoration_v1_set_mode(decoration.xdg_decoration, decoration.xdg_decoration[0].requested_mode)
+end
+
+--[[@type wl_notify_func_t]]
+mod.xdg_decoration_destroy = function(listener, data)
+	local decoration = wl.wl_container_of(listener, "composter_decoration", "destroy")[0]
+	wl.wl_list_remove(decoration.request_mode.link)
+	wl.wl_list_remove(decoration.destroy.link)
+	queue_free(decoration)
+end
+
+--[[@type wl_notify_func_t]]
+mod.server_new_xdg_decoration = function(listener, data)
+	local server = wl.wl_container_of(listener, "composter_server", "new_toplevel_decoration")[0]
+	local xdg_decoration = cast("wlr_xdg_toplevel_decoration_v1", data)[0]
+	local decoration = new("composter_decoration")
+	decoration.xdg_decoration = xdg_decoration
+	local what = server_decoration_mode_by_name[mod.variables.default_server_decoration_mode]
+	xdg_decoration.scheduled_mode = server_decoration_mode_by_name[mod.variables.default_server_decoration_mode]
+	decoration.destroy.notify = mod.xdg_decoration_destroy
+	wl.wl_signal_add(xdg_decoration.events.destroy, decoration.destroy)
+	decoration.request_mode.notify = mod.xdg_decoration_request_mode
+	wl.wl_signal_add(xdg_decoration.events.destroy, decoration.destroy)
+end
+
+local log_level_string = os.getenv("WLR_LOG_LEVEL") or os.getenv("COMPOSTER_LOG_LEVEL")
+if log_level_string then log_level_string = log_level_string:upper() end
+local log_level = tonumber(log_level_string) or wlr.WLR_INFO
+if log_level_string and log_level_string:find("[A-Z]") then
+	log_level = wlr[log_level_string:find("^WLR_") and log_level_string:upper() or ("WLR_" .. log_level_string:upper())]
+end
+
 mod.run = function(init_log)
-	if not init_log ~= false then
-		wlr.wlr_log_init(wlr.WLR_ERROR, nil)
-	end
+	if init_log ~= false then wlr.wlr_log_init(log_level, nil) end
 	local server = new("composter_server")
 	server.wl_display = wl.wl_display_create()
 	server.backend = wlr.wlr_backend_autocreate(wl.wl_display_get_event_loop(server.wl_display), nil)
@@ -821,6 +887,9 @@ mod.run = function(init_log)
 	server.xwayland = wlr.wlr_xwayland_create(server.wl_display, compositor, true)
 	server.new_xwayland_surface.notify = mod.server_new_xwayland_surface
 	wl.wl_signal_add(server.xwayland[0].events.new_surface, server.new_xwayland_surface)
+	server.xdg_decoration_manager = wlr.wlr_xdg_decoration_manager_v1_create(server.wl_display)
+	server.new_toplevel_decoration.notify = mod.server_new_xdg_decoration
+	wl.wl_signal_add(server.xdg_decoration_manager[0].events.new_toplevel_decoration, server.new_toplevel_decoration)
 	server.cursor = wlr.wlr_cursor_create()
 	wlr.wlr_cursor_attach_output_layout(server.cursor, server.output_layout)
 	server.cursor_manager = wlr.wlr_xcursor_manager_create(mod.variables.cursor_name, mod.variables.cursor_size_px)
@@ -865,13 +934,13 @@ mod.run = function(init_log)
 	wlr.wlr_renderer_destroy(server.renderer)
 	wlr.wlr_backend_destroy(server.backend)
 	wl.wl_display_destroy(server.wl_display)
+	queue_free(server)
 end
 
 if pcall(debug.getlocal, 4, 1) then
 	return mod
 else
-	wlr.wlr_log_init(tonumber(os.getenv("WLR_LOG_LEVEL")) or tonumber(os.getenv("COMPOSTER_LOG_LEVEL")) or wlr.WLR_INFO,
-		nil)
+	wlr.wlr_log_init(log_level, nil)
 	--[[@diagnostic disable-next-line: lowercase-global]]
 	composter = mod
 	local config_path = args.config

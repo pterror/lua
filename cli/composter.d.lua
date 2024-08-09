@@ -12,6 +12,9 @@
 --[[@field toplevels wl_list]]
 --[[@field xwayland ptr_c<wlr_xwayland>]]
 --[[@field new_xwayland_surface wl_listener]]
+--[[@field xdg_decoration_manager ptr_c<wlr_xdg_decoration_manager_v1>]]
+--[[@field new_toplevel_decoration wl_listener]]
+--[[@field destroy_toplevel_decoration wl_listener]]
 --[[@field cursor ptr_c<wlr_cursor>]]
 --[[@field cursor_manager ptr_c<wlr_xcursor_manager>]]
 --[[@field cursor_motion wl_listener]]
@@ -69,3 +72,8 @@
 --[[@field modifiers wl_listener]]
 --[[@field key wl_listener]]
 --[[@field destroy wl_listener]]
+
+--[[@class composter_decoration]]
+--[[@field xdg_decoration ptr_c<wlr_xdg_toplevel_decoration_v1>]]
+--[[@field destroy wl_listener]]
+--[[@field request_mode wl_listener]]
