@@ -164,10 +164,16 @@ ffi.cdef [[
 	};
 ]]
 
+local permanent = {}
+
 --[[@generic t]]
 --[[@param type `t`]]
 --[[@return t]]
-local new = function(type) return ffi.new("struct " .. type) end
+local new = function(type)
+	local obj = ffi.new("struct " .. type)
+	permanent[obj] = true
+	return obj
+end
 
 --[[@generic t]]
 --[[@param type `t`]]
@@ -556,7 +562,7 @@ local now = ffi.new("struct timespec[1]") --[[@type ptr_c<timespec_c>]]
 mod.output_frame = function(listener, data)
 	local output = wl.wl_container_of(listener, "composter_output", "frame")[0]
 	local scene = output.server[0].scene[0]
-	local scene_output = wlr.wlr_scene_get_scene_output(scene, output.wlr_output)
+	local scene_output = wlr.wlr_scene_get_scene_output(scene, output.wlr_output) --[[@type ptr_c<wlr_scene_output>]]
 	wlr.wlr_scene_output_commit(scene_output, nil)
 	ffi.C.clock_gettime(1 --[[CLOCK_MONOTONIC]], now)
 	wlr.wlr_scene_output_send_frame_done(scene_output, now)
