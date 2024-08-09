@@ -175,6 +175,9 @@ local new = function(type) return ffi.new("struct " .. type) end
 local cast = function(type, data) return ffi.cast("struct " .. type .. " *", data) end
 
 mod.variables = {}
+mod.variables.seat_name = "seat0"
+mod.variables.cursor_name = nil --[[@type string?]]
+mod.variables.cursor_size_px = 24
 mod.variables.key_repeats_per_sec = 25
 mod.variables.key_repeat_delay_ms = 600
 
@@ -194,6 +197,11 @@ mod.hooks.on_startup = function() end
 mod.hooks.on_exit = function(server) end
 
 mod.functions = {}
+--[[@param name string]]
+--[[@param value string]]
+mod.functions.setenv = function(name, value)
+	ffi.C.setenv(name, value, true)
+end
 --[[@param ... string]]
 mod.functions.exec = function(...)
 	local pid = ffi.C.fork()
@@ -624,7 +632,6 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_destroy = function(listener, data)
-	--[[Called when the xdg_toplevel is destroyed.]]
 	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "destroy")[0]
 	wl.wl_list_remove(toplevel.map.link)
 	wl.wl_list_remove(toplevel.unmap.link)
@@ -768,8 +775,10 @@ mod.server_new_xdg_popup = function(listener, data)
 	wl.wl_signal_add(xdg_popup.events.destroy, popup.destroy)
 end
 
-mod.run = function()
-	wlr.wlr_log_init(wlr.WLR_ERROR, nil)
+mod.run = function(init_log)
+	if not init_log ~= false then
+		wlr.wlr_log_init(wlr.WLR_ERROR, nil)
+	end
 	local server = new("composter_server")
 	server.wl_display = wl.wl_display_create()
 	server.backend = wlr.wlr_backend_autocreate(wl.wl_display_get_event_loop(server.wl_display), nil)
@@ -808,13 +817,12 @@ mod.run = function()
 	wl.wl_signal_add(server.xwayland[0].events.new_surface, server.new_xwayland_surface)
 	server.cursor = wlr.wlr_cursor_create()
 	wlr.wlr_cursor_attach_output_layout(server.cursor, server.output_layout)
-	server.cursor_manager = wlr.wlr_xcursor_manager_create(nil, 24)
+	server.cursor_manager = wlr.wlr_xcursor_manager_create(mod.variables.cursor_name, mod.variables.cursor_size_px)
 	server.cursor_mode = composter_cursor_mode.passthrough
 	server.cursor_motion.notify = mod.server_cursor_motion
 	wl.wl_signal_add(server.cursor[0].events.motion, server.cursor_motion)
 	server.cursor_motion_absolute.notify = mod.server_cursor_motion_absolute
-	wl.wl_signal_add(server.cursor[0].events.motion_absolute,
-		server.cursor_motion_absolute)
+	wl.wl_signal_add(server.cursor[0].events.motion_absolute, server.cursor_motion_absolute)
 	server.cursor_button.notify = mod.server_cursor_button
 	wl.wl_signal_add(server.cursor[0].events.button, server.cursor_button)
 	server.cursor_axis.notify = mod.server_cursor_axis
@@ -824,13 +832,11 @@ mod.run = function()
 	wl.wl_list_init(server.keyboards)
 	server.new_input.notify = mod.server_new_input
 	wl.wl_signal_add(server.backend[0].events.new_input, server.new_input)
-	server.seat = wlr.wlr_seat_create(server.wl_display, "seat0")
+	server.seat = wlr.wlr_seat_create(server.wl_display, mod.variables.seat_name)
 	server.request_cursor.notify = mod.seat_request_cursor
-	wl.wl_signal_add(server.seat[0].events.request_set_cursor,
-		server.request_cursor)
+	wl.wl_signal_add(server.seat[0].events.request_set_cursor, server.request_cursor)
 	server.request_set_selection.notify = mod.seat_request_set_selection
-	wl.wl_signal_add(server.seat[0].events.request_set_selection,
-		server.request_set_selection)
+	wl.wl_signal_add(server.seat[0].events.request_set_selection, server.request_set_selection)
 	local socket = wl.wl_display_add_socket_auto(server.wl_display)
 	if socket == nil then
 		wlr.wlr_backend_destroy(server.backend)
@@ -843,7 +849,7 @@ mod.run = function()
 	end
 	ffi.C.setenv("WAYLAND_DISPLAY", socket, true)
 	mod.hooks.on_startup()
-	wlr._wlr_log(wlr.WLR_INFO, "Running Wayland compositor on WAYLAND_DISPLAY=%s", socket)
+	wlr._wlr_log(wlr.WLR_INFO, "running wayland compositor on WAYLAND_DISPLAY=%s", socket)
 	wl.wl_display_run(server.wl_display)
 	wl.wl_display_destroy_clients(server.wl_display)
 	wlr.wlr_scene_node_destroy(server.scene[0].tree.node)
@@ -853,21 +859,21 @@ mod.run = function()
 	wlr.wlr_renderer_destroy(server.renderer)
 	wlr.wlr_backend_destroy(server.backend)
 	wl.wl_display_destroy(server.wl_display)
-	return 0
 end
 
 if pcall(debug.getlocal, 4, 1) then
 	return mod
 else
+	wlr.wlr_log_init(tonumber(os.getenv("WLR_LOG_LEVEL")) or tonumber(os.getenv("COMPOSTER_LOG_LEVEL")) or wlr.WLR_INFO,
+		nil)
 	--[[@diagnostic disable-next-line: lowercase-global]]
 	composter = mod
 	local config_path = args.config
 	args.config = nil
 	for k, v in pairs(args) do
 		if k ~= "" or type(v) ~= "table" and #v > 0 then
-			io.stderr:write("\x1b[33mwarn\x1b[0m: composter: unknown command-line argument ", k, "=",
-				type(v) == "table" and ("{" .. table.concat(v, ", ") .. "}") or v,
-				"\n")
+			wlr._wlr_log(wlr.WLR_ERROR, "unknown command-line argument %s=%s", k,
+				(type(v) == "table" and ("{" .. table.concat(v, ", ") .. "}") or v))
 		end
 	end
 	if config_path then
@@ -877,11 +883,10 @@ else
 		success = pcall(dofile, tostring(os.getenv("HOME") .. "/.config/composter/config.lua"))
 		if not success then
 			local default_config_path = assert(here):gsub("/composter.lua$", "/composter/default_config.lua")
-			io.stderr:write(
-				"\x1b[33mwarn\x1b[0m: composter: config not found at ~/.config/composter/config.lua, using default config at ",
-				default_config_path:gsub(os.getenv("HOME") or "", "~"), "\n")
+			wlr._wlr_log(wlr.WLR_INFO, "config not found at ~/.config/composter/config.lua, using default config at %s",
+				default_config_path:gsub(os.getenv("HOME") or "", "~"))
 			dofile(default_config_path)
 		end
 	end
-	mod.run()
+	mod.run(false)
 end

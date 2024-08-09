@@ -5,6 +5,8 @@ local terminal = "kitty"
 local screenshot = { "qti", "--path", os.getenv("HOME") .. "/git/qti/app/screenshot-editor/screenshot-editor.qml" }
 
 --[[default values]]
+c.variables.cursor_name = nil
+c.variables.cursor_size_px = 24
 c.variables.key_repeats_per_sec = 25
 c.variables.key_repeat_delay_ms = 600
 --[[@param server composter_server]]
