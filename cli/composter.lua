@@ -8,6 +8,27 @@ else
 	package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path
 end
 
+local ipc_clients = nil --[[@type table<luajitsocket,true>?]]
+local value_to_json --[[@type fun(v): string]]
+local ipc_send_event = function(event)
+	if not ipc_clients then return end
+	local json = value_to_json(event)
+	for client in pairs(ipc_clients) do
+		client:send(json)
+	end
+end
+
+local mod = {}
+
+mod.variables = {}
+mod.variables.ipc = true
+mod.variables.default_server_decoration_mode = "none" --[[@type "none"|"client"|"server"]]
+mod.variables.seat_name = "seat0"
+mod.variables.cursor_name = nil --[[@type string?]]
+mod.variables.cursor_size_px = 24
+mod.variables.key_repeats_per_sec = 25
+mod.variables.key_repeat_delay_ms = 600
+
 --[[@diagnostic disable: need-check-nil]]
 
 local ffi = require("ffi")
@@ -58,8 +79,6 @@ for _, arg_ in ipairs(arg) do
 		args[""][#args[""] + 1] = arg_s
 	end
 end
-
-local mod = {}
 
 --[[@enum composter_cursor_mode]]
 local composter_cursor_mode = { passthrough = 0, move = 1, resize = 2 }
@@ -176,13 +195,18 @@ ffi.cdef [[
 local permanent = {}
 local queue_free = function(obj) permanent[obj] = nil end
 
+--[[@param pointer ptr_c<unknown>]]
+local address_string = function(pointer)
+	return string.format("%016x", ffi.cast("uint64_t", pointer))
+end
+
 --[[@generic t]]
 --[[@param type `t`]]
 --[[@return t]]
 local new = function(type)
-	local obj = ffi.new("struct " .. type)
+	local obj = ffi.new("struct " .. type .. "[1]")
 	permanent[obj] = true
-	return obj
+	return obj[0]
 end
 
 --[[@generic t]]
@@ -201,14 +225,6 @@ local server_decoration_mode_by_name = {
 
 --[[@type table<string, wlr_xdg_toplevel_decoration_v1_mode>]]
 server_decoration_mode_by_name = server_decoration_mode_by_name
-
-mod.variables = {}
-mod.variables.default_server_decoration_mode = "none" --[[@type "none"|"client"|"server"]]
-mod.variables.seat_name = "seat0"
-mod.variables.cursor_name = nil --[[@type string?]]
-mod.variables.cursor_size_px = 24
-mod.variables.key_repeats_per_sec = 25
-mod.variables.key_repeat_delay_ms = 600
 
 mod.keybinds = {} --[[@type table<string, fun(server: composter_server)>]]
 
@@ -637,9 +653,18 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_map = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "map")[0]
-	wl.wl_list_insert(toplevel.server[0].toplevels, toplevel.link)
-	mod.focus_toplevel(toplevel, toplevel.xdg_toplevel[0].base[0].surface)
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "map")
+	wl.wl_list_insert(toplevel[0].server[0].toplevels, toplevel[0].link)
+	mod.focus_toplevel(toplevel[0], toplevel[0].xdg_toplevel[0].base[0].surface)
+	local xdg_toplevel = toplevel[0].xdg_toplevel[0]
+	if ipc_clients then
+		ipc_send_event({
+			type = "new_window",
+			version = 1,
+			title = ffi.string(xdg_toplevel.title),
+			address = address_string(toplevel),
+		})
+	end
 end
 
 --[[@type wl_notify_func_t]]
@@ -853,7 +878,8 @@ mod.run = function(init_log)
 	if init_log ~= false then wlr.wlr_log_init(log_level, nil) end
 	local server = new("composter_server")
 	server.wl_display = wl.wl_display_create()
-	server.backend = wlr.wlr_backend_autocreate(wl.wl_display_get_event_loop(server.wl_display), nil)
+	local loop = wl.wl_display_get_event_loop(server.wl_display)
+	server.backend = wlr.wlr_backend_autocreate(loop, nil)
 	if server.backend == nil then
 		wlr._wlr_log(wlr.WLR_ERROR, "failed to create wlr_backend")
 		return 1
@@ -925,7 +951,31 @@ mod.run = function(init_log)
 	ffi.C.setenv("WAYLAND_DISPLAY", socket, true)
 	mod.hooks.on_startup()
 	wlr._wlr_log(wlr.WLR_INFO, "running wayland compositor on WAYLAND_DISPLAY=%s", socket)
-	wl.wl_display_run(server.wl_display)
+	if not mod.variables.ipc then
+		wl.wl_display_run(server.wl_display)
+	else
+		local epoll = require("dep.epoll").new()
+		value_to_json = require("dep.lunajson").value_to_json
+		local epoll_running = true
+		local wl_fd = wl.wl_event_loop_get_fd(loop)
+		epoll:add(wl_fd, function()
+			wl.wl_display_flush_clients(server.wl_display)
+			if wl.wl_event_loop_dispatch(loop, -1) < 0 then epoll_running = false end
+		end)
+		local ipc_path = os.getenv("XDG_RUNTIME_DIR") .. "/composter-events.sock"
+		os.remove(ipc_path)
+		require("lib.socket.server").server(function()
+			return ""
+			--[[@diagnostic disable-next-line: param-type-mismatch]]
+		end, ipc_path, epoll, "unix", function(client)
+			ipc_clients = ipc_clients or {}
+			ipc_clients[client] = true
+		end)
+		ffi.C.setenv("COMPOSTER_IPC_PATH", ipc_path, true)
+		wl.wl_display_flush_clients(server.wl_display)
+		while epoll_running do epoll:wait() end
+		assert(os.remove(ipc_path))
+	end
 	wl.wl_display_destroy_clients(server.wl_display)
 	wlr.wlr_scene_node_destroy(server.scene[0].tree.node)
 	wlr.wlr_xcursor_manager_destroy(server.cursor_manager)

@@ -1,8 +1,27 @@
 --[[https://github.com/CapsAdmin/luajitsocket]]
+--[[
+MIT License
 
---[[FIXME: extract a.b to locals]]
---[[FIXME: switch from ffi.C]]
---[[FIXME: don't augment ljsocket_ffi]]
+Copyright (c) 2022 Elias Hogstvedt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+]]
 
 local ffi = require("ffi")
 local socket = {}
@@ -15,17 +34,21 @@ if register_ffi_module then register_ffi_module("dep.ljsocket") end
 do
 	local ljsocket_ffi --[[@type ljsocket_ffi]]
 
-	if ffi.os == "Windows" then ljsocket_ffi = assert(ffi.load("Ws2_32"))
-	else ljsocket_ffi = ffi.C end
+	if ffi.os == "Windows" then
+		ljsocket_ffi = assert(ffi.load("Ws2_32"))
+	else
+		ljsocket_ffi = ffi.C
+	end
 
-	local generic_function = function (C_name, cdef, alias, size_error_handling)
+	local generic_function = function(C_name, cdef, alias, size_error_handling)
 		ffi.cdef(cdef)
 		alias = alias or C_name
 		local func_name = alias
 		local func = ljsocket_ffi[C_name]
-		if size_error_handling == false then socket[func_name] = func
+		if size_error_handling == false then
+			socket[func_name] = func
 		elseif size_error_handling then
-			socket[func_name] = function (...)
+			socket[func_name] = function(...)
 				local len = func(...)
 				if len < 0 then return nil, socket.lasterror() end
 				return len
@@ -123,6 +146,11 @@ do
 				struct in6_addr sin6_addr;
 				uint32_t sin6_scope_id;
 			};
+			
+			struct sockaddr_un {
+				uint16_t sun_family;
+				char sun_path[108];
+			};
 		]]
 	end
 
@@ -202,7 +230,7 @@ do
 		--[[@field GetLastError fun(): integer]]
 		--[[@field FormatMessageA fun(dwFlags: integer, lpSource: ffi.cdata*?, dwMessageId: integer, dwLanguageId: integer, lpBuffer: ffi.cdata*?, nSize: integer, ...: unknown): integer]]
 
-		local WORD = function (low, high)
+		local WORD = function(low, high)
 			return bit.bor(low, bit.lshift(high, 8))
 		end
 
@@ -211,7 +239,7 @@ do
 
 			local cache = {}
 
-			socket.lasterror = socket.lasterror or function (num)
+			socket.lasterror = socket.lasterror or function(num)
 				num = num or ffi.C.GetLastError()
 
 				if not cache[num] then
@@ -254,7 +282,7 @@ do
 				}]])
 			end
 
-			socket.initialize = function ()
+			socket.initialize = function()
 				local data = wsa_data()
 
 				if ljsocket_ffi.WSAStartup(WORD(2, 2), data) == 0 then
@@ -270,7 +298,7 @@ do
 			--[@class ljsocket_ffi]]
 			--[@field WSACleanup fun(): integer]]
 
-			socket.shutdown = function ()
+			socket.shutdown = function()
 				if ljsocket_ffi.WSACleanup() == 0 then
 					return true
 				end
@@ -284,7 +312,7 @@ do
 			--[[@class ljsocket_ffi]]
 			--[[@field WSAAddressToStringA fun(lpsaAddress: ffi.cdata*, dwAddressLength: integer, lpProtocolInfo: ffi.cdata*?, lpszAddressString: ffi.cdata*, lpdwAddressStringLength: ffi.cdata*): integer]]
 
-			socket.inet_ntop = socket.inet_ntop or function (family, pAddr, strptr, strlen)
+			socket.inet_ntop = socket.inet_ntop or function(family, pAddr, strptr, strlen)
 				-- win XP: http://memset.wordpress.com/2010/10/09/inet_ntop-for-win32/
 				local srcaddr = ffi.new("struct sockaddr_in")
 				ffi.copy(srcaddr.sin_addr, pAddr, ffi.sizeof(srcaddr.sin_addr))
@@ -304,20 +332,20 @@ do
 
 			local IOCPARM_MASK = 0x7
 			local IOC_IN = 0x80000000
-			local _IOW = function (x,y,t)
-				return bit.bor(IOC_IN, bit.lshift(bit.band(ffi.sizeof(t),IOCPARM_MASK),16), bit.lshift(x,8), y)
+			local _IOW = function(x, y, t)
+				return bit.bor(IOC_IN, bit.lshift(bit.band(ffi.sizeof(t), IOCPARM_MASK), 16), bit.lshift(x, 8), y)
 			end
 
 			local FIONBIO = _IOW(string.byte("f"), 126, "uint32_t") --[[-2147195266 -- 2147772030ULL]]
 
-			socket.blocking = socket.blocking or function (fd, b)
+			socket.blocking = socket.blocking or function(fd, b)
 				local ret = ljsocket_ffi.ioctlsocket(fd, FIONBIO, ffi.new("int[1]", b and 0 or 1))
 				if ret == 0 then return true end
 				return nil, socket.lasterror()
 			end
 		end
 
-		socket.poll = socket.poll or function (fds, ndfs, timeout)
+		socket.poll = socket.poll or function(fds, ndfs, timeout)
 			local ret = ljsocket_ffi.WSAPoll(fds, ndfs, timeout)
 			if ret < 0 then return nil, socket.lasterror() end
 			return ret
@@ -337,7 +365,7 @@ do
 
 		do
 			local cache = {}
-			socket.lasterror = function (num)
+			socket.lasterror = function(num)
 				num = num or ffi.errno()
 				if not cache[num] then
 					local err = ffi.string(ffi.C.strerror(num))
@@ -359,18 +387,21 @@ do
 			local O_NONBLOCK = 04000
 
 			if ffi.os == "OSX" then O_NONBLOCK = 0x0004 end
-			socket.blocking = function (fd, b)
+			socket.blocking = function(fd, b)
 				local flags = ffi.C.fcntl(fd, F_GETFL, 0)
 				if flags < 0 then return nil, socket.lasterror() end
-				if b then flags = bit.band(flags, bit.bnot(O_NONBLOCK))
-				else flags = bit.bor(flags, O_NONBLOCK) end
+				if b then
+					flags = bit.band(flags, bit.bnot(O_NONBLOCK))
+				else
+					flags = bit.bor(flags, O_NONBLOCK)
+				end
 				local ret = ffi.C.fcntl(fd, F_SETFL, ffi.new("int", flags))
 				if ret < 0 then return nil, socket.lasterror() end
 				return true
 			end
 		end
 
-		socket.poll = socket.poll or function (fds, ndfs, timeout)
+		socket.poll = socket.poll or function(fds, ndfs, timeout)
 			local ret = ljsocket_ffi.poll(fds, ndfs, timeout)
 			if ret < 0 then return nil, socket.lasterror() end
 			return ret
@@ -395,14 +426,14 @@ do
 	--[[@field inet_ntoa fun(in: ffi.cdata*): ffi.cdata*]]
 	--[[@field ntohs fun(netshort: integer): integer]]
 
-	socket.getaddrinfo = function (node_name, service_name, hints, result)
+	socket.getaddrinfo = function(node_name, service_name, hints, result)
 		local ret = ljsocket_ffi.getaddrinfo(node_name, service_name, hints, result)
 		if ret == 0 then return true end
 		local err = ljsocket_ffi.gai_strerror(ret)
 		return nil, ffi.string(err)
 	end
 
-	socket.getnameinfo = function (address, length, host, hostlen, serv, servlen, flags)
+	socket.getnameinfo = function(address, length, host, hostlen, serv, servlen, flags)
 		local ret = ljsocket_ffi.getnameinfo(address, length, host, hostlen, serv, servlen, flags)
 		if ret == 0 then return true end
 		local err = socket.lasterror(ret)
@@ -414,7 +445,7 @@ do
 		--[[@class ljsocket_ffi]]
 		--[[@field inet_ntop fun(__af: integer, __cp: ffi.cdata*, __buf: ffi.cdata*, __len: integer): ffi.cdata*]]
 
-		socket.inet_ntop = function (family, addrinfo, strptr, strlen)
+		socket.inet_ntop = function(family, addrinfo, strptr, strlen)
 			if ljsocket_ffi.inet_ntop(family, addrinfo, strptr, strlen) == nil then return nil, socket.lasterror() end
 			return strptr
 		end
@@ -425,7 +456,7 @@ do
 		--[[@class ljsocket_ffi]]
 		--[[@field socket fun(af: integer, type: integer, protocol: integer): integer]]
 
-		socket.create = function (af, type, protocol)
+		socket.create = function(af, type, protocol)
 			local fd = ljsocket_ffi.socket(af, type, protocol)
 			if fd <= 0 then return nil, socket.lasterror() end
 			return fd
@@ -440,9 +471,11 @@ do
 	generic_function("connect", "int connect(SOCKET s, const struct sockaddr * name, int namelen);")
 	generic_function("listen", "int listen(SOCKET s, int backlog);")
 	generic_function("recv", "int recv(SOCKET s, char* buf, int len, int flags);", nil, true)
-	generic_function("recvfrom", "int recvfrom(SOCKET s, char* buf, int len, int flags, struct sockaddr *src_addr, unsigned int *addrlen);", nil, true)
+	generic_function("recvfrom",
+		"int recvfrom(SOCKET s, char* buf, int len, int flags, struct sockaddr *src_addr, unsigned int *addrlen);", nil, true)
 	generic_function("send", "int send(SOCKET s, const char* buf, int len, int flags);", nil, true)
-	generic_function("sendto", "int sendto(SOCKET s, const char* buf, int len, int flags, const struct sockaddr* to, int tolen);", nil, true)
+	generic_function("sendto",
+		"int sendto(SOCKET s, const char* buf, int len, int flags, const struct sockaddr* to, int tolen);", nil, true)
 	generic_function("getpeername", "int getpeername(SOCKET s, struct sockaddr *, unsigned int *);")
 	generic_function("getsockname", "int getsockname(SOCKET s, struct sockaddr *, unsigned int *);")
 
@@ -450,7 +483,7 @@ do
 	socket.ntohs = socket.ntohs or ljsocket_ffi.ntohs
 
 	--[[FIXME]]
-	socket.poll = socket.poll or function (fd, events, revents) end
+	socket.poll = socket.poll or function(fd, events, revents) end
 
 	e = {
 		TCP_NODELAY = 1,
@@ -722,7 +755,7 @@ do
 	if socket.initialize then assert(socket.initialize()) end
 end
 
-local capture_flags = function (what)
+local capture_flags = function(what)
 	local flags = {}
 	local reverse = {}
 	for k, v in pairs(e) do
@@ -737,12 +770,12 @@ local capture_flags = function (what)
 		reverse = reverse,
 		strict_reverse = function(key)
 			if not key then error("invalid " .. what:sub(0, -2) .. " flag: nil") end
-			if not reverse[key] then error("invalid "..what:sub(0, -2).." flag: " .. key, 2) end
+			if not reverse[key] then error("invalid " .. what:sub(0, -2) .. " flag: " .. key, 2) end
 			return reverse[key]
 		end,
 		strict_lookup = function(key)
 			if not key then error("invalid " .. what:sub(0, -2) .. " flag: nil") end
-			if not flags[key] then error("invalid "..what:sub(0, -2).." flag: " .. key, 2) end
+			if not flags[key] then error("invalid " .. what:sub(0, -2) .. " flag: " .. key, 2) end
 			return flags[key]
 		end
 	}
@@ -757,9 +790,9 @@ local SO = capture_flags("SO_")
 local TCP = capture_flags("TCP_")
 local POLL = capture_flags("POLL")
 
-local table_to_flags = function (flags, valid_flags, operation)
+local table_to_flags = function(flags, valid_flags, operation)
 	if type(flags) == "string" then
-		flags = {flags}
+		flags = { flags }
 	end
 	operation = operation or bit.band
 
@@ -777,7 +810,7 @@ local table_to_flags = function (flags, valid_flags, operation)
 	return out
 end
 
-local flags_to_table = function (flags, valid_flags, operation)
+local flags_to_table = function(flags, valid_flags, operation)
 	if not flags then return valid_flags.default_valid_flag end
 	operation = operation or bit.band
 
@@ -799,18 +832,18 @@ timeout_messages[errno.EINPROGRESS] = true
 timeout_messages[errno.EAGAIN] = true
 timeout_messages[errno.EWOULDBLOCK] = true
 
-mod.poll = function (socket, flags, timeout)
-	local pfd = ffi.new("struct pollfd[1]", {{
+mod.poll = function(socket, flags, timeout)
+	local pfd = ffi.new("struct pollfd[1]", { {
 		fd = socket.fd,
 		events = table_to_flags(flags, POLL.lookup, bit.bor),
 		revents = 0,
-	}})
+	} })
 	local ok, err = socket.poll(pfd, 1, timeout or 0)
 	if not ok then return ok, err end
 	return flags_to_table(pfd[0].revents, POLL.lookup, bit.bor), ok
 end
 
-local addrinfo_get_ip = function (self)
+local addrinfo_get_ip = function(self)
 	if self.addrinfo.ai_addr == nil then
 		return nil
 	end
@@ -819,7 +852,7 @@ local addrinfo_get_ip = function (self)
 	return ffi.string(addr)
 end
 
-local addrinfo_get_port = function (self)
+local addrinfo_get_port = function(self)
 	if self.addrinfo.ai_addr == nil then
 		return nil
 	end
@@ -828,17 +861,14 @@ local addrinfo_get_port = function (self)
 	elseif self.family == "inet6" then
 		return ffi.cast("struct sockaddr_in6*", self.addrinfo.ai_addr).sin6_port
 	end
-
-	return nil, "unknown family " .. tostring(self.family)
+	return nil, "ljsocket.addrinfo_get_port: unknown family " .. tostring(self.family)
 end
 
-local addrinfo_to_table = function (res, host, service)
+local addrinfo_to_table = function(res, host, service)
 	local info = {}
-
 	if res.ai_canonname ~= nil then
 		info.canonical_name = ffi.string(res.ai_canonname)
 	end
-
 	info.host = host ~= "*" and host or nil
 	info.service = service
 	info.family = AF.reverse[res.ai_family]
@@ -848,11 +878,10 @@ local addrinfo_to_table = function (res, host, service)
 	info.addrinfo = res
 	info.get_ip = addrinfo_get_ip
 	info.get_port = addrinfo_get_port
-
 	return info
 end
 
-mod.get_address_info = function (data)
+mod.get_address_info = function(data)
 	local hints
 	if data.socket_type or data.protocol or data.flags or data.family then
 		hints = ffi.new("struct addrinfo", {
@@ -886,16 +915,31 @@ end
 --[[@field protocol socket_protocol]]
 --[[@field flags "passive"[] ]]
 -- FIXME: missing flags?
---[[@param host "*"|string]] --[[@param service "http"|"https"|"ftp"|"ssh"|string|integer]] --[[@param options luajitsocket_ffa_options]]
-mod.find_first_address = function (host, service, options)
+--[[@param host "*"|"unix"|string]]
+--[[@param service "http"|"https"|"ftp"|"ssh"|string|integer]]
+--[[@param options luajitsocket_ffa_options]]
+mod.find_first_address = function(host, service, options)
+	if host == "unix" then
+		local addrinfo = ffi.new("struct addrinfo")
+		addrinfo.ai_family = e.AF_UNIX
+		addrinfo.ai_socktype = e.SOCK_STREAM
+		addrinfo.ai_protocol = e.IPPROTO_IP
+		addrinfo.ai_addrlen = ffi.sizeof("struct sockaddr_un")
+		local ai_addr = ffi.new("struct sockaddr_un")
+		addrinfo.ai_addr = ffi.cast("struct sockaddr *", ai_addr)
+		ai_addr.sun_family = e.AF_UNIX
+		ai_addr.sun_path = service
+		return addrinfo_to_table(addrinfo, host, service)
+	end
 	options = options or {}
-	local info = {}
-	info.host = host
-	info.service = service
-	info.family = options.family or "inet"
-	info.socket_type = options.socket_type or "stream"
-	info.protocol = options.protocol or "tcp"
-	info.flags = options.flags
+	local info = {
+		host = host,
+		service = service,
+		family = options.family or "inet",
+		socket_type = options.socket_type or "stream",
+		protocol = options.protocol or "tcp",
+		flags = options.flags,
+	}
 	if host == "*" then
 		info.flags = info.flags or {}
 		table.insert(info.flags, "passive")
@@ -911,12 +955,10 @@ mod.find_first_address = function (host, service, options)
 	return addrinfo[1]
 end
 
---[[@alias socket_family "inet" | "inet6" | "unspec" | "unix" | "ax25" | "ipx" | "appletalk" | "netrom" | "bridge" | "aal5" | "x25"]]
---[[@alias socket_type "string" | "dgram" | "raw" | "rdm" | "seqpacket" | "dccp" | "packet" | "cloexec" | "nonblock" | "stream"]]
---[[@alias socket_protocol "ip" | "hopopts" | "icmp" | "igmp" | "ipip" | "tcp" | "egp" | "pup" | "udp" | "idp" | "tp" | "dccp" | "ipv6" | "routing" | "fragment" | "rsvp" | "gre" | "esp" | "ah" | "icmpv6" | "none" | "dstopts" | "mtp" | "encap" | "pim" | "comp" | "sctp" | "udplite" | "raw"]]
+--[[@alias socket_family "inet"|"inet6"|"unspec"|"unix"|"ax25"|"ipx"|"appletalk"|"netrom"|"bridge"|"aal5"|"x25"]]
+--[[@alias socket_type "string"|"dgram"|"raw"|"rdm"|"seqpacket"|"dccp"|"packet"|"cloexec"|"nonblock"|"stream"]]
+--[[@alias socket_protocol "ip"|"hopopts"|"icmp"|"igmp"|"ipip"|"tcp"|"egp"|"pup"|"udp"|"idp"|"tp"|"dccp"|"ipv6"|"routing"|"fragment"|"rsvp"|"gre"|"esp"|"ah"|"icmpv6"|"none"|"dstopts"|"mtp"|"encap"|"pim"|"comp"|"sctp"|"udplite"|"raw"]]
 
--- FIXME: "stream" is only part of socket_type because it's further down in the module
--- check if it's a real thing
 do
 	--[[@class luajitsocket]]
 	--[[@field family socket_family]]
@@ -924,6 +966,7 @@ do
 	--[[@field protocol socket_protocol]]
 	--[[@field fd fd_c]]
 	--[[@field debug boolean]]
+	--[[@field timeout_connected? { host: string|{ addrinfo: unknown }; service: "http"|"https"|"ftp"|"ssh"|string|integer }]]
 	--[[@field on_connect fun(self: luajitsocket, host: string|"*", service: "http"|"https"|"ftp"|"ssh"|string|integer): nil, string?]]
 	-- TODO: the type of flags
 	--[[@field on_receive fun(self: luajitsocket, buf: string_c, size: integer, flags): string?, string?]]
@@ -933,13 +976,16 @@ do
 	local meta = {}
 	meta.__index = meta
 
-	meta.__tostring = function (self)
+	meta.__tostring = function(self)
 		return string.format("socket[%s-%s-%s][%s]", self.family, self.socket_type, self.protocol, self.fd)
 	end
 
-	--[[@param family socket_family]] --[[@param socket_type socket_type]] --[[@param protocol socket_protocol]]
-	mod.create = function (family, socket_type, protocol)
-		local fd, err, num = socket.create(AF.strict_lookup(family), SOCK.strict_lookup(socket_type), IPPROTO.strict_lookup(protocol))
+	--[[@param family socket_family]]
+	--[[@param socket_type socket_type]]
+	--[[@param protocol socket_protocol]]
+	mod.create = function(family, socket_type, protocol)
+		local fd, err, num = socket.create(AF.strict_lookup(family), SOCK.strict_lookup(socket_type),
+			IPPROTO.strict_lookup(protocol))
 
 		if not fd then return fd, err, num end
 
@@ -952,41 +998,47 @@ do
 		}, meta)
 	end
 
-	meta.close = function (self)
+	meta.close = function(self)
 		if self.on_close then self:on_close() end
 		return socket.close(self.fd)
 	end
 
-	meta.set_blocking = function (self, b)
+	meta.set_blocking = function(self, b)
 		local ok, err, num = socket.blocking(self.fd, b)
 		if ok then self.blocking = b end
 		return ok, err, num
 	end
 
-	meta.set_option = function (self, key, val, level)
+	meta.set_option = function(self, key, val, level)
 		level = level or "socket"
-		if type(val) == "boolean" then val = ffi.new("int[1]", val and 1 or 0)
-		elseif type(val) == "number" then val = ffi.new("int[1]", val)
-		elseif type(val) ~= "cdata" then error("unknown value type: " .. type(val)) end
+		if type(val) == "boolean" then
+			val = ffi.new("int[1]", val and 1 or 0)
+		elseif type(val) == "number" then
+			val = ffi.new("int[1]", val)
+		elseif type(val) ~= "cdata" then
+			error("unknown value type: " .. type(val))
+		end
 		local env = SO
 		if level == "tcp" then env = TCP end
-		return socket.setsockopt(self.fd, SOL.strict_lookup(level), env.strict_lookup(key), ffi.cast("void *", val), ffi.sizeof(val))
+		return socket.setsockopt(self.fd, SOL.strict_lookup(level), env.strict_lookup(key), ffi.cast("void *", val),
+			ffi.sizeof(val))
 	end
 
 	--[[@param host string|{ addrinfo: unknown }]]
 	--[[@param service "http"|"https"|"ftp"|"ssh"|string|integer]]
-	meta.connect = function (self, host, service)
+	meta.connect = function(self, host, service)
 		local res
-		if type(host) == "table" and host.addrinfo then res = host
+		if type(host) == "table" and host.addrinfo then
+			res = host
 		else
+			local err
 			--[[@diagnostic disable-next-line: param-type-mismatch]]
-			local res_, err = mod.find_first_address(host, service, {
+			res, err = mod.find_first_address(host, service, {
 				family = self.family,
 				socket_type = self.socket_type,
 				protocol = self.protocol
 			})
-			if not res_ then return res_, "ljsocket.find_first_address: " .. err end
-			res = res_
+			if not res then return res, "ljsocket.find_first_address: " .. err end
 		end
 		local ok, err, num = socket.connect(self.fd, res.addrinfo.ai_addr, res.addrinfo.ai_addrlen)
 		if not ok and not self.blocking then
@@ -1002,7 +1054,7 @@ do
 		return true
 	end
 
-	meta.poll_connect = function (self)
+	meta.poll_connect = function(self)
 		if self.on_connect and self.timeout_connected and self:is_connected() then
 			local ok, err, num = self:on_connect(unpack(self.timeout_connected))
 			self.timeout_connected = nil
@@ -1011,13 +1063,14 @@ do
 		return nil, "timeout"
 	end
 
-	--[[@param host ("*"|string|{ addrinfo: unknown; })?]]
-	--[[@param service? "http"|"https"|"ftp"|"ssh"|string|integer]]
-	meta.bind = function (self, host, service)
+	--[[@param host ("*"|"unix"|string|{ addrinfo: unknown; })?]]
+	--[[@param service? "http"|"https"|"ftp"|"ssh"|string|integer path if unix socket]]
+	meta.bind = function(self, host, service)
 		if host == "*" then host = nil end
 		local res
 		local err
-		if type(host) == "table" and host.addrinfo then res = host
+		if type(host) == "table" and host.addrinfo then
+			res = host
 		else
 			res, err = mod.find_first_address(host, tostring(service), {
 				family = self.family,
@@ -1029,14 +1082,15 @@ do
 		return socket.bind(self.fd, res.addrinfo.ai_addr, res.addrinfo.ai_addrlen)
 	end
 
-	meta.listen = function (self, max_connections)
+	meta.listen = function(self, max_connections)
 		max_connections = max_connections or e.SOMAXCONN
 		return socket.listen(self.fd, max_connections)
 	end
 
-	meta.accept = function (self)
+	meta.accept = function(self)
 		local address = ffi.new("struct sockaddr_in[1]")
-		local fd, err = socket.accept(self.fd, ffi.cast("struct sockaddr *", address), ffi.new("unsigned int[1]", ffi.sizeof(address)))
+		local fd, err = socket.accept(self.fd, ffi.cast("struct sockaddr *", address),
+			ffi.new("unsigned int[1]", ffi.sizeof(address)))
 		if fd ~= socket.INVALID_SOCKET then
 			local client = setmetatable({
 				fd = fd,
@@ -1055,15 +1109,18 @@ do
 		return nil, err, num
 	end
 
-	meta.is_connected = function (self)
+	meta.is_connected = function(self)
 		local ip, service, num = self:get_peer_name()
 		local ip2, service2, num2 = self:get_name()
 		if not ip and (num == errno.ECONNRESET or num == errno.ENOTSOCK) then return false, service, num end
-		if ffi.os == "Windows" then return ip ~= "0.0.0.0" and ip2 ~= "0.0.0.0" and service ~= 0 and service2 ~= 0
-		else return ip and ip2 and service ~= 0 and service2 ~= 0 end
+		if ffi.os == "Windows" then
+			return ip ~= "0.0.0.0" and ip2 ~= "0.0.0.0" and service ~= 0 and service2 ~= 0
+		else
+			return ip and ip2 and service ~= 0 and service2 ~= 0
+		end
 	end
 
-	meta.get_peer_name = function (self)
+	meta.get_peer_name = function(self)
 		local data = ffi.new("struct sockaddr_in")
 		local len = ffi.new("unsigned int[1]", ffi.sizeof(data))
 
@@ -1073,7 +1130,7 @@ do
 		return ffi.string(socket.inet_ntoa(data.sin_addr)), socket.ntohs(data.sin_port)
 	end
 
-	meta.get_name = function (self)
+	meta.get_name = function(self)
 		local data = ffi.new("struct sockaddr_in")
 		local len = ffi.new("unsigned int[1]", ffi.sizeof(data))
 
@@ -1086,21 +1143,24 @@ do
 	local default_flags = 0
 	if ffi.os ~= "Windows" then default_flags = e.MSG_NOSIGNAL end
 
-	meta.send_to = function (self, addr, data, flags)
+	meta.send_to = function(self, addr, data, flags)
 		return self:send(data, flags, addr)
 	end
 
-	meta.send = function (self, data, flags, addr)
+	meta.send = function(self, data, flags, addr)
 		flags = flags or default_flags
 		if self.on_send then return self:on_send(data, flags) end
 		local len, err, num
-		if addr then len, err, num = socket.sendto(self.fd, data, #data, flags, addr.addrinfo.ai_addr, addr.addrinfo.ai_addrlen)
-		else len, err, num = socket.send(self.fd, data, #data, flags) end
+		if addr then
+			len, err, num = socket.sendto(self.fd, data, #data, flags, addr.addrinfo.ai_addr, addr.addrinfo.ai_addrlen)
+		else
+			len, err, num = socket.send(self.fd, data, #data, flags)
+		end
 		if not len then return len, err, num end
 		if len > 0 then return len end
 	end
 
-	meta.receive_from = function (self, address, size, flags)
+	meta.receive_from = function(self, address, size, flags)
 		local src_addr
 		local src_addr_size
 		if not address then
@@ -1114,15 +1174,18 @@ do
 	end
 
 	--[[@param size integer?]]
-	meta.receive = function (self, size, flags, src_address, address_len)
+	meta.receive = function(self, size, flags, src_address, address_len)
 		size = size or 65536
 		local buf = type(size) == "cdata" and size or ffi.new("char[?]", size)
 		if self.on_receive then return self:on_receive(buf, size, flags) end
 		local len, err, num, len_res
 		if src_address then
 			len_res = ffi.new("int[1]", address_len)
-			len, err, num = socket.recvfrom(self.fd, buf, ffi.sizeof(buf), flags or 0, ffi.cast("struct sockaddr *", src_address), len_res)
-		else len, err, num = socket.recv(self.fd, buf, ffi.sizeof(buf), flags or 0) end
+			len, err, num = socket.recvfrom(self.fd, buf, ffi.sizeof(buf), flags or 0,
+				ffi.cast("struct sockaddr *", src_address), len_res)
+		else
+			len, err, num = socket.recv(self.fd, buf, ffi.sizeof(buf), flags or 0)
+		end
 
 		if num == errno.ECONNRESET then
 			self:close()
@@ -1155,23 +1218,23 @@ do
 	end
 end
 
---[[@param host string]] --[[@param service "http"|"https"|"ftp"|"ssh"|string|integer]] --[[@param protocol? socket_protocol]]
-mod.bind = function (host, service, protocol)
-	local server
+--[[@param host "*"|"unix"|string]]
+--[[@param service "http"|"https"|"ftp"|"ssh"|string|integer]]
+--[[@param protocol? socket_protocol]]
+mod.bind = function(host, service, protocol)
 	local ok
-	local num
-	local info, err = mod.find_first_address(host, service, {
-		family = "inet",
+	local info, err = mod.find_first_address(host, service, host == "unix" and {
+		family = host == "unix" and "unix" or "inet",
 		socket_type = "stream",
 		protocol = protocol or "tcp",
-		flags = {"passive"},
+		flags = { "passive" },
 	})
 	if not info then return info, err end
-	server, err, num = mod.create(info.family, info.socket_type, info.protocol)
-	if not server then return server, err, num end
+	local server, err2, num = mod.create(info.family, info.socket_type, info.protocol)
+	if not server then return server, err2, num end
 	server:set_option("reuseaddr", 1)
-	ok, err, num = server:bind(info)
-	if not ok then return ok, err, num end
+	ok, err2, num = server:bind(info)
+	if not ok then return ok, err2, num end
 	server:set_option("sndbuf", 65536)
 	server:set_option("rcvbuf", 65536)
 	return server
