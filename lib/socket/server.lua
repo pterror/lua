@@ -10,7 +10,8 @@ local mod = {}
 --[[@param epoll? epoll]]
 --[[@param host? ("*"|"unix"|string|{ addrinfo: unknown; })?]]
 --[[@param on_client? fun(client: luajitsocket)]]
-mod.server = function(callback, port, epoll, host, on_client)
+--[[@param on_client_close? fun(client: luajitsocket)]]
+mod.server = function(callback, port, epoll, host, on_client, on_client_close)
 	--[[@diagnostic disable-next-line: undefined-field]]
 	epoll = epoll or _G.epoll
 	local is_running = not epoll
@@ -28,6 +29,7 @@ mod.server = function(callback, port, epoll, host, on_client)
 		local client_close = client.close
 		--[[@diagnostic disable-next-line: duplicate-set-field]]
 		client.close = function()
+			if on_client_close then on_client_close(client) end
 			client_close(client)
 			--[[@diagnostic disable-next-line: need-check-nil]]
 			remove()

@@ -425,6 +425,8 @@ mod.server_new_pointer = function(server, device)
 	wlr.wlr_cursor_attach_input_device(server[0].cursor, device)
 end
 
+local device_type_name = { [0] = "keyboard", "pointer", "touch", "tablet", "tablet pad", "switch" }
+
 --[[@type wl_notify_func_t]]
 mod.server_new_input = function(listener, data)
 	local server = wl.wl_container_of(listener, "composter_server", "new_input")
@@ -433,6 +435,8 @@ mod.server_new_input = function(listener, data)
 		mod.server_new_keyboard(server, device)
 	elseif device[0].type == wlr.WLR_INPUT_DEVICE_POINTER then
 		mod.server_new_pointer(server, device)
+	else
+		wlr._wlr_log(wlr.WLR_ERROR, "unknown input device type: %s", device_type_name[tonumber(device[0].type)])
 	end
 	local caps = wl.WL_SEAT_CAPABILITY_POINTER
 	if not wl.wl_list_empty(server[0].keyboards) then
@@ -663,6 +667,7 @@ mod.xdg_toplevel_map = function(listener, data)
 			type = "new_window",
 			version = 1,
 			title = ffi.string(xdg_toplevel[0].title),
+			app_id = ffi.string(xdg_toplevel[0].app_id),
 			address = address_string(toplevel),
 		})
 	end
@@ -714,14 +719,14 @@ mod.begin_interactive = function(toplevel, mode, edges)
 		server[0].grab_x = server[0].cursor[0].x - toplevel[0].scene_tree[0].node.x
 		server[0].grab_y = server[0].cursor[0].y - toplevel[0].scene_tree[0].node.y
 	else
-		local geo_box = ffi.new("struct wlr_box *")[0] --[[@type wlr_box]]
+		local geo_box = ffi.new("struct wlr_box *") --[[@type ptr_c<wlr_box>]]
 		wlr.wlr_xdg_surface_get_geometry(toplevel[0].xdg_toplevel[0].base, geo_box)
-		local border_x = (toplevel[0].scene_tree[0].node.x + geo_box.x) +
+		local border_x = (toplevel[0].scene_tree[0].node.x + geo_box[0].x) +
 				--[[@diagnostic disable-next-line: param-type-mismatch]]
-				(bit.band(edges, wlr.WLR_EDGE_RIGHT) ~= 0 and geo_box.width or 0)
-		local border_y = (toplevel[0].scene_tree[0].node.y + geo_box.y) +
+				(bit.band(edges, wlr.WLR_EDGE_RIGHT) ~= 0 and geo_box[0].width or 0)
+		local border_y = (toplevel[0].scene_tree[0].node.y + geo_box[0].y) +
 				--[[@diagnostic disable-next-line: param-type-mismatch]]
-				(bit.band(edges, wlr.WLR_EDGE_BOTTOM) ~= 0 and geo_box.height or 0)
+				(bit.band(edges, wlr.WLR_EDGE_BOTTOM) ~= 0 and geo_box[0].height or 0)
 		server[0].grab_x = server[0].cursor[0].x - border_x
 		server[0].grab_y = server[0].cursor[0].y - border_y
 		server[0].grab_geobox = geo_box
@@ -857,11 +862,9 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.server_new_xdg_decoration = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "new_toplevel_decoration")
 	local xdg_decoration = cast("wlr_xdg_toplevel_decoration_v1", data)
 	local decoration = new("composter_decoration")
 	decoration[0].xdg_decoration = xdg_decoration
-	local what = server_decoration_mode_by_name[mod.variables.default_server_decoration_mode]
 	xdg_decoration[0].scheduled_mode = server_decoration_mode_by_name[mod.variables.default_server_decoration_mode]
 	decoration[0].destroy.notify = mod.xdg_decoration_destroy
 	wl.wl_signal_add(xdg_decoration[0].events.destroy, decoration[0].destroy)
@@ -972,6 +975,11 @@ mod.run = function(init_log)
 		end, ipc_path, epoll, "unix", function(client)
 			ipc_clients = ipc_clients or {}
 			ipc_clients[client] = true
+		end, function(client)
+			if not ipc_clients then return end
+			ipc_clients[client] = nil
+			local first_key = next(ipc_clients)
+			if not first_key then ipc_clients = nil end
 		end)
 		ffi.C.setenv("COMPOSTER_IPC_PATH", ipc_path, true)
 		wl.wl_display_flush_clients(server[0].wl_display)
