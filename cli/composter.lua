@@ -202,11 +202,11 @@ end
 
 --[[@generic t]]
 --[[@param type `t`]]
---[[@return t]]
+--[[@return ptr_c<t>]]
 local new = function(type)
 	local obj = ffi.new("struct " .. type .. "[1]")
 	permanent[obj] = true
-	return obj[0]
+	return obj
 end
 
 --[[@generic t]]
@@ -272,22 +272,22 @@ end
 --[[@param server composter_server]]
 mod.functions.exit = function(server)
 	mod.hooks.on_exit(server)
-	wl.wl_display_terminate(server.wl_display)
+	wl.wl_display_terminate(server[0].wl_display)
 end
 --[[@param server composter_server]]
 mod.functions.focus_window_below_mouse = function(server)
-	local toplevel, surface = mod.desktop_toplevel_at(server, server.cursor[0].x, server.cursor[0].y)
+	local toplevel, surface = mod.desktop_toplevel_at(server, server[0].cursor[0].x, server[0].cursor[0].y)
 	mod.focus_toplevel(toplevel, surface)
 end
 --[[@param server composter_server]]
 mod.functions.focus_next_window = function(server)
-	if wl.wl_list_length(server.toplevels) < 2 then return end
-	local next_toplevel = wl.wl_container_of(server.toplevels.prev, "composter_toplevel", "link")[0]
+	if wl.wl_list_length(server[0].toplevels) < 2 then return end
+	local next_toplevel = wl.wl_container_of(server[0].toplevels.prev, "composter_toplevel", "link")
 	mod.focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
 end
 --[[@param server composter_server]]
 mod.functions.focused_window = function(server)
-	return server.focused_toplevel
+	return server[0].focused_toplevel
 end
 --[[@param window composter_toplevel]]
 mod.functions.close_window = function(window)
@@ -314,16 +314,16 @@ end
 --[[@param server composter_server]]
 --[[@param cursor "invalid"|"default"|"context-menu"|"help"|"pointer"|"progress"|"wait"|"cell"|"crosshair"|"text"|"vertical-text"|"alias"|"copy"|"move"|"no-drop"|"not-allowed"|"grab"|"grabbing"|"e-resize"|"n-resize"|"ne-resize"|"nw-resize"|"s-resize"|"se-resize"|"sw-resize"|"w-resize"|"ew-resize"|"ns-resize"|"nesw-resize"|"nwse-resize"|"col-resize"|"row-resize"|"all-scroll"|"zoom-in"|"zoom-out")]]
 mod.functions.set_cursor = function(server, cursor)
-	wlr.wlr_cursor_set_xcursor(server.cursor, server.cursor_manager, cursor)
+	wlr.wlr_cursor_set_xcursor(server[0].cursor, server[0].cursor_manager, cursor)
 end
 
---[[@param toplevel composter_toplevel]]
+--[[@param toplevel ptr_c<composter_toplevel>]]
 --[[@param surface ptr_c<wlr_surface>]]
 mod.focus_toplevel = function(toplevel, surface)
 	if toplevel == nil then return end
-	local server = toplevel.server[0]
-	local seat = server.seat[0]
-	local prev_surface = seat.keyboard_state.focused_surface
+	local server = toplevel[0].server
+	local seat = server[0].seat
+	local prev_surface = seat[0].keyboard_state.focused_surface
 	if prev_surface == surface then return end
 	if prev_surface ~= nil then
 		local prev_toplevel = wlr.wlr_xdg_toplevel_try_from_wlr_surface(prev_surface)
@@ -331,38 +331,38 @@ mod.focus_toplevel = function(toplevel, surface)
 			wlr.wlr_xdg_toplevel_set_activated(prev_toplevel, false)
 		end
 	end
-	server.focused_toplevel = toplevel
-	local keyboard = wlr.wlr_seat_get_keyboard(seat)[0] --[[@type wlr_keyboard]]
-	wlr.wlr_scene_node_raise_to_top(toplevel.scene_tree[0].node)
-	wl.wl_list_remove(toplevel.link)
-	wl.wl_list_insert(server.toplevels, toplevel.link)
-	wlr.wlr_xdg_toplevel_set_activated(toplevel.xdg_toplevel, true)
+	server[0].focused_toplevel = toplevel
+	local keyboard = wlr.wlr_seat_get_keyboard(seat) --[[@type ptr_c<wlr_keyboard>]]
+	wlr.wlr_scene_node_raise_to_top(toplevel[0].scene_tree[0].node)
+	wl.wl_list_remove(toplevel[0].link)
+	wl.wl_list_insert(server[0].toplevels, toplevel[0].link)
+	wlr.wlr_xdg_toplevel_set_activated(toplevel[0].xdg_toplevel, true)
 	if keyboard ~= nil then
-		wlr.wlr_seat_keyboard_notify_enter(seat, toplevel.xdg_toplevel[0].base[0].surface, keyboard.keycodes,
-			keyboard.num_keycodes, keyboard.modifiers)
+		wlr.wlr_seat_keyboard_notify_enter(seat, toplevel[0].xdg_toplevel[0].base[0].surface, keyboard[0].keycodes,
+			keyboard[0].num_keycodes, keyboard[0].modifiers)
 	end
 end
 
 --[[@type wl_notify_func_t]]
 mod.keyboard_handle_modifiers = function(listener, data)
-	local keyboard = wl.wl_container_of(listener, "composter_keyboard", "modifiers")[0]
-	wlr.wlr_seat_set_keyboard(keyboard.server[0].seat, keyboard.wlr_keyboard)
-	wlr.wlr_seat_keyboard_notify_modifiers(keyboard.server[0].seat, keyboard.wlr_keyboard[0].modifiers)
+	local keyboard = wl.wl_container_of(listener, "composter_keyboard", "modifiers")
+	wlr.wlr_seat_set_keyboard(keyboard[0].server[0].seat, keyboard[0].wlr_keyboard)
+	wlr.wlr_seat_keyboard_notify_modifiers(keyboard[0].server[0].seat, keyboard[0].wlr_keyboard[0].modifiers)
 end
 
 --[[@type wl_notify_func_t]]
 mod.keyboard_handle_key = function(listener, data)
-	local keyboard = wl.wl_container_of(listener, "composter_keyboard", "key")[0]
-	local server = keyboard.server[0]
-	local event = cast("wlr_keyboard_key_event", data)[0]
-	local seat = server.seat[0]
-	local keycode = event.keycode + 8
+	local keyboard = wl.wl_container_of(listener, "composter_keyboard", "key")
+	local server = keyboard[0].server
+	local event = cast("wlr_keyboard_key_event", data)
+	local seat = server[0].seat
+	local keycode = event[0].keycode + 8
 	local syms = ffi.cast("const xkb_keysym_t **", ffi.new("xkb_keysym_t *[1]")) --[[@type ptr_c<xkb_keysym_t>]]
-	local nsyms = xkb.xkb_state_key_get_syms(keyboard.wlr_keyboard[0].xkb_state, keycode, syms)
+	local nsyms = xkb.xkb_state_key_get_syms(keyboard[0].wlr_keyboard[0].xkb_state, keycode, syms)
 	local handled = false
-	local modifiers = wlr.wlr_keyboard_get_modifiers(keyboard.wlr_keyboard)
+	local modifiers = wlr.wlr_keyboard_get_modifiers(keyboard[0].wlr_keyboard)
 	local mod_str = ""
-	if event.state == wl.WL_KEYBOARD_KEY_STATE_PRESSED then
+	if event[0].state == wl.WL_KEYBOARD_KEY_STATE_PRESSED then
 		--[[@diagnostic disable-next-line: param-type-mismatch]]
 		if bit.band(modifiers, wlr.WLR_MODIFIER_CTRL) ~= 0 then mod_str = mod_str .. "ctrl+" end
 		--[[@diagnostic disable-next-line: param-type-mismatch]]
@@ -380,82 +380,82 @@ mod.keyboard_handle_key = function(listener, data)
 		end
 	end
 	if not handled then
-		wlr.wlr_seat_set_keyboard(seat, keyboard.wlr_keyboard)
-		wlr.wlr_seat_keyboard_notify_key(seat, event.time_msec, event.keycode, event.state)
+		wlr.wlr_seat_set_keyboard(seat, keyboard[0].wlr_keyboard)
+		wlr.wlr_seat_keyboard_notify_key(seat, event[0].time_msec, event[0].keycode, event[0].state)
 		--[[TODO: flow is reaching here but keyboard events are not appearing in terminal]]
 	end
 end
 
 --[[@type wl_notify_func_t]]
 mod.keyboard_handle_destroy = function(listener, data)
-	local keyboard = wl.wl_container_of(listener, "composter_keyboard", "destroy")[0]
-	wl.wl_list_remove(keyboard.modifiers.link)
-	wl.wl_list_remove(keyboard.key.link)
-	wl.wl_list_remove(keyboard.destroy.link)
-	wl.wl_list_remove(keyboard.link)
+	local keyboard = wl.wl_container_of(listener, "composter_keyboard", "destroy")
+	wl.wl_list_remove(keyboard[0].modifiers.link)
+	wl.wl_list_remove(keyboard[0].key.link)
+	wl.wl_list_remove(keyboard[0].destroy.link)
+	wl.wl_list_remove(keyboard[0].link)
 	queue_free(keyboard)
 end
 
 --[[@param server composter_server]]
 --[[@param device wlr_input_device]]
 mod.server_new_keyboard = function(server, device)
-	local wlr_keyboard = wlr.wlr_keyboard_from_input_device(device) --[[@type wlr_keyboard]]
+	local wlr_keyboard = wlr.wlr_keyboard_from_input_device(device) --[[@type ptr_c<wlr_keyboard>]]
 	local keyboard = new("composter_keyboard")
-	keyboard.server = server
-	keyboard.wlr_keyboard = wlr_keyboard
+	keyboard[0].server = server
+	keyboard[0].wlr_keyboard = wlr_keyboard
 	local context = xkb.xkb_context_new(xkb.XKB_CONTEXT_NO_FLAGS)
 	local keymap = xkb.xkb_keymap_new_from_names(context, nil, xkb.XKB_KEYMAP_COMPILE_NO_FLAGS)
 	wlr.wlr_keyboard_set_keymap(wlr_keyboard, keymap)
 	xkb.xkb_keymap_unref(keymap)
 	xkb.xkb_context_unref(context)
 	wlr.wlr_keyboard_set_repeat_info(wlr_keyboard, mod.variables.key_repeats_per_sec, mod.variables.key_repeat_delay_ms)
-	keyboard.modifiers.notify = mod.keyboard_handle_modifiers
-	wl.wl_signal_add(wlr_keyboard.events.modifiers, keyboard.modifiers)
-	keyboard.key.notify = mod.keyboard_handle_key
-	wl.wl_signal_add(wlr_keyboard.events.key, keyboard.key)
-	keyboard.destroy.notify = mod.keyboard_handle_destroy
-	wl.wl_signal_add(device.events.destroy, keyboard.destroy)
-	wlr.wlr_seat_set_keyboard(server.seat, keyboard.wlr_keyboard)
-	wl.wl_list_insert(server.keyboards, keyboard.link)
+	keyboard[0].modifiers.notify = mod.keyboard_handle_modifiers
+	wl.wl_signal_add(wlr_keyboard[0].events.modifiers, keyboard[0].modifiers)
+	keyboard[0].key.notify = mod.keyboard_handle_key
+	wl.wl_signal_add(wlr_keyboard[0].events.key, keyboard[0].key)
+	keyboard[0].destroy.notify = mod.keyboard_handle_destroy
+	wl.wl_signal_add(device.events.destroy, keyboard[0].destroy)
+	wlr.wlr_seat_set_keyboard(server[0].seat, keyboard[0].wlr_keyboard)
+	wl.wl_list_insert(server[0].keyboards, keyboard[0].link)
 end
 
 --[[@param server composter_server]]
 --[[@param device wlr_input_device]]
 mod.server_new_pointer = function(server, device)
-	wlr.wlr_cursor_attach_input_device(server.cursor, device)
+	wlr.wlr_cursor_attach_input_device(server[0].cursor, device)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_new_input = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "new_input")[0]
-	local device = cast("wlr_input_device", data)[0]
-	if device.type == wlr.WLR_INPUT_DEVICE_KEYBOARD then
+	local server = wl.wl_container_of(listener, "composter_server", "new_input")
+	local device = cast("wlr_input_device", data)
+	if device[0].type == wlr.WLR_INPUT_DEVICE_KEYBOARD then
 		mod.server_new_keyboard(server, device)
-	elseif device.type == wlr.WLR_INPUT_DEVICE_POINTER then
+	elseif device[0].type == wlr.WLR_INPUT_DEVICE_POINTER then
 		mod.server_new_pointer(server, device)
 	end
 	local caps = wl.WL_SEAT_CAPABILITY_POINTER
-	if not wl.wl_list_empty(server.keyboards) then
+	if not wl.wl_list_empty(server[0].keyboards) then
 		caps = bit.bor(caps, wl.WL_SEAT_CAPABILITY_KEYBOARD)
 	end
-	wlr.wlr_seat_set_capabilities(server.seat, caps)
+	wlr.wlr_seat_set_capabilities(server[0].seat, caps)
 end
 
 --[[@type wl_notify_func_t]]
 mod.seat_request_cursor = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "request_cursor")[0]
-	local event = cast("wlr_seat_pointer_request_set_cursor_event", data)[0]
-	local focused_client = server.seat[0].pointer_state.focused_client[0]
-	if focused_client == event.seat_client[0] then
-		wlr.wlr_cursor_set_surface(server.cursor, event.surface, event.hotspot_x, event.hotspot_y)
+	local server = wl.wl_container_of(listener, "composter_server", "request_cursor")
+	local event = cast("wlr_seat_pointer_request_set_cursor_event", data)
+	local focused_client = server[0].seat[0].pointer_state.focused_client
+	if focused_client == event[0].seat_client then
+		wlr.wlr_cursor_set_surface(server[0].cursor, event[0].surface, event[0].hotspot_x, event[0].hotspot_y)
 	end
 end
 
 --[[@type wl_notify_func_t]]
 mod.seat_request_set_selection = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "request_set_selection")[0]
-	local event = cast("wlr_seat_request_set_selection_event", data)[0]
-	wlr.wlr_seat_set_selection(server.seat, event.source, event.serial)
+	local server = wl.wl_container_of(listener, "composter_server", "request_set_selection")
+	local event = cast("wlr_seat_request_set_selection_event", data)
+	wlr.wlr_seat_set_selection(server[0].seat, event[0].source, event[0].serial)
 end
 
 local static_sx = ffi.new("double[1]") --[[@type ptr_c<number>]]
@@ -464,12 +464,12 @@ local static_sy = ffi.new("double[1]") --[[@type ptr_c<number>]]
 --[[@param server composter_server]]
 --[[@param lx number]]
 --[[@param ly number]]
---[[@return composter_toplevel toplevel]]
---[[@return wlr_surface surface]]
+--[[@return ptr_c<composter_toplevel> toplevel]]
+--[[@return ptr_c<wlr_surface> surface]]
 --[[@return number sx]]
 --[[@return number sy]]
 mod.desktop_toplevel_at = function(server, lx, ly)
-	local node = wlr.wlr_scene_node_at(server.scene[0].tree.node, lx, ly, static_sx, static_sy)
+	local node = wlr.wlr_scene_node_at(server[0].scene[0].tree.node, lx, ly, static_sx, static_sy)
 	--[[@diagnostic disable-next-line: return-type-mismatch, missing-return-value]]
 	if node == nil or node[0].type ~= wlr.WLR_SCENE_NODE_BUFFER then return nil end
 	local scene_buffer = wlr.wlr_scene_buffer_from_node(node)
@@ -480,45 +480,45 @@ mod.desktop_toplevel_at = function(server, lx, ly)
 	while tree ~= nil and tree[0].node.data == nil do
 		tree = tree[0].node.parent
 	end
-	return cast("composter_toplevel", tree[0].node.data)[0], scene_surface[0].surface[0], static_sx[0], static_sy[0]
+	return cast("composter_toplevel", tree[0].node.data), scene_surface[0].surface, static_sx[0], static_sy[0]
 end
 
 --[[@param server composter_server]]
 mod.reset_cursor_mode = function(server)
-	server.cursor_mode = composter_cursor_mode.passthrough
-	server.grabbed_toplevel = nil
+	server[0].cursor_mode = composter_cursor_mode.passthrough
+	server[0].grabbed_toplevel = nil
 end
 
 --[[@param server composter_server]]
 --[[@param time integer]]
 mod.process_cursor_move = function(server, time)
-	local toplevel = server.grabbed_toplevel
-	wlr.wlr_scene_node_set_position(toplevel[0].scene_tree[0].node, server.cursor[0].x - server.grab_x,
-		server.cursor[0].y - server.grab_y)
+	local toplevel = server[0].grabbed_toplevel
+	wlr.wlr_scene_node_set_position(toplevel[0].scene_tree[0].node, server[0].cursor[0].x - server[0].grab_x,
+		server[0].cursor[0].y - server[0].grab_y)
 end
 
 --[[@param server composter_server]]
 --[[@param time integer]]
 mod.process_cursor_resize = function(server, time)
-	local toplevel = server.grabbed_toplevel
-	local border_x = server.cursor[0].x - server.grab_x
-	local border_y = server.cursor[0].y - server.grab_y
-	local new_left = server.grab_geobox.x --[[@type number]]
-	local new_right = server.grab_geobox.x + server.grab_geobox.width --[[@type number]]
-	local new_top = server.grab_geobox.y --[[@type number]]
-	local new_bottom = server.grab_geobox.y + server.grab_geobox.height --[[@type number]]
+	local toplevel = server[0].grabbed_toplevel
+	local border_x = server[0].cursor[0].x - server[0].grab_x
+	local border_y = server[0].cursor[0].y - server[0].grab_y
+	local new_left = server[0].grab_geobox.x --[[@type number]]
+	local new_right = server[0].grab_geobox.x + server[0].grab_geobox.width --[[@type number]]
+	local new_top = server[0].grab_geobox.y --[[@type number]]
+	local new_bottom = server[0].grab_geobox.y + server[0].grab_geobox.height --[[@type number]]
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
-	if bit.band(server.resize_edges, wlr.WLR_EDGE_TOP) ~= 0 then
+	if bit.band(server[0].resize_edges, wlr.WLR_EDGE_TOP) ~= 0 then
 		new_top = math.min(border_y, new_bottom - 1)
 		--[[@diagnostic disable-next-line: param-type-mismatch]]
-	elseif bit.band(server.resize_edges, wlr.WLR_EDGE_BOTTOM) ~= 0 then
+	elseif bit.band(server[0].resize_edges, wlr.WLR_EDGE_BOTTOM) ~= 0 then
 		new_bottom = math.max(border_y, new_top + 1)
 	end
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
-	if bit.band(server.resize_edges, wlr.WLR_EDGE_LEFT) ~= 0 then
+	if bit.band(server[0].resize_edges, wlr.WLR_EDGE_LEFT) ~= 0 then
 		new_left = math.min(border_x, new_right - 1)
 		--[[@diagnostic disable-next-line: param-type-mismatch]]
-	elseif bit.band(server.resize_edges, wlr.WLR_EDGE_RIGHT) ~= 0 then
+	elseif bit.band(server[0].resize_edges, wlr.WLR_EDGE_RIGHT) ~= 0 then
 		new_right = math.max(border_x, new_left + 1)
 	end
 	local geo_box
@@ -532,17 +532,17 @@ end
 --[[@param server composter_server]]
 --[[@param time integer]]
 mod.process_cursor_motion = function(server, time)
-	if server.cursor_mode == composter_cursor_mode.move then
+	if server[0].cursor_mode == composter_cursor_mode.move then
 		mod.process_cursor_move(server, time)
 		return
-	elseif server.cursor_mode == composter_cursor_mode.resize then
+	elseif server[0].cursor_mode == composter_cursor_mode.resize then
 		mod.process_cursor_resize(server, time)
 		return
 	end
-	local seat = server.seat[0]
-	local toplevel, surface, sx, sy = mod.desktop_toplevel_at(server, server.cursor[0].x, server.cursor[0].y)
+	local seat = server[0].seat[0]
+	local toplevel, surface, sx, sy = mod.desktop_toplevel_at(server, server[0].cursor[0].x, server[0].cursor[0].y)
 	if toplevel == nil then
-		wlr.wlr_cursor_set_xcursor(server.cursor, server.cursor_manager, "default")
+		wlr.wlr_cursor_set_xcursor(server[0].cursor, server[0].cursor_manager, "default")
 	end
 	if surface ~= nil then
 		wlr.wlr_seat_pointer_notify_enter(seat, surface, sx, sy)
@@ -555,26 +555,26 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.server_cursor_motion = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "cursor_motion")[0]
-	local event = cast("wlr_pointer_motion_event", data)[0]
-	wlr.wlr_cursor_move(server.cursor, event.pointer[0].base, event.delta_x, event.delta_y)
-	mod.process_cursor_motion(server, event.time_msec)
+	local server = wl.wl_container_of(listener, "composter_server", "cursor_motion")
+	local event = cast("wlr_pointer_motion_event", data)
+	wlr.wlr_cursor_move(server[0].cursor, event[0].pointer[0].base, event[0].delta_x, event[0].delta_y)
+	mod.process_cursor_motion(server, event[0].time_msec)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_cursor_motion_absolute = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "cursor_motion_absolute")[0]
-	local event = cast("wlr_pointer_motion_absolute_event", data)[0]
-	wlr.wlr_cursor_warp_absolute(server.cursor, event.pointer[0].base, event.x, event.y)
-	mod.process_cursor_motion(server, event.time_msec)
+	local server = wl.wl_container_of(listener, "composter_server", "cursor_motion_absolute")
+	local event = cast("wlr_pointer_motion_absolute_event", data)
+	wlr.wlr_cursor_warp_absolute(server[0].cursor, event[0].pointer[0].base, event[0].x, event[0].y)
+	mod.process_cursor_motion(server, event[0].time_msec)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_cursor_button = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "cursor_button")[0]
-	local event = cast("wlr_pointer_button_event", data)[0]
-	wlr.wlr_seat_pointer_notify_button(server.seat, event.time_msec, event.button, event.state)
-	if event.state == wl.WL_POINTER_BUTTON_STATE_RELEASED then
+	local server = wl.wl_container_of(listener, "composter_server", "cursor_button")
+	local event = cast("wlr_pointer_button_event", data)
+	wlr.wlr_seat_pointer_notify_button(server[0].seat, event[0].time_msec, event[0].button, event[0].state)
+	if event[0].state == wl.WL_POINTER_BUTTON_STATE_RELEASED then
 		mod.hooks.on_release(server)
 	else
 		mod.hooks.on_press(server)
@@ -583,25 +583,26 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.server_cursor_axis = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "cursor_axis")[0]
-	local event = cast("wlr_pointer_axis_event", data)[0]
-	wlr.wlr_seat_pointer_notify_axis(server.seat, event.time_msec, event.orientation, event.delta, event.delta_discrete,
-		event.source, event.relative_direction)
+	local server = wl.wl_container_of(listener, "composter_server", "cursor_axis")
+	local event = cast("wlr_pointer_axis_event", data)
+	wlr.wlr_seat_pointer_notify_axis(server[0].seat, event[0].time_msec, event[0].orientation, event[0].delta,
+		event[0].delta_discrete,
+		event[0].source, event[0].relative_direction)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_cursor_frame = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "cursor_frame")[0]
-	wlr.wlr_seat_pointer_notify_frame(server.seat)
+	local server = wl.wl_container_of(listener, "composter_server", "cursor_frame")
+	wlr.wlr_seat_pointer_notify_frame(server[0].seat)
 end
 
 local now = ffi.new("struct timespec[1]") --[[@type ptr_c<timespec_c>]]
 
 --[[@type wl_notify_func_t]]
 mod.output_frame = function(listener, data)
-	local output = wl.wl_container_of(listener, "composter_output", "frame")[0]
-	local scene = output.server[0].scene[0]
-	local scene_output = wlr.wlr_scene_get_scene_output(scene, output.wlr_output) --[[@type ptr_c<wlr_scene_output>]]
+	local output = wl.wl_container_of(listener, "composter_output", "frame")
+	local scene = output[0].server[0].scene[0]
+	local scene_output = wlr.wlr_scene_get_scene_output(scene, output[0].wlr_output) --[[@type ptr_c<wlr_scene_output>]]
 	wlr.wlr_scene_output_commit(scene_output, nil)
 	ffi.C.clock_gettime(1 --[[CLOCK_MONOTONIC]], now)
 	wlr.wlr_scene_output_send_frame_done(scene_output, now)
@@ -609,26 +610,26 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.output_request_state = function(listener, data)
-	local output = wl.wl_container_of(listener, "composter_output", "request_state")[0]
-	local event = cast("wlr_output_event_request_state", data)[0]
-	wlr.wlr_output_commit_state(output.wlr_output, event.state)
+	local output = wl.wl_container_of(listener, "composter_output", "request_state")
+	local event = cast("wlr_output_event_request_state", data)
+	wlr.wlr_output_commit_state(output[0].wlr_output, event[0].state)
 end
 
 --[[@type wl_notify_func_t]]
 mod.output_destroy = function(listener, data)
-	local output = wl.wl_container_of(listener, "composter_output", "destroy")[0]
-	wl.wl_list_remove(output.frame.link)
-	wl.wl_list_remove(output.request_state.link)
-	wl.wl_list_remove(output.destroy.link)
-	wl.wl_list_remove(output.link)
+	local output = wl.wl_container_of(listener, "composter_output", "destroy")
+	wl.wl_list_remove(output[0].frame.link)
+	wl.wl_list_remove(output[0].request_state.link)
+	wl.wl_list_remove(output[0].destroy.link)
+	wl.wl_list_remove(output[0].link)
 	queue_free(output)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_new_output = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "new_output")[0]
-	local wlr_output = cast("wlr_output", data)[0]
-	wlr.wlr_output_init_render(wlr_output, server.allocator, server.renderer)
+	local server = wl.wl_container_of(listener, "composter_server", "new_output")
+	local wlr_output = cast("wlr_output", data)
+	wlr.wlr_output_init_render(wlr_output, server[0].allocator, server[0].renderer)
 	local state = new("wlr_output_state")
 	wlr.wlr_output_state_init(state)
 	wlr.wlr_output_state_set_enabled(state, true)
@@ -637,31 +638,31 @@ mod.server_new_output = function(listener, data)
 	wlr.wlr_output_commit_state(wlr_output, state)
 	wlr.wlr_output_state_finish(state)
 	local output = new("composter_output")
-	output.wlr_output = wlr_output
-	output.server = server
-	output.frame.notify = mod.output_frame
-	wl.wl_signal_add(wlr_output.events.frame, output.frame)
-	output.request_state.notify = mod.output_request_state
-	wl.wl_signal_add(wlr_output.events.request_state, output.request_state)
-	output.destroy.notify = mod.output_destroy
-	wl.wl_signal_add(wlr_output.events.destroy, output.destroy)
-	wl.wl_list_insert(server.outputs, output.link)
-	local layout_output = wlr.wlr_output_layout_add_auto(server.output_layout, wlr_output)
-	local scene_output = wlr.wlr_scene_output_create(server.scene, wlr_output)
-	wlr.wlr_scene_output_layout_add_output(server.scene_layout, layout_output, scene_output)
+	output[0].wlr_output = wlr_output
+	output[0].server = server
+	output[0].frame.notify = mod.output_frame
+	wl.wl_signal_add(wlr_output[0].events.frame, output[0].frame)
+	output[0].request_state.notify = mod.output_request_state
+	wl.wl_signal_add(wlr_output[0].events.request_state, output[0].request_state)
+	output[0].destroy.notify = mod.output_destroy
+	wl.wl_signal_add(wlr_output[0].events.destroy, output[0].destroy)
+	wl.wl_list_insert(server[0].outputs, output[0].link)
+	local layout_output = wlr.wlr_output_layout_add_auto(server[0].output_layout, wlr_output)
+	local scene_output = wlr.wlr_scene_output_create(server[0].scene, wlr_output)
+	wlr.wlr_scene_output_layout_add_output(server[0].scene_layout, layout_output, scene_output)
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_map = function(listener, data)
 	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "map")
 	wl.wl_list_insert(toplevel[0].server[0].toplevels, toplevel[0].link)
-	mod.focus_toplevel(toplevel[0], toplevel[0].xdg_toplevel[0].base[0].surface)
-	local xdg_toplevel = toplevel[0].xdg_toplevel[0]
+	mod.focus_toplevel(toplevel, toplevel[0].xdg_toplevel[0].base[0].surface)
+	local xdg_toplevel = toplevel[0].xdg_toplevel
 	if ipc_clients then
 		ipc_send_event({
 			type = "new_window",
 			version = 1,
-			title = ffi.string(xdg_toplevel.title),
+			title = ffi.string(xdg_toplevel[0].title),
 			address = address_string(toplevel),
 		})
 	end
@@ -669,32 +670,32 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_unmap = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "unmap")[0]
-	if toplevel == toplevel.server[0].grabbed_toplevel[0] then
-		mod.reset_cursor_mode(toplevel.server)
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "unmap")
+	if toplevel == toplevel[0].server[0].grabbed_toplevel[0] then
+		mod.reset_cursor_mode(toplevel[0].server)
 	end
-	wl.wl_list_remove(toplevel.link)
+	wl.wl_list_remove(toplevel[0].link)
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_commit = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "commit")[0]
-	if toplevel.xdg_toplevel[0].base[0].initial_commit then
-		wlr.wlr_xdg_toplevel_set_size(toplevel.xdg_toplevel, 0, 0)
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "commit")
+	if toplevel[0].xdg_toplevel[0].base[0].initial_commit then
+		wlr.wlr_xdg_toplevel_set_size(toplevel[0].xdg_toplevel, 0, 0)
 	end
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_destroy = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "destroy")[0]
-	wl.wl_list_remove(toplevel.map.link)
-	wl.wl_list_remove(toplevel.unmap.link)
-	wl.wl_list_remove(toplevel.commit.link)
-	wl.wl_list_remove(toplevel.destroy.link)
-	wl.wl_list_remove(toplevel.request_move.link)
-	wl.wl_list_remove(toplevel.request_resize.link)
-	wl.wl_list_remove(toplevel.request_maximize.link)
-	wl.wl_list_remove(toplevel.request_fullscreen.link)
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "destroy")
+	wl.wl_list_remove(toplevel[0].map.link)
+	wl.wl_list_remove(toplevel[0].unmap.link)
+	wl.wl_list_remove(toplevel[0].commit.link)
+	wl.wl_list_remove(toplevel[0].destroy.link)
+	wl.wl_list_remove(toplevel[0].request_move.link)
+	wl.wl_list_remove(toplevel[0].request_resize.link)
+	wl.wl_list_remove(toplevel[0].request_maximize.link)
+	wl.wl_list_remove(toplevel[0].request_fullscreen.link)
 	queue_free(toplevel)
 end
 
@@ -702,96 +703,96 @@ end
 --[[@param mode composter_cursor_mode]]
 --[[@param edges integer]]
 mod.begin_interactive = function(toplevel, mode, edges)
-	local server = toplevel.server[0]
-	local focused_surface = server.seat[0].pointer_state.focused_surface
-	if toplevel.xdg_toplevel[0].base[0].surface ~= wlr.wlr_surface_get_root_surface(focused_surface) then
+	local server = toplevel[0].server[0]
+	local focused_surface = server[0].seat[0].pointer_state.focused_surface
+	if toplevel[0].xdg_toplevel[0].base[0].surface ~= wlr.wlr_surface_get_root_surface(focused_surface) then
 		return
 	end
-	server.grabbed_toplevel = toplevel
-	server.cursor_mode = mode
+	server[0].grabbed_toplevel = toplevel
+	server[0].cursor_mode = mode
 	if mode == composter_cursor_mode.move then
-		server.grab_x = server.cursor[0].x - toplevel.scene_tree[0].node.x
-		server.grab_y = server.cursor[0].y - toplevel.scene_tree[0].node.y
+		server[0].grab_x = server[0].cursor[0].x - toplevel[0].scene_tree[0].node.x
+		server[0].grab_y = server[0].cursor[0].y - toplevel[0].scene_tree[0].node.y
 	else
 		local geo_box = ffi.new("struct wlr_box *")[0] --[[@type wlr_box]]
-		wlr.wlr_xdg_surface_get_geometry(toplevel.xdg_toplevel[0].base, geo_box)
-		local border_x = (toplevel.scene_tree[0].node.x + geo_box.x) +
+		wlr.wlr_xdg_surface_get_geometry(toplevel[0].xdg_toplevel[0].base, geo_box)
+		local border_x = (toplevel[0].scene_tree[0].node.x + geo_box.x) +
 				--[[@diagnostic disable-next-line: param-type-mismatch]]
 				(bit.band(edges, wlr.WLR_EDGE_RIGHT) ~= 0 and geo_box.width or 0)
-		local border_y = (toplevel.scene_tree[0].node.y + geo_box.y) +
+		local border_y = (toplevel[0].scene_tree[0].node.y + geo_box.y) +
 				--[[@diagnostic disable-next-line: param-type-mismatch]]
 				(bit.band(edges, wlr.WLR_EDGE_BOTTOM) ~= 0 and geo_box.height or 0)
-		server.grab_x = server.cursor[0].x - border_x
-		server.grab_y = server.cursor[0].y - border_y
-		server.grab_geobox = geo_box
-		server.grab_geobox.x = server.grab_geobox.x + toplevel.scene_tree[0].node.x
-		server.grab_geobox.y = server.grab_geobox.y + toplevel.scene_tree[0].node.y
-		server.resize_edges = edges
+		server[0].grab_x = server[0].cursor[0].x - border_x
+		server[0].grab_y = server[0].cursor[0].y - border_y
+		server[0].grab_geobox = geo_box
+		server[0].grab_geobox.x = server[0].grab_geobox.x + toplevel[0].scene_tree[0].node.x
+		server[0].grab_geobox.y = server[0].grab_geobox.y + toplevel[0].scene_tree[0].node.y
+		server[0].resize_edges = edges
 	end
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_request_move = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_move")[0]
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_move")
 	mod.begin_interactive(toplevel, composter_cursor_mode.move, 0)
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_request_resize = function(listener, data)
-	local event = cast("wlr_xdg_toplevel_resize_event", data)[0]
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_resize")[0]
-	mod.begin_interactive(toplevel, composter_cursor_mode.resize, event.edges)
+	local event = cast("wlr_xdg_toplevel_resize_event", data)
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_resize")
+	mod.begin_interactive(toplevel, composter_cursor_mode.resize, event[0].edges)
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_request_maximize = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_maximize")[0]
-	if toplevel.xdg_toplevel[0].base[0].initialized then
-		wlr.wlr_xdg_surface_schedule_configure(toplevel.xdg_toplevel[0].base)
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_maximize")
+	if toplevel[0].xdg_toplevel[0].base[0].initialized then
+		wlr.wlr_xdg_surface_schedule_configure(toplevel[0].xdg_toplevel[0].base)
 	end
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_toplevel_request_fullscreen = function(listener, data)
-	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_fullscreen")[0]
-	if toplevel.xdg_toplevel[0].base[0].initialized then
-		wlr.wlr_xdg_surface_schedule_configure(toplevel.xdg_toplevel[0].base)
+	local toplevel = wl.wl_container_of(listener, "composter_toplevel", "request_fullscreen")
+	if toplevel[0].xdg_toplevel[0].base[0].initialized then
+		wlr.wlr_xdg_surface_schedule_configure(toplevel[0].xdg_toplevel[0].base)
 	end
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_new_xdg_toplevel = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "new_xdg_toplevel")[0]
-	local xdg_toplevel = cast("wlr_xdg_toplevel", data)[0]
+	local server = wl.wl_container_of(listener, "composter_server", "new_xdg_toplevel")
+	local xdg_toplevel = cast("wlr_xdg_toplevel", data)
 	local toplevel = new("composter_toplevel")
-	toplevel.server = server
-	toplevel.xdg_toplevel = xdg_toplevel
-	toplevel.scene_tree = wlr.wlr_scene_xdg_surface_create(toplevel.server[0].scene[0].tree, xdg_toplevel.base)
-	toplevel.scene_tree[0].node.data = toplevel
-	xdg_toplevel.base[0].data = toplevel.scene_tree
-	toplevel.map.notify = mod.xdg_toplevel_map
-	wl.wl_signal_add(xdg_toplevel.base[0].surface[0].events.map, toplevel.map)
-	toplevel.unmap.notify = mod.xdg_toplevel_unmap
-	wl.wl_signal_add(xdg_toplevel.base[0].surface[0].events.unmap, toplevel.unmap)
-	toplevel.commit.notify = mod.xdg_toplevel_commit
-	wl.wl_signal_add(xdg_toplevel.base[0].surface[0].events.commit, toplevel.commit)
-	toplevel.destroy.notify = mod.xdg_toplevel_destroy
-	wl.wl_signal_add(xdg_toplevel.events.destroy, toplevel.destroy)
-	toplevel.request_move.notify = mod.xdg_toplevel_request_move
-	wl.wl_signal_add(xdg_toplevel.events.request_move, toplevel.request_move)
-	toplevel.request_resize.notify = mod.xdg_toplevel_request_resize
-	wl.wl_signal_add(xdg_toplevel.events.request_resize, toplevel.request_resize)
-	toplevel.request_maximize.notify = mod.xdg_toplevel_request_maximize
-	wl.wl_signal_add(xdg_toplevel.events.request_maximize, toplevel.request_maximize)
-	toplevel.request_fullscreen.notify = mod.xdg_toplevel_request_fullscreen
-	wl.wl_signal_add(xdg_toplevel.events.request_fullscreen, toplevel.request_fullscreen)
+	toplevel[0].server = server
+	toplevel[0].xdg_toplevel = xdg_toplevel
+	toplevel[0].scene_tree = wlr.wlr_scene_xdg_surface_create(toplevel[0].server[0].scene[0].tree, xdg_toplevel[0].base)
+	toplevel[0].scene_tree[0].node.data = toplevel
+	xdg_toplevel[0].base[0].data = toplevel[0].scene_tree
+	toplevel[0].map.notify = mod.xdg_toplevel_map
+	wl.wl_signal_add(xdg_toplevel[0].base[0].surface[0].events.map, toplevel[0].map)
+	toplevel[0].unmap.notify = mod.xdg_toplevel_unmap
+	wl.wl_signal_add(xdg_toplevel[0].base[0].surface[0].events.unmap, toplevel[0].unmap)
+	toplevel[0].commit.notify = mod.xdg_toplevel_commit
+	wl.wl_signal_add(xdg_toplevel[0].base[0].surface[0].events.commit, toplevel[0].commit)
+	toplevel[0].destroy.notify = mod.xdg_toplevel_destroy
+	wl.wl_signal_add(xdg_toplevel[0].events.destroy, toplevel[0].destroy)
+	toplevel[0].request_move.notify = mod.xdg_toplevel_request_move
+	wl.wl_signal_add(xdg_toplevel[0].events.request_move, toplevel[0].request_move)
+	toplevel[0].request_resize.notify = mod.xdg_toplevel_request_resize
+	wl.wl_signal_add(xdg_toplevel[0].events.request_resize, toplevel[0].request_resize)
+	toplevel[0].request_maximize.notify = mod.xdg_toplevel_request_maximize
+	wl.wl_signal_add(xdg_toplevel[0].events.request_maximize, toplevel[0].request_maximize)
+	toplevel[0].request_fullscreen.notify = mod.xdg_toplevel_request_fullscreen
+	wl.wl_signal_add(xdg_toplevel[0].events.request_fullscreen, toplevel[0].request_fullscreen)
 	mod.hooks.on_new_toplevel(server)
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_popup_commit = function(listener, data)
-	local popup = wl.wl_container_of(listener, "composter_popup", "commit")[0]
-	local base = popup.xdg_popup[0].base[0]
+	local popup = wl.wl_container_of(listener, "composter_popup", "commit")
+	local base = popup[0].xdg_popup[0].base[0]
 	if base.initial_commit then
 		wlr.wlr_xdg_surface_schedule_configure(base)
 	end
@@ -799,72 +800,73 @@ end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_popup_destroy = function(listener, data)
-	local popup = wl.wl_container_of(listener, "composter_popup", "destroy")[0]
-	wl.wl_list_remove(popup.commit.link)
-	wl.wl_list_remove(popup.destroy.link)
+	local popup = wl.wl_container_of(listener, "composter_popup", "destroy")
+	wl.wl_list_remove(popup[0].commit.link)
+	wl.wl_list_remove(popup[0].destroy.link)
 	queue_free(popup)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_new_xdg_popup = function(listener, data)
-	local xdg_popup = cast("wlr_xdg_popup", data)[0]
+	local xdg_popup = cast("wlr_xdg_popup", data)
 	local popup = new("composter_popup")
-	popup.xdg_popup = xdg_popup
-	local parent = wlr.wlr_xdg_surface_try_from_wlr_surface(xdg_popup.parent)[0]
+	popup[0].xdg_popup = xdg_popup
+	local parent = wlr.wlr_xdg_surface_try_from_wlr_surface(xdg_popup[0].parent)
 	assert(parent ~= nil, "composter: server_new_xdg_popup: parent must not be NULL")
-	local parent_tree = parent.data[0]
-	xdg_popup.base[0].data = wlr.wlr_scene_xdg_surface_create(parent_tree, xdg_popup.base)
-	popup.commit.notify = mod.xdg_popup_commit
-	wl.wl_signal_add(xdg_popup.base[0].surface[0].events.commit, popup.commit)
-	popup.destroy.notify = mod.xdg_popup_destroy
-	wl.wl_signal_add(xdg_popup.events.destroy, popup.destroy)
+	local parent_tree = parent[0].data[0]
+	xdg_popup[0].base[0].data = wlr.wlr_scene_xdg_surface_create(parent_tree, xdg_popup[0].base)
+	popup[0].commit.notify = mod.xdg_popup_commit
+	wl.wl_signal_add(xdg_popup[0].base[0].surface[0].events.commit, popup[0].commit)
+	popup[0].destroy.notify = mod.xdg_popup_destroy
+	wl.wl_signal_add(xdg_popup[0].events.destroy, popup[0].destroy)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_new_xwayland_surface = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "new_xwayland_surface")[0]
-	local xwayland_surface = cast("wlr_xwayland_surface", data)[0]
+	local server = wl.wl_container_of(listener, "composter_server", "new_xwayland_surface")
+	local xwayland_surface = cast("wlr_xwayland_surface", data)
 	local toplevel = new("composter_toplevel")
-	toplevel.server = server
-	toplevel.xwayland_surface = xwayland_surface
-	toplevel.destroy.notify = mod.xdg_toplevel_destroy
-	wl.wl_signal_add(xwayland_surface.events.destroy, toplevel.destroy)
-	toplevel.request_move.notify = mod.xdg_toplevel_request_move
-	wl.wl_signal_add(xwayland_surface.events.request_move, toplevel.request_move)
-	toplevel.request_resize.notify = mod.xdg_toplevel_request_resize
-	wl.wl_signal_add(xwayland_surface.events.request_resize, toplevel.request_resize)
-	toplevel.request_maximize.notify = mod.xdg_toplevel_request_maximize
-	wl.wl_signal_add(xwayland_surface.events.request_maximize, toplevel.request_maximize)
-	toplevel.request_fullscreen.notify = mod.xdg_toplevel_request_fullscreen
-	wl.wl_signal_add(xwayland_surface.events.request_fullscreen, toplevel.request_fullscreen)
+	toplevel[0].server = server
+	toplevel[0].xwayland_surface = xwayland_surface
+	toplevel[0].destroy.notify = mod.xdg_toplevel_destroy
+	wl.wl_signal_add(xwayland_surface[0].events.destroy, toplevel[0].destroy)
+	toplevel[0].request_move.notify = mod.xdg_toplevel_request_move
+	wl.wl_signal_add(xwayland_surface[0].events.request_move, toplevel[0].request_move)
+	toplevel[0].request_resize.notify = mod.xdg_toplevel_request_resize
+	wl.wl_signal_add(xwayland_surface[0].events.request_resize, toplevel[0].request_resize)
+	toplevel[0].request_maximize.notify = mod.xdg_toplevel_request_maximize
+	wl.wl_signal_add(xwayland_surface[0].events.request_maximize, toplevel[0].request_maximize)
+	toplevel[0].request_fullscreen.notify = mod.xdg_toplevel_request_fullscreen
+	wl.wl_signal_add(xwayland_surface[0].events.request_fullscreen, toplevel[0].request_fullscreen)
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_decoration_request_mode = function(listener, data)
-	local decoration = wl.wl_container_of(listener, "composter_decoration", "request_mode")[0]
-	wlr.wlr_xdg_toplevel_decoration_v1_set_mode(decoration.xdg_decoration, decoration.xdg_decoration[0].requested_mode)
+	local decoration = wl.wl_container_of(listener, "composter_decoration", "request_mode")
+	wlr.wlr_xdg_toplevel_decoration_v1_set_mode(decoration[0].xdg_decoration,
+		decoration[0].xdg_decoration[0].requested_mode)
 end
 
 --[[@type wl_notify_func_t]]
 mod.xdg_decoration_destroy = function(listener, data)
-	local decoration = wl.wl_container_of(listener, "composter_decoration", "destroy")[0]
-	wl.wl_list_remove(decoration.request_mode.link)
-	wl.wl_list_remove(decoration.destroy.link)
+	local decoration = wl.wl_container_of(listener, "composter_decoration", "destroy")
+	wl.wl_list_remove(decoration[0].request_mode.link)
+	wl.wl_list_remove(decoration[0].destroy.link)
 	queue_free(decoration)
 end
 
 --[[@type wl_notify_func_t]]
 mod.server_new_xdg_decoration = function(listener, data)
-	local server = wl.wl_container_of(listener, "composter_server", "new_toplevel_decoration")[0]
-	local xdg_decoration = cast("wlr_xdg_toplevel_decoration_v1", data)[0]
+	local server = wl.wl_container_of(listener, "composter_server", "new_toplevel_decoration")
+	local xdg_decoration = cast("wlr_xdg_toplevel_decoration_v1", data)
 	local decoration = new("composter_decoration")
-	decoration.xdg_decoration = xdg_decoration
+	decoration[0].xdg_decoration = xdg_decoration
 	local what = server_decoration_mode_by_name[mod.variables.default_server_decoration_mode]
-	xdg_decoration.scheduled_mode = server_decoration_mode_by_name[mod.variables.default_server_decoration_mode]
-	decoration.destroy.notify = mod.xdg_decoration_destroy
-	wl.wl_signal_add(xdg_decoration.events.destroy, decoration.destroy)
-	decoration.request_mode.notify = mod.xdg_decoration_request_mode
-	wl.wl_signal_add(xdg_decoration.events.destroy, decoration.destroy)
+	xdg_decoration[0].scheduled_mode = server_decoration_mode_by_name[mod.variables.default_server_decoration_mode]
+	decoration[0].destroy.notify = mod.xdg_decoration_destroy
+	wl.wl_signal_add(xdg_decoration[0].events.destroy, decoration[0].destroy)
+	decoration[0].request_mode.notify = mod.xdg_decoration_request_mode
+	wl.wl_signal_add(xdg_decoration[0].events.destroy, decoration[0].destroy)
 end
 
 local log_level_string = os.getenv("WLR_LOG_LEVEL") or os.getenv("COMPOSTER_LOG_LEVEL")
@@ -877,89 +879,89 @@ end
 mod.run = function(init_log)
 	if init_log ~= false then wlr.wlr_log_init(log_level, nil) end
 	local server = new("composter_server")
-	server.wl_display = wl.wl_display_create()
-	local loop = wl.wl_display_get_event_loop(server.wl_display)
-	server.backend = wlr.wlr_backend_autocreate(loop, nil)
-	if server.backend == nil then
+	server[0].wl_display = wl.wl_display_create()
+	local loop = wl.wl_display_get_event_loop(server[0].wl_display)
+	server[0].backend = wlr.wlr_backend_autocreate(loop, nil)
+	if server[0].backend == nil then
 		wlr._wlr_log(wlr.WLR_ERROR, "failed to create wlr_backend")
 		return 1
 	end
-	server.renderer = wlr.wlr_renderer_autocreate(server.backend)
-	if server.renderer == nil then
+	server[0].renderer = wlr.wlr_renderer_autocreate(server[0].backend)
+	if server[0].renderer == nil then
 		wlr._wlr_log(wlr.WLR_ERROR, "failed to create wlr_renderer")
 		return 1
 	end
-	wlr.wlr_renderer_init_wl_display(server.renderer, server.wl_display)
-	server.allocator = wlr.wlr_allocator_autocreate(server.backend, server.renderer)
-	if server.allocator == nil then
+	wlr.wlr_renderer_init_wl_display(server[0].renderer, server[0].wl_display)
+	server[0].allocator = wlr.wlr_allocator_autocreate(server[0].backend, server[0].renderer)
+	if server[0].allocator == nil then
 		wlr._wlr_log(wlr.WLR_ERROR, "failed to create wlr_allocator")
 		return 1
 	end
-	local compositor = wlr.wlr_compositor_create(server.wl_display, 5, server.renderer)
-	wlr.wlr_subcompositor_create(server.wl_display)
-	wlr.wlr_data_device_manager_create(server.wl_display)
-	server.output_layout = wlr.wlr_output_layout_create(server.wl_display)
-	wl.wl_list_init(server.outputs)
-	server.new_output.notify = mod.server_new_output
-	wl.wl_signal_add(server.backend[0].events.new_output, server.new_output)
-	server.scene = wlr.wlr_scene_create()
-	server.scene_layout = wlr.wlr_scene_attach_output_layout(server.scene, server.output_layout)
-	wl.wl_list_init(server.toplevels)
-	server.xdg_shell = wlr.wlr_xdg_shell_create(server.wl_display, 3)
-	server.new_xdg_toplevel.notify = mod.server_new_xdg_toplevel
-	wl.wl_signal_add(server.xdg_shell[0].events.new_toplevel, server.new_xdg_toplevel)
-	server.new_xdg_popup.notify = mod.server_new_xdg_popup
-	wl.wl_signal_add(server.xdg_shell[0].events.new_popup, server.new_xdg_popup)
-	server.xwayland = wlr.wlr_xwayland_create(server.wl_display, compositor, true)
-	server.new_xwayland_surface.notify = mod.server_new_xwayland_surface
-	wl.wl_signal_add(server.xwayland[0].events.new_surface, server.new_xwayland_surface)
-	server.xdg_decoration_manager = wlr.wlr_xdg_decoration_manager_v1_create(server.wl_display)
-	server.new_toplevel_decoration.notify = mod.server_new_xdg_decoration
-	wl.wl_signal_add(server.xdg_decoration_manager[0].events.new_toplevel_decoration, server.new_toplevel_decoration)
-	server.cursor = wlr.wlr_cursor_create()
-	wlr.wlr_cursor_attach_output_layout(server.cursor, server.output_layout)
-	server.cursor_manager = wlr.wlr_xcursor_manager_create(mod.variables.cursor_name, mod.variables.cursor_size_px)
-	server.cursor_mode = composter_cursor_mode.passthrough
-	server.cursor_motion.notify = mod.server_cursor_motion
-	wl.wl_signal_add(server.cursor[0].events.motion, server.cursor_motion)
-	server.cursor_motion_absolute.notify = mod.server_cursor_motion_absolute
-	wl.wl_signal_add(server.cursor[0].events.motion_absolute, server.cursor_motion_absolute)
-	server.cursor_button.notify = mod.server_cursor_button
-	wl.wl_signal_add(server.cursor[0].events.button, server.cursor_button)
-	server.cursor_axis.notify = mod.server_cursor_axis
-	wl.wl_signal_add(server.cursor[0].events.axis, server.cursor_axis)
-	server.cursor_frame.notify = mod.server_cursor_frame
-	wl.wl_signal_add(server.cursor[0].events.frame, server.cursor_frame)
-	wl.wl_list_init(server.keyboards)
-	server.new_input.notify = mod.server_new_input
-	wl.wl_signal_add(server.backend[0].events.new_input, server.new_input)
-	server.seat = wlr.wlr_seat_create(server.wl_display, mod.variables.seat_name)
-	server.request_cursor.notify = mod.seat_request_cursor
-	wl.wl_signal_add(server.seat[0].events.request_set_cursor, server.request_cursor)
-	server.request_set_selection.notify = mod.seat_request_set_selection
-	wl.wl_signal_add(server.seat[0].events.request_set_selection, server.request_set_selection)
-	local socket = wl.wl_display_add_socket_auto(server.wl_display)
+	local compositor = wlr.wlr_compositor_create(server[0].wl_display, 5, server[0].renderer)
+	wlr.wlr_subcompositor_create(server[0].wl_display)
+	wlr.wlr_data_device_manager_create(server[0].wl_display)
+	server[0].output_layout = wlr.wlr_output_layout_create(server[0].wl_display)
+	wl.wl_list_init(server[0].outputs)
+	server[0].new_output.notify = mod.server_new_output
+	wl.wl_signal_add(server[0].backend[0].events.new_output, server[0].new_output)
+	server[0].scene = wlr.wlr_scene_create()
+	server[0].scene_layout = wlr.wlr_scene_attach_output_layout(server[0].scene, server[0].output_layout)
+	wl.wl_list_init(server[0].toplevels)
+	server[0].xdg_shell = wlr.wlr_xdg_shell_create(server[0].wl_display, 3)
+	server[0].new_xdg_toplevel.notify = mod.server_new_xdg_toplevel
+	wl.wl_signal_add(server[0].xdg_shell[0].events.new_toplevel, server[0].new_xdg_toplevel)
+	server[0].new_xdg_popup.notify = mod.server_new_xdg_popup
+	wl.wl_signal_add(server[0].xdg_shell[0].events.new_popup, server[0].new_xdg_popup)
+	server[0].xwayland = wlr.wlr_xwayland_create(server[0].wl_display, compositor, true)
+	server[0].new_xwayland_surface.notify = mod.server_new_xwayland_surface
+	wl.wl_signal_add(server[0].xwayland[0].events.new_surface, server[0].new_xwayland_surface)
+	server[0].xdg_decoration_manager = wlr.wlr_xdg_decoration_manager_v1_create(server[0].wl_display)
+	server[0].new_toplevel_decoration.notify = mod.server_new_xdg_decoration
+	wl.wl_signal_add(server[0].xdg_decoration_manager[0].events.new_toplevel_decoration, server[0].new_toplevel_decoration)
+	server[0].cursor = wlr.wlr_cursor_create()
+	wlr.wlr_cursor_attach_output_layout(server[0].cursor, server[0].output_layout)
+	server[0].cursor_manager = wlr.wlr_xcursor_manager_create(mod.variables.cursor_name, mod.variables.cursor_size_px)
+	server[0].cursor_mode = composter_cursor_mode.passthrough
+	server[0].cursor_motion.notify = mod.server_cursor_motion
+	wl.wl_signal_add(server[0].cursor[0].events.motion, server[0].cursor_motion)
+	server[0].cursor_motion_absolute.notify = mod.server_cursor_motion_absolute
+	wl.wl_signal_add(server[0].cursor[0].events.motion_absolute, server[0].cursor_motion_absolute)
+	server[0].cursor_button.notify = mod.server_cursor_button
+	wl.wl_signal_add(server[0].cursor[0].events.button, server[0].cursor_button)
+	server[0].cursor_axis.notify = mod.server_cursor_axis
+	wl.wl_signal_add(server[0].cursor[0].events.axis, server[0].cursor_axis)
+	server[0].cursor_frame.notify = mod.server_cursor_frame
+	wl.wl_signal_add(server[0].cursor[0].events.frame, server[0].cursor_frame)
+	wl.wl_list_init(server[0].keyboards)
+	server[0].new_input.notify = mod.server_new_input
+	wl.wl_signal_add(server[0].backend[0].events.new_input, server[0].new_input)
+	server[0].seat = wlr.wlr_seat_create(server[0].wl_display, mod.variables.seat_name)
+	server[0].request_cursor.notify = mod.seat_request_cursor
+	wl.wl_signal_add(server[0].seat[0].events.request_set_cursor, server[0].request_cursor)
+	server[0].request_set_selection.notify = mod.seat_request_set_selection
+	wl.wl_signal_add(server[0].seat[0].events.request_set_selection, server[0].request_set_selection)
+	local socket = wl.wl_display_add_socket_auto(server[0].wl_display)
 	if socket == nil then
-		wlr.wlr_backend_destroy(server.backend)
+		wlr.wlr_backend_destroy(server[0].backend)
 		return 1
 	end
-	if not wlr.wlr_backend_start(server.backend) then
-		wlr.wlr_backend_destroy(server.backend)
-		wl.wl_display_destroy(server.wl_display)
+	if not wlr.wlr_backend_start(server[0].backend) then
+		wlr.wlr_backend_destroy(server[0].backend)
+		wl.wl_display_destroy(server[0].wl_display)
 		return 1
 	end
 	ffi.C.setenv("WAYLAND_DISPLAY", socket, true)
 	mod.hooks.on_startup()
 	wlr._wlr_log(wlr.WLR_INFO, "running wayland compositor on WAYLAND_DISPLAY=%s", socket)
 	if not mod.variables.ipc then
-		wl.wl_display_run(server.wl_display)
+		wl.wl_display_run(server[0].wl_display)
 	else
 		local epoll = require("dep.epoll").new()
 		value_to_json = require("dep.lunajson").value_to_json
 		local epoll_running = true
 		local wl_fd = wl.wl_event_loop_get_fd(loop)
 		epoll:add(wl_fd, function()
-			wl.wl_display_flush_clients(server.wl_display)
+			wl.wl_display_flush_clients(server[0].wl_display)
 			if wl.wl_event_loop_dispatch(loop, -1) < 0 then epoll_running = false end
 		end)
 		local ipc_path = os.getenv("XDG_RUNTIME_DIR") .. "/composter-events.sock"
@@ -972,18 +974,18 @@ mod.run = function(init_log)
 			ipc_clients[client] = true
 		end)
 		ffi.C.setenv("COMPOSTER_IPC_PATH", ipc_path, true)
-		wl.wl_display_flush_clients(server.wl_display)
+		wl.wl_display_flush_clients(server[0].wl_display)
 		while epoll_running do epoll:wait() end
 		assert(os.remove(ipc_path))
 	end
-	wl.wl_display_destroy_clients(server.wl_display)
-	wlr.wlr_scene_node_destroy(server.scene[0].tree.node)
-	wlr.wlr_xcursor_manager_destroy(server.cursor_manager)
-	wlr.wlr_cursor_destroy(server.cursor)
-	wlr.wlr_allocator_destroy(server.allocator)
-	wlr.wlr_renderer_destroy(server.renderer)
-	wlr.wlr_backend_destroy(server.backend)
-	wl.wl_display_destroy(server.wl_display)
+	wl.wl_display_destroy_clients(server[0].wl_display)
+	wlr.wlr_scene_node_destroy(server[0].scene[0].tree.node)
+	wlr.wlr_xcursor_manager_destroy(server[0].cursor_manager)
+	wlr.wlr_cursor_destroy(server[0].cursor)
+	wlr.wlr_allocator_destroy(server[0].allocator)
+	wlr.wlr_renderer_destroy(server[0].renderer)
+	wlr.wlr_backend_destroy(server[0].backend)
+	wl.wl_display_destroy(server[0].wl_display)
 	queue_free(server)
 end
 
