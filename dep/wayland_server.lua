@@ -64,9 +64,9 @@ ffi.cdef [[
 	};
 
 	enum wl_seat_capability {
-		WL_SEAT_CAPABILITY_POINTER,
-		WL_SEAT_CAPABILITY_KEYBOARD,
-		WL_SEAT_CAPABILITY_TOUCH,
+		WL_SEAT_CAPABILITY_POINTER = 1 << 0,
+		WL_SEAT_CAPABILITY_KEYBOARD = 1 << 1,
+		WL_SEAT_CAPABILITY_TOUCH = 1 << 2,
 	};
 
 	enum wl_shell_error {

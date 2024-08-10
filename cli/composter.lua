@@ -382,7 +382,6 @@ mod.keyboard_handle_key = function(listener, data)
 	if not handled then
 		wlr.wlr_seat_set_keyboard(seat, keyboard[0].wlr_keyboard)
 		wlr.wlr_seat_keyboard_notify_key(seat, event[0].time_msec, event[0].keycode, event[0].state)
-		--[[TODO: flow is reaching here but keyboard events are not appearing in terminal]]
 	end
 end
 
@@ -439,7 +438,7 @@ mod.server_new_input = function(listener, data)
 		wlr._wlr_log(wlr.WLR_ERROR, "unknown input device type: %s", device_type_name[tonumber(device[0].type)])
 	end
 	local caps = wl.WL_SEAT_CAPABILITY_POINTER
-	if not wl.wl_list_empty(server[0].keyboards) then
+	if wl.wl_list_empty(server[0].keyboards) == 0 then
 		caps = bit.bor(caps, wl.WL_SEAT_CAPABILITY_KEYBOARD)
 	end
 	wlr.wlr_seat_set_capabilities(server[0].seat, caps)
