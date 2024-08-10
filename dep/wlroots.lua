@@ -802,22 +802,22 @@ struct wlr_fbox {
 };
 void wlr_box_closest_point(const struct wlr_box *box, double x, double y,
  double *dest_x, double *dest_y);
-_Bool 
+_Bool
     wlr_box_intersection(struct wlr_box *dest, const struct wlr_box *box_a,
  const struct wlr_box *box_b);
-_Bool 
+_Bool
     wlr_box_contains_point(const struct wlr_box *box, double x, double y);
-_Bool 
+_Bool
     wlr_box_empty(const struct wlr_box *box);
 void wlr_box_transform(struct wlr_box *dest, const struct wlr_box *box,
  enum wl_output_transform transform, int width, int height);
-_Bool 
+_Bool
     wlr_fbox_empty(const struct wlr_fbox *box);
 void wlr_fbox_transform(struct wlr_fbox *dest, const struct wlr_fbox *box,
  enum wl_output_transform transform, double width, double height);
-_Bool 
+_Bool
     wlr_box_equal(const struct wlr_box *a, const struct wlr_box *b);
-_Bool 
+_Bool
     wlr_fbox_equal(const struct wlr_fbox *a, const struct wlr_fbox *b);
 struct wlr_renderer;
 struct wlr_buffer;
@@ -829,7 +829,7 @@ struct wlr_buffer_pass_options {
 };
 struct wlr_render_pass *wlr_renderer_begin_buffer_pass(struct wlr_renderer *renderer,
  struct wlr_buffer *buffer, const struct wlr_buffer_pass_options *options);
-_Bool 
+_Bool
     wlr_render_pass_submit(struct wlr_render_pass *render_pass);
 enum wlr_render_blend_mode {
  WLR_RENDER_BLEND_MODE_PREMULTIPLIED,
@@ -872,7 +872,7 @@ struct wlr_dmabuf_attributes {
  int fd[4];
 };
 void wlr_dmabuf_attributes_finish(struct wlr_dmabuf_attributes *attribs);
-_Bool 
+_Bool
     wlr_dmabuf_attributes_copy(struct wlr_dmabuf_attributes *dst,
  const struct wlr_dmabuf_attributes *src);
 struct wlr_buffer;
@@ -890,7 +890,7 @@ struct wlr_texture_read_pixels_options {
  uint32_t dst_x, dst_y;
  const struct wlr_box src_box;
 };
-_Bool 
+_Bool
     wlr_texture_read_pixels(struct wlr_texture *texture,
  const struct wlr_texture_read_pixels_options *options);
 uint32_t wlr_texture_preferred_read_format(struct wlr_texture *texture);
@@ -899,7 +899,7 @@ struct wlr_texture *wlr_texture_from_pixels(struct wlr_renderer *renderer,
  const void *data);
 struct wlr_texture *wlr_texture_from_dmabuf(struct wlr_renderer *renderer,
  struct wlr_dmabuf_attributes *attribs);
-_Bool 
+_Bool
     wlr_texture_update_from_buffer(struct wlr_texture *texture,
  struct wlr_buffer *buffer, const pixman_region32_t *damage);
 void wlr_texture_destroy(struct wlr_texture *texture);
@@ -918,7 +918,7 @@ struct wlr_renderer {
   struct wl_signal lost;
  } events;
  struct {
- _Bool 
+ _Bool
       output_color_transform;
  } features;
  const struct wlr_renderer_impl *impl;
@@ -926,10 +926,10 @@ struct wlr_renderer {
 struct wlr_renderer *wlr_renderer_autocreate(struct wlr_backend *backend);
 const struct wlr_drm_format_set *wlr_renderer_get_texture_formats(
  struct wlr_renderer *r, uint32_t buffer_caps);
-_Bool 
+_Bool
     wlr_renderer_init_wl_display(struct wlr_renderer *r,
  struct wl_display *wl_display);
-_Bool 
+_Bool
     wlr_renderer_init_wl_shm(struct wlr_renderer *r,
  struct wl_display *wl_display);
 int wlr_renderer_get_drm_fd(struct wlr_renderer *r);
@@ -973,10 +973,10 @@ enum wlr_buffer_cap {
 struct wlr_buffer {
  const struct wlr_buffer_impl *impl;
  int width, height;
-_Bool 
+_Bool
      dropped;
  size_t n_locks;
-_Bool 
+_Bool
      accessing_data_ptr;
  struct {
   struct wl_signal destroy;
@@ -987,10 +987,10 @@ _Bool
 void wlr_buffer_drop(struct wlr_buffer *buffer);
 struct wlr_buffer *wlr_buffer_lock(struct wlr_buffer *buffer);
 void wlr_buffer_unlock(struct wlr_buffer *buffer);
-_Bool 
+_Bool
     wlr_buffer_get_dmabuf(struct wlr_buffer *buffer,
  struct wlr_dmabuf_attributes *attribs);
-_Bool 
+_Bool
     wlr_buffer_get_shm(struct wlr_buffer *buffer,
  struct wlr_shm_attributes *attribs);
 struct wlr_buffer *wlr_buffer_try_from_resource(struct wl_resource *resource);
@@ -998,7 +998,7 @@ enum wlr_buffer_data_ptr_access_flag {
  WLR_BUFFER_DATA_PTR_ACCESS_READ = 1 << 0,
  WLR_BUFFER_DATA_PTR_ACCESS_WRITE = 1 << 1,
 };
-_Bool 
+_Bool
     wlr_buffer_begin_data_ptr_access(struct wlr_buffer *buffer, uint32_t flags,
  void **data, uint32_t *format, size_t *stride);
 void wlr_buffer_end_data_ptr_access(struct wlr_buffer *buffer);
@@ -1021,7 +1021,7 @@ enum wlr_output_mode_aspect_ratio {
 struct wlr_output_mode {
  int32_t width, height;
  int32_t refresh;
-_Bool 
+_Bool
      preferred;
  enum wlr_output_mode_aspect_ratio picture_aspect_ratio;
  struct wl_list link;
@@ -1029,16 +1029,16 @@ _Bool
 struct wlr_output_cursor {
  struct wlr_output *output;
  double x, y;
-_Bool 
+_Bool
      enabled;
-_Bool 
+_Bool
      visible;
  uint32_t width, height;
  struct wlr_fbox src_box;
  enum wl_output_transform transform;
  int32_t hotspot_x, hotspot_y;
  struct wlr_texture *texture;
-_Bool 
+_Bool
      own_texture;
  struct wl_listener renderer_destroy;
  struct wl_list link;
@@ -1066,19 +1066,19 @@ enum wlr_output_state_mode_type {
 };
 struct wlr_output_state {
  uint32_t committed;
-_Bool 
+_Bool
      allow_reconfiguration;
  pixman_region32_t damage;
-_Bool 
+_Bool
      enabled;
  float scale;
  enum wl_output_transform transform;
-_Bool 
+_Bool
      adaptive_sync_enabled;
  uint32_t render_format;
  enum wl_output_subpixel subpixel;
  struct wlr_buffer *buffer;
-_Bool 
+_Bool
      tearing_page_flip;
  enum wlr_output_state_mode_type mode_type;
  struct wlr_output_mode *mode;
@@ -1107,20 +1107,20 @@ struct wlr_output {
  struct wlr_output_mode *current_mode;
  int32_t width, height;
  int32_t refresh;
-_Bool 
+_Bool
      enabled;
  float scale;
  enum wl_output_subpixel subpixel;
  enum wl_output_transform transform;
  enum wlr_output_adaptive_sync_status adaptive_sync_status;
  uint32_t render_format;
-_Bool 
+_Bool
      adaptive_sync_supported;
-_Bool 
+_Bool
      needs_frame;
-_Bool 
+_Bool
      frame_pending;
-_Bool 
+_Bool
      non_desktop;
  uint32_t commit_seq;
  struct {
@@ -1174,7 +1174,7 @@ enum wlr_output_present_flag {
 struct wlr_output_event_present {
  struct wlr_output *output;
  uint32_t commit_seq;
-_Bool 
+_Bool
      presented;
  struct timespec *when;
  unsigned seq;
@@ -1192,7 +1192,7 @@ struct wlr_output_event_request_state {
 struct wlr_surface;
 void wlr_output_create_global(struct wlr_output *output, struct wl_display *display);
 void wlr_output_destroy_global(struct wlr_output *output);
-_Bool 
+_Bool
     wlr_output_init_render(struct wlr_output *output,
  struct wlr_allocator *allocator, struct wlr_renderer *renderer);
 struct wlr_output_mode *wlr_output_preferred_mode(struct wlr_output *output);
@@ -1204,20 +1204,20 @@ void wlr_output_transformed_resolution(struct wlr_output *output,
  int *width, int *height);
 void wlr_output_effective_resolution(struct wlr_output *output,
  int *width, int *height);
-_Bool 
+_Bool
     wlr_output_test_state(struct wlr_output *output,
  const struct wlr_output_state *state);
-_Bool 
+_Bool
     wlr_output_commit_state(struct wlr_output *output,
  const struct wlr_output_state *state);
 void wlr_output_schedule_frame(struct wlr_output *output);
 size_t wlr_output_get_gamma_size(struct wlr_output *output);
 struct wlr_output *wlr_output_from_resource(struct wl_resource *resource);
-void wlr_output_lock_attach_render(struct wlr_output *output, 
-                                                             _Bool 
+void wlr_output_lock_attach_render(struct wlr_output *output,
+                                                             _Bool
                                                                   lock);
-void wlr_output_lock_software_cursors(struct wlr_output *output, 
-                                                                _Bool 
+void wlr_output_lock_software_cursors(struct wlr_output *output,
+                                                                _Bool
                                                                      lock);
 void wlr_output_render_software_cursors(struct wlr_output *output,
  const pixman_region32_t *damage);
@@ -1225,20 +1225,20 @@ void wlr_output_add_software_cursors_to_render_pass(struct wlr_output *output,
  struct wlr_render_pass *render_pass, const pixman_region32_t *damage);
 const struct wlr_drm_format_set *wlr_output_get_primary_formats(
  struct wlr_output *output, uint32_t buffer_caps);
-_Bool 
+_Bool
     wlr_output_is_direct_scanout_allowed(struct wlr_output *output);
 struct wlr_output_cursor *wlr_output_cursor_create(struct wlr_output *output);
-_Bool 
+_Bool
     wlr_output_cursor_set_buffer(struct wlr_output_cursor *cursor,
  struct wlr_buffer *buffer, int32_t hotspot_x, int32_t hotspot_y);
-_Bool 
+_Bool
     wlr_output_cursor_move(struct wlr_output_cursor *cursor,
  double x, double y);
 void wlr_output_cursor_destroy(struct wlr_output_cursor *cursor);
 void wlr_output_state_init(struct wlr_output_state *state);
 void wlr_output_state_finish(struct wlr_output_state *state);
 void wlr_output_state_set_enabled(struct wlr_output_state *state,
-_Bool 
+_Bool
      enabled);
 void wlr_output_state_set_mode(struct wlr_output_state *state,
  struct wlr_output_mode *mode);
@@ -1248,7 +1248,7 @@ void wlr_output_state_set_scale(struct wlr_output_state *state, float scale);
 void wlr_output_state_set_transform(struct wlr_output_state *state,
  enum wl_output_transform transform);
 void wlr_output_state_set_adaptive_sync_enabled(struct wlr_output_state *state,
-_Bool 
+_Bool
      enabled);
 void wlr_output_state_set_render_format(struct wlr_output_state *state,
  uint32_t format);
@@ -1256,17 +1256,17 @@ void wlr_output_state_set_subpixel(struct wlr_output_state *state,
  enum wl_output_subpixel subpixel);
 void wlr_output_state_set_buffer(struct wlr_output_state *state,
  struct wlr_buffer *buffer);
-_Bool 
+_Bool
     wlr_output_state_set_gamma_lut(struct wlr_output_state *state,
  size_t ramp_size, const uint16_t *r, const uint16_t *g, const uint16_t *b);
 void wlr_output_state_set_damage(struct wlr_output_state *state,
  const pixman_region32_t *damage);
 void wlr_output_state_set_layers(struct wlr_output_state *state,
  struct wlr_output_layer_state *layers, size_t layers_len);
-_Bool 
+_Bool
     wlr_output_state_copy(struct wlr_output_state *dst,
  const struct wlr_output_state *src);
-_Bool 
+_Bool
     wlr_output_configure_primary_swapchain(struct wlr_output *output,
  const struct wlr_output_state *state, struct wlr_swapchain **swapchain);
 struct wlr_render_pass *wlr_output_begin_render_pass(struct wlr_output *output,
@@ -1288,14 +1288,14 @@ struct wlr_backend {
 };
 struct wlr_backend *wlr_backend_autocreate(struct wl_event_loop *loop,
  struct wlr_session **session_ptr);
-_Bool 
+_Bool
     wlr_backend_start(struct wlr_backend *backend);
 void wlr_backend_destroy(struct wlr_backend *backend);
 int wlr_backend_get_drm_fd(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_backend_test(struct wlr_backend *backend,
  const struct wlr_backend_output_state *states, size_t states_len);
-_Bool 
+_Bool
     wlr_backend_commit(struct wlr_backend *backend,
  const struct wlr_backend_output_state *states, size_t states_len);
 typedef __u_char u_char;
@@ -1502,7 +1502,7 @@ struct wlr_device {
  } events;
 };
 struct wlr_session {
-_Bool 
+_Bool
      active;
  unsigned vtnr;
  char seat[256];
@@ -1543,7 +1543,7 @@ struct wlr_device *wlr_session_open_file(struct wlr_session *session,
  const char *path);
 void wlr_session_close_file(struct wlr_session *session,
  struct wlr_device *device);
-_Bool 
+_Bool
     wlr_session_change_vt(struct wlr_session *session, unsigned vt);
 ssize_t wlr_session_find_gpus(struct wlr_session *session,
  size_t ret_len, struct wlr_device **ret);
@@ -1560,9 +1560,9 @@ struct wlr_drm_lease {
 };
 struct wlr_backend *wlr_drm_backend_create(struct wlr_session *session,
  struct wlr_device *dev, struct wlr_backend *parent);
-_Bool 
+_Bool
     wlr_backend_is_drm(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_output_is_drm(struct wlr_output *output);
 struct wlr_backend *wlr_drm_backend_get_parent(struct wlr_backend *backend);
 uint32_t wlr_drm_connector_get_id(struct wlr_output *output);
@@ -1578,21 +1578,21 @@ enum wl_output_transform wlr_drm_connector_get_panel_orientation(
 struct wlr_backend *wlr_headless_backend_create(struct wl_event_loop *loop);
 struct wlr_output *wlr_headless_add_output(struct wlr_backend *backend,
  unsigned int width, unsigned int height);
-_Bool 
+_Bool
     wlr_backend_is_headless(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_output_is_headless(struct wlr_output *output);
 struct wlr_output_state;
 struct wlr_backend_impl {
-_Bool 
+_Bool
      (*start)(struct wlr_backend *backend);
  void (*destroy)(struct wlr_backend *backend);
  int (*get_drm_fd)(struct wlr_backend *backend);
  uint32_t (*get_buffer_caps)(struct wlr_backend *backend);
-_Bool 
+_Bool
      (*test)(struct wlr_backend *backend,
   const struct wlr_backend_output_state *states, size_t states_len);
-_Bool 
+_Bool
      (*commit)(struct wlr_backend *backend,
   const struct wlr_backend_output_state *states, size_t states_len);
 };
@@ -1603,19 +1603,19 @@ struct wlr_input_device;
 struct wlr_backend *wlr_libinput_backend_create(struct wlr_session *session);
 struct libinput_device *wlr_libinput_get_device_handle(
   struct wlr_input_device *dev);
-_Bool 
+_Bool
     wlr_backend_is_libinput(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_input_device_is_libinput(struct wlr_input_device *device);
 struct wlr_backend *wlr_multi_backend_create(struct wl_event_loop *loop);
-_Bool 
+_Bool
     wlr_multi_backend_add(struct wlr_backend *multi,
  struct wlr_backend *backend);
 void wlr_multi_backend_remove(struct wlr_backend *multi,
  struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_backend_is_multi(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_multi_is_empty(struct wlr_backend *backend);
 void wlr_multi_for_each_backend(struct wlr_backend *backend,
   void (*callback)(struct wlr_backend *backend, void *data), void *data);
@@ -1626,11 +1626,11 @@ struct wl_display *wlr_wl_backend_get_remote_display(struct wlr_backend *backend
 struct wlr_output *wlr_wl_output_create(struct wlr_backend *backend);
 struct wlr_output *wlr_wl_output_create_from_surface(struct wlr_backend *backend,
   struct wl_surface *surface);
-_Bool 
+_Bool
     wlr_backend_is_wl(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_input_device_is_wl(struct wlr_input_device *device);
-_Bool 
+_Bool
     wlr_output_is_wl(struct wlr_output *output);
 void wlr_wl_output_set_title(struct wlr_output *output, const char *title);
 void wlr_wl_output_set_app_id(struct wlr_output *output, const char *app_id);
@@ -1639,29 +1639,29 @@ struct wlr_input_device;
 struct wlr_backend *wlr_x11_backend_create(struct wl_event_loop *loop,
  const char *x11_display);
 struct wlr_output *wlr_x11_output_create(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_backend_is_x11(struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_input_device_is_x11(struct wlr_input_device *device);
-_Bool 
+_Bool
     wlr_output_is_x11(struct wlr_output *output);
 void wlr_x11_output_set_title(struct wlr_output *output, const char *title);
 struct wlr_buffer_impl {
  void (*destroy)(struct wlr_buffer *buffer);
-_Bool 
+_Bool
      (*get_dmabuf)(struct wlr_buffer *buffer,
   struct wlr_dmabuf_attributes *attribs);
-_Bool 
+_Bool
      (*get_shm)(struct wlr_buffer *buffer,
   struct wlr_shm_attributes *attribs);
-_Bool 
+_Bool
      (*begin_data_ptr_access)(struct wlr_buffer *buffer, uint32_t flags,
   void **data, uint32_t *format, size_t *stride);
  void (*end_data_ptr_access)(struct wlr_buffer *buffer);
 };
 struct wlr_buffer_resource_interface {
  const char *name;
-_Bool 
+_Bool
      (*is_instance)(struct wl_resource *resource);
  struct wlr_buffer *(*from_resource)(struct wl_resource *resource);
 };
@@ -1741,16 +1741,16 @@ struct wlr_keyboard {
 struct wlr_keyboard_key_event {
  uint32_t time_msec;
  uint32_t keycode;
-_Bool 
+_Bool
      update_state;
  enum wl_keyboard_key_state state;
 };
 struct wlr_keyboard *wlr_keyboard_from_input_device(
  struct wlr_input_device *input_device);
-_Bool 
+_Bool
     wlr_keyboard_set_keymap(struct wlr_keyboard *kb,
  struct xkb_keymap *keymap);
-_Bool 
+_Bool
     wlr_keyboard_keymaps_match(struct xkb_keymap *km1, struct xkb_keymap *km2);
 void wlr_keyboard_set_repeat_info(struct wlr_keyboard *kb, int32_t rate_hz,
  int32_t delay_ms);
@@ -1772,15 +1772,15 @@ struct wlr_output_cursor_size {
  int width, height;
 };
 struct wlr_output_impl {
-_Bool 
+_Bool
      (*set_cursor)(struct wlr_output *output, struct wlr_buffer *buffer,
   int hotspot_x, int hotspot_y);
-_Bool 
+_Bool
      (*move_cursor)(struct wlr_output *output, int x, int y);
  void (*destroy)(struct wlr_output *output);
-_Bool 
+_Bool
      (*test)(struct wlr_output *output, const struct wlr_output_state *state);
-_Bool 
+_Bool
      (*commit)(struct wlr_output *output, const struct wlr_output_state *state);
  size_t (*get_gamma_size)(struct wlr_output *output);
  const struct wlr_drm_format_set *(*get_cursor_formats)(
@@ -1861,7 +1861,7 @@ struct wlr_pointer_swipe_update_event {
 struct wlr_pointer_swipe_end_event {
  struct wlr_pointer *pointer;
  uint32_t time_msec;
-_Bool 
+_Bool
      cancelled;
 };
 struct wlr_pointer_pinch_begin_event {
@@ -1880,7 +1880,7 @@ struct wlr_pointer_pinch_update_event {
 struct wlr_pointer_pinch_end_event {
  struct wlr_pointer *pointer;
  uint32_t time_msec;
-_Bool 
+_Bool
      cancelled;
 };
 struct wlr_pointer_hold_begin_event {
@@ -1891,7 +1891,7 @@ struct wlr_pointer_hold_begin_event {
 struct wlr_pointer_hold_end_event {
  struct wlr_pointer *pointer;
  uint32_t time_msec;
-_Bool 
+_Bool
      cancelled;
 };
 struct wlr_pointer *wlr_pointer_from_input_device(
@@ -2010,17 +2010,17 @@ struct wlr_tablet_tool {
  enum wlr_tablet_tool_type type;
  uint64_t hardware_serial;
  uint64_t hardware_wacom;
-_Bool 
+_Bool
      tilt;
-_Bool 
+_Bool
      pressure;
-_Bool 
+_Bool
      distance;
-_Bool 
+_Bool
      rotation;
-_Bool 
+_Bool
      slider;
-_Bool 
+_Bool
      wheel;
  struct {
   struct wl_signal destroy;
@@ -2199,16 +2199,16 @@ struct wlr_drm_format_set {
 void wlr_drm_format_set_finish(struct wlr_drm_format_set *set);
 const struct wlr_drm_format *wlr_drm_format_set_get(
  const struct wlr_drm_format_set *set, uint32_t format);
-_Bool 
+_Bool
     wlr_drm_format_set_has(const struct wlr_drm_format_set *set,
  uint32_t format, uint64_t modifier);
-_Bool 
+_Bool
     wlr_drm_format_set_add(struct wlr_drm_format_set *set, uint32_t format,
  uint64_t modifier);
-_Bool 
+_Bool
     wlr_drm_format_set_intersect(struct wlr_drm_format_set *dst,
  const struct wlr_drm_format_set *a, const struct wlr_drm_format_set *b);
-_Bool 
+_Bool
     wlr_drm_format_set_union(struct wlr_drm_format_set *dst,
  const struct wlr_drm_format_set *a, const struct wlr_drm_format_set *b);
 struct wlr_drm_syncobj_timeline {
@@ -2228,19 +2228,19 @@ struct wlr_drm_syncobj_timeline *wlr_drm_syncobj_timeline_import(int drm_fd,
  int drm_syncobj_fd);
 struct wlr_drm_syncobj_timeline *wlr_drm_syncobj_timeline_ref(struct wlr_drm_syncobj_timeline *timeline);
 void wlr_drm_syncobj_timeline_unref(struct wlr_drm_syncobj_timeline *timeline);
-_Bool 
+_Bool
     wlr_drm_syncobj_timeline_check(struct wlr_drm_syncobj_timeline *timeline,
- uint64_t point, uint32_t flags, 
-                                _Bool 
+ uint64_t point, uint32_t flags,
+                                _Bool
                                      *result);
-_Bool 
+_Bool
     wlr_drm_syncobj_timeline_waiter_init(struct wlr_drm_syncobj_timeline_waiter *waiter,
  struct wlr_drm_syncobj_timeline *timeline, uint64_t point, uint32_t flags,
  struct wl_event_loop *loop);
 void wlr_drm_syncobj_timeline_waiter_finish(struct wlr_drm_syncobj_timeline_waiter *waiter);
 int wlr_drm_syncobj_timeline_export_sync_file(struct wlr_drm_syncobj_timeline *timeline,
  uint64_t src_point);
-_Bool 
+_Bool
     wlr_drm_syncobj_timeline_import_sync_file(struct wlr_drm_syncobj_timeline *timeline,
  uint64_t dst_point, int sync_file_fd);
 struct wlr_egl;
@@ -2252,20 +2252,20 @@ struct wlr_egl;
 struct wlr_renderer *wlr_gles2_renderer_create_with_drm_fd(int drm_fd);
 struct wlr_renderer *wlr_gles2_renderer_create(struct wlr_egl *egl);
 struct wlr_egl *wlr_gles2_renderer_get_egl(struct wlr_renderer *renderer);
-_Bool 
+_Bool
     wlr_gles2_renderer_check_ext(struct wlr_renderer *renderer, const char *ext);
 GLuint wlr_gles2_renderer_get_buffer_fbo(struct wlr_renderer *renderer, struct wlr_buffer *buffer);
 struct wlr_gles2_texture_attribs {
  GLenum target;
  GLuint tex;
-_Bool 
+_Bool
      has_alpha;
 };
-_Bool 
+_Bool
     wlr_renderer_is_gles2(struct wlr_renderer *wlr_renderer);
-_Bool 
+_Bool
     wlr_render_timer_is_gles2(struct wlr_render_timer *timer);
-_Bool 
+_Bool
     wlr_texture_is_gles2(struct wlr_texture *texture);
 void wlr_gles2_texture_get_attribs(struct wlr_texture *texture,
  struct wlr_gles2_texture_attribs *attribs);
@@ -2287,10 +2287,10 @@ struct wlr_renderer_impl {
 void wlr_renderer_init(struct wlr_renderer *renderer,
  const struct wlr_renderer_impl *impl, uint32_t render_buffer_caps);
 struct wlr_texture_impl {
-_Bool 
+_Bool
      (*update_from_buffer)(struct wlr_texture *texture,
   struct wlr_buffer *buffer, const pixman_region32_t *damage);
-_Bool 
+_Bool
      (*read_pixels)(struct wlr_texture *texture,
   const struct wlr_texture_read_pixels_options *options);
  uint32_t (*preferred_read_format)(struct wlr_texture *texture);
@@ -2304,7 +2304,7 @@ struct wlr_render_pass {
 void wlr_render_pass_init(struct wlr_render_pass *pass,
  const struct wlr_render_pass_impl *impl);
 struct wlr_render_pass_impl {
-_Bool 
+_Bool
      (*submit)(struct wlr_render_pass *pass);
  void (*add_texture)(struct wlr_render_pass *pass,
   const struct wlr_render_texture_options *options);
@@ -2331,16 +2331,16 @@ void wlr_texture_read_pixels_options_get_src_box(
 void *wlr_texture_read_pixel_options_get_data(
  const struct wlr_texture_read_pixels_options *options);
 struct wlr_renderer *wlr_pixman_renderer_create(void);
-_Bool 
+_Bool
     wlr_renderer_is_pixman(struct wlr_renderer *wlr_renderer);
-_Bool 
+_Bool
     wlr_texture_is_pixman(struct wlr_texture *texture);
 pixman_image_t *wlr_pixman_renderer_get_buffer_image(
     struct wlr_renderer *wlr_renderer, struct wlr_buffer *wlr_buffer);
 pixman_image_t *wlr_pixman_texture_get_image(struct wlr_texture *wlr_texture);
 struct wlr_swapchain_slot {
  struct wlr_buffer *buffer;
-_Bool 
+_Bool
      acquired;
  int age;
  struct wl_listener release;
@@ -2358,7 +2358,7 @@ struct wlr_swapchain *wlr_swapchain_create(
 void wlr_swapchain_destroy(struct wlr_swapchain *swapchain);
 struct wlr_buffer *wlr_swapchain_acquire(struct wlr_swapchain *swapchain,
  int *age);
-_Bool 
+_Bool
     wlr_swapchain_has_buffer(struct wlr_swapchain *swapchain,
  struct wlr_buffer *buffer);
 void wlr_swapchain_set_buffer_submitted(struct wlr_swapchain *swapchain,
@@ -2373,13 +2373,13 @@ VkInstance wlr_vk_renderer_get_instance(struct wlr_renderer *renderer);
 VkPhysicalDevice wlr_vk_renderer_get_physical_device(struct wlr_renderer *renderer);
 VkDevice wlr_vk_renderer_get_device(struct wlr_renderer *renderer);
 uint32_t wlr_vk_renderer_get_queue_family(struct wlr_renderer *renderer);
-_Bool 
+_Bool
     wlr_renderer_is_vk(struct wlr_renderer *wlr_renderer);
-_Bool 
+_Bool
     wlr_texture_is_vk(struct wlr_texture *texture);
 void wlr_vk_texture_get_image_attribs(struct wlr_texture *texture,
  struct wlr_vk_image_attribs *attribs);
-_Bool 
+_Bool
     wlr_vk_texture_has_alpha(struct wlr_texture *texture);
 struct wlr_surface;
 struct wlr_alpha_modifier_surface_v1_state {
@@ -2419,7 +2419,7 @@ struct wlr_surface_state {
  struct wl_list subsurfaces_below;
  struct wl_list subsurfaces_above;
  struct {
- _Bool 
+ _Bool
       has_src, has_dst;
   struct wlr_fbox src;
   int dst_width, dst_height;
@@ -2430,7 +2430,7 @@ struct wlr_surface_state {
 };
 struct wlr_surface_role {
  const char *name;
-_Bool 
+_Bool
      no_object;
  void (*client_commit)(struct wlr_surface *surface);
  void (*commit)(struct wlr_surface *surface);
@@ -2453,7 +2453,7 @@ struct wlr_surface {
  pixman_region32_t input_region;
  struct wlr_surface_state current, pending;
  struct wl_list cached;
-_Bool 
+_Bool
      mapped;
  const struct wlr_surface_role *role;
  struct wl_resource *role_resource;
@@ -2475,16 +2475,16 @@ _Bool
   int width, height;
   int buffer_width, buffer_height;
  } previous;
-_Bool 
+_Bool
      unmap_commit;
-_Bool 
+_Bool
      opaque;
-_Bool 
+_Bool
      handling_commit;
-_Bool 
+_Bool
      pending_rejected;
  int32_t preferred_buffer_scale;
-_Bool 
+_Bool
      preferred_buffer_transform_sent;
  enum wl_output_transform preferred_buffer_transform;
  struct wl_list synced;
@@ -2505,7 +2505,7 @@ struct wlr_compositor {
 };
 typedef void (*wlr_surface_iterator_func_t)(struct wlr_surface *surface,
  int sx, int sy, void *data);
-_Bool 
+_Bool
     wlr_surface_set_role(struct wlr_surface *surface, const struct wlr_surface_role *role,
  struct wl_resource *error_resource, uint32_t error_code);
 void wlr_surface_set_role_object(struct wlr_surface *surface, struct wl_resource *role_resource);
@@ -2513,13 +2513,13 @@ void wlr_surface_map(struct wlr_surface *surface);
 void wlr_surface_unmap(struct wlr_surface *surface);
 void wlr_surface_reject_pending(struct wlr_surface *surface, struct wl_resource *resource,
  uint32_t code, const char *msg, ...);
-_Bool 
+_Bool
     wlr_surface_has_buffer(struct wlr_surface *surface);
-_Bool 
+_Bool
     wlr_surface_state_has_buffer(const struct wlr_surface_state *state);
 struct wlr_texture *wlr_surface_get_texture(struct wlr_surface *surface);
 struct wlr_surface *wlr_surface_get_root_surface(struct wlr_surface *surface);
-_Bool 
+_Bool
     wlr_surface_point_accepts_input(struct wlr_surface *surface,
   double sx, double sy);
 struct wlr_surface *wlr_surface_surface_at(struct wlr_surface *surface,
@@ -2556,7 +2556,7 @@ struct wlr_surface_synced {
  struct wl_list link;
  size_t index;
 };
-_Bool 
+_Bool
     wlr_surface_synced_init(struct wlr_surface_synced *synced,
  struct wlr_surface *surface, const struct wlr_surface_synced_impl *impl,
  void *pending, void *current);
@@ -2598,7 +2598,7 @@ struct wlr_output_layout_output {
  struct wlr_output *output;
  int x, y;
  struct wl_list link;
-_Bool 
+_Bool
      auto_configured;
  struct {
   struct wl_signal destroy;
@@ -2620,10 +2620,10 @@ void wlr_output_layout_remove(struct wlr_output_layout *layout,
  struct wlr_output *output);
 void wlr_output_layout_output_coords(struct wlr_output_layout *layout,
  struct wlr_output *reference, double *lx, double *ly);
-_Bool 
+_Bool
     wlr_output_layout_contains_point(struct wlr_output_layout *layout,
  struct wlr_output *reference, int lx, int ly);
-_Bool 
+_Bool
     wlr_output_layout_intersects(struct wlr_output_layout *layout,
  struct wlr_output *reference, const struct wlr_box *target_lbox);
 void wlr_output_layout_closest_point(struct wlr_output_layout *layout,
@@ -2680,7 +2680,7 @@ struct wlr_cursor {
 };
 struct wlr_cursor *wlr_cursor_create(void);
 void wlr_cursor_destroy(struct wlr_cursor *cur);
-_Bool 
+_Bool
     wlr_cursor_warp(struct wlr_cursor *cur, struct wlr_input_device *dev,
  double lx, double ly);
 void wlr_cursor_absolute_to_layout_coords(struct wlr_cursor *cur,
@@ -2753,10 +2753,10 @@ void wlr_damage_ring_init(struct wlr_damage_ring *ring);
 void wlr_damage_ring_finish(struct wlr_damage_ring *ring);
 void wlr_damage_ring_set_bounds(struct wlr_damage_ring *ring,
  int32_t width, int32_t height);
-_Bool 
+_Bool
     wlr_damage_ring_add(struct wlr_damage_ring *ring,
  const pixman_region32_t *damage);
-_Bool 
+_Bool
     wlr_damage_ring_add_box(struct wlr_damage_ring *ring,
  const struct wlr_box *box);
 void wlr_damage_ring_add_whole(struct wlr_damage_ring *ring);
@@ -2788,7 +2788,7 @@ struct wlr_seat_client {
   struct wl_signal destroy;
  } events;
  struct wlr_serial_ringset serials;
-_Bool 
+_Bool
      needs_touch_frame;
  struct {
   int32_t acc_discrete[2];
@@ -2876,7 +2876,7 @@ struct wlr_seat_pointer_state {
  double sx, sy;
  struct wlr_seat_pointer_grab *grab;
  struct wlr_seat_pointer_grab *default_grab;
-_Bool 
+_Bool
      sent_axis_source;
  enum wl_pointer_axis_source cached_axis_source;
  uint32_t buttons[16];
@@ -2990,7 +2990,7 @@ struct wlr_seat_client *wlr_seat_client_for_wl_client(struct wlr_seat *wlr_seat,
 void wlr_seat_set_capabilities(struct wlr_seat *wlr_seat,
   uint32_t capabilities);
 void wlr_seat_set_name(struct wlr_seat *wlr_seat, const char *name);
-_Bool 
+_Bool
     wlr_seat_pointer_surface_has_focus(struct wlr_seat *wlr_seat,
   struct wlr_surface *surface);
 void wlr_seat_pointer_enter(struct wlr_seat *wlr_seat,
@@ -3021,7 +3021,7 @@ void wlr_seat_pointer_notify_frame(struct wlr_seat *wlr_seat);
 void wlr_seat_pointer_start_grab(struct wlr_seat *wlr_seat,
   struct wlr_seat_pointer_grab *grab);
 void wlr_seat_pointer_end_grab(struct wlr_seat *wlr_seat);
-_Bool 
+_Bool
     wlr_seat_pointer_has_grab(struct wlr_seat *seat);
 void wlr_seat_set_keyboard(struct wlr_seat *seat, struct wlr_keyboard *keyboard);
 struct wlr_keyboard *wlr_seat_get_keyboard(struct wlr_seat *seat);
@@ -3044,7 +3044,7 @@ void wlr_seat_keyboard_notify_clear_focus(struct wlr_seat *wlr_seat);
 void wlr_seat_keyboard_start_grab(struct wlr_seat *wlr_seat,
   struct wlr_seat_keyboard_grab *grab);
 void wlr_seat_keyboard_end_grab(struct wlr_seat *wlr_seat);
-_Bool 
+_Bool
     wlr_seat_keyboard_has_grab(struct wlr_seat *seat);
 struct wlr_touch_point *wlr_seat_touch_get_point(struct wlr_seat *seat,
   int32_t touch_id);
@@ -3077,24 +3077,24 @@ int wlr_seat_touch_num_points(struct wlr_seat *seat);
 void wlr_seat_touch_start_grab(struct wlr_seat *wlr_seat,
   struct wlr_seat_touch_grab *grab);
 void wlr_seat_touch_end_grab(struct wlr_seat *wlr_seat);
-_Bool 
+_Bool
     wlr_seat_touch_has_grab(struct wlr_seat *seat);
-_Bool 
+_Bool
     wlr_seat_validate_pointer_grab_serial(struct wlr_seat *seat,
  struct wlr_surface *origin, uint32_t serial);
-_Bool 
+_Bool
     wlr_seat_validate_touch_grab_serial(struct wlr_seat *seat,
  struct wlr_surface *origin, uint32_t serial,
  struct wlr_touch_point **point_ptr);
 uint32_t wlr_seat_client_next_serial(struct wlr_seat_client *client);
-_Bool 
+_Bool
     wlr_seat_client_validate_event_serial(struct wlr_seat_client *client,
  uint32_t serial);
 struct wlr_seat_client *wlr_seat_client_from_resource(
  struct wl_resource *resource);
 struct wlr_seat_client *wlr_seat_client_from_pointer_resource(
  struct wl_resource *resource);
-_Bool 
+_Bool
     wlr_surface_accepts_touch(struct wlr_seat *wlr_seat, struct wlr_surface *surface);
 struct wlr_data_control_manager_v1 {
  struct wl_global *global;
@@ -3140,7 +3140,7 @@ struct wlr_data_offer {
  struct wl_list link;
  uint32_t actions;
  enum wl_data_device_manager_dnd_action preferred_action;
-_Bool 
+_Bool
      in_ask;
  struct wl_listener source_destroy;
 };
@@ -3159,7 +3159,7 @@ struct wlr_data_source {
  const struct wlr_data_source_impl *impl;
  struct wl_array mime_types;
  int32_t actions;
-_Bool 
+_Bool
      accepted;
  enum wl_data_device_manager_dnd_action current_dnd_action;
  uint32_t compositor_action;
@@ -3193,7 +3193,7 @@ struct wlr_drag {
  struct wlr_drag_icon *icon;
  struct wlr_surface *focus;
  struct wlr_data_source *source;
-_Bool 
+_Bool
      started, dropped, cancelling;
  int32_t grab_touch_id, touch_id;
  struct {
@@ -3301,7 +3301,7 @@ struct wlr_drm_lease_request_v1 {
  struct wlr_drm_lease_connector_v1 **connectors;
  size_t n_connectors;
  struct wl_resource *lease_resource;
-_Bool 
+_Bool
      invalid;
  struct wl_list link;
 };
@@ -3317,7 +3317,7 @@ struct wlr_drm_lease_v1 {
 };
 struct wlr_drm_lease_v1_manager *wlr_drm_lease_v1_manager_create(
  struct wl_display *display, struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_drm_lease_v1_manager_offer_output(
  struct wlr_drm_lease_v1_manager *manager, struct wlr_output *output);
 void wlr_drm_lease_v1_manager_withdraw_output(
@@ -3339,7 +3339,7 @@ struct wlr_export_dmabuf_frame_v1 {
  struct wlr_export_dmabuf_manager_v1 *manager;
  struct wl_list link;
  struct wlr_output *output;
-_Bool 
+_Bool
      cursor_locked;
  struct wl_listener output_commit;
  struct wl_listener output_destroy;
@@ -3429,12 +3429,12 @@ struct wlr_foreign_toplevel_handle_v1 {
 };
 struct wlr_foreign_toplevel_handle_v1_maximized_event {
  struct wlr_foreign_toplevel_handle_v1 *toplevel;
-_Bool 
+_Bool
      maximized;
 };
 struct wlr_foreign_toplevel_handle_v1_minimized_event {
  struct wlr_foreign_toplevel_handle_v1 *toplevel;
-_Bool 
+_Bool
      minimized;
 };
 struct wlr_foreign_toplevel_handle_v1_activated_event {
@@ -3443,7 +3443,7 @@ struct wlr_foreign_toplevel_handle_v1_activated_event {
 };
 struct wlr_foreign_toplevel_handle_v1_fullscreen_event {
  struct wlr_foreign_toplevel_handle_v1 *toplevel;
-_Bool 
+_Bool
      fullscreen;
  struct wlr_output *output;
 };
@@ -3467,20 +3467,20 @@ void wlr_foreign_toplevel_handle_v1_output_enter(
 void wlr_foreign_toplevel_handle_v1_output_leave(
  struct wlr_foreign_toplevel_handle_v1 *toplevel, struct wlr_output *output);
 void wlr_foreign_toplevel_handle_v1_set_maximized(
- struct wlr_foreign_toplevel_handle_v1 *toplevel, 
-                                                 _Bool 
+ struct wlr_foreign_toplevel_handle_v1 *toplevel,
+                                                 _Bool
                                                       maximized);
 void wlr_foreign_toplevel_handle_v1_set_minimized(
- struct wlr_foreign_toplevel_handle_v1 *toplevel, 
-                                                 _Bool 
+ struct wlr_foreign_toplevel_handle_v1 *toplevel,
+                                                 _Bool
                                                       minimized);
 void wlr_foreign_toplevel_handle_v1_set_activated(
- struct wlr_foreign_toplevel_handle_v1 *toplevel, 
-                                                 _Bool 
+ struct wlr_foreign_toplevel_handle_v1 *toplevel,
+                                                 _Bool
                                                       activated);
 void wlr_foreign_toplevel_handle_v1_set_fullscreen(
- struct wlr_foreign_toplevel_handle_v1* toplevel, 
-                                                 _Bool 
+ struct wlr_foreign_toplevel_handle_v1* toplevel,
+                                                 _Bool
                                                       fullscreen);
 void wlr_foreign_toplevel_handle_v1_set_parent(
  struct wlr_foreign_toplevel_handle_v1 *toplevel,
@@ -3544,7 +3544,7 @@ struct wlr_gamma_control_manager_v1 *wlr_gamma_control_manager_v1_create(
  struct wl_display *display);
 struct wlr_gamma_control_v1 *wlr_gamma_control_manager_v1_get_control(
  struct wlr_gamma_control_manager_v1 *manager, struct wlr_output *output);
-_Bool 
+_Bool
     wlr_gamma_control_v1_apply(struct wlr_gamma_control_v1 *gamma_control,
  struct wlr_output_state *output_state);
 void wlr_gamma_control_v1_send_failed_and_destroy(struct wlr_gamma_control_v1 *gamma_control);
@@ -3572,14 +3572,14 @@ struct wlr_idle_inhibit_manager_v1 *wlr_idle_inhibit_v1_create(struct wl_display
 struct wlr_seat;
 struct wlr_idle_notifier_v1 {
  struct wl_global *global;
-_Bool 
+_Bool
      inhibited;
  struct wl_list notifications;
  struct wl_listener display_destroy;
 };
 struct wlr_idle_notifier_v1 *wlr_idle_notifier_v1_create(struct wl_display *display);
 void wlr_idle_notifier_v1_set_inhibited(struct wlr_idle_notifier_v1 *notifier,
-_Bool 
+_Bool
      inhibited);
 void wlr_idle_notifier_v1_notify_activity(struct wlr_idle_notifier_v1 *notifier,
  struct wlr_seat *seat);
@@ -3603,9 +3603,9 @@ struct wlr_input_method_v2 {
  struct wlr_seat_client *seat_client;
  struct wlr_input_method_v2_state pending;
  struct wlr_input_method_v2_state current;
-_Bool 
+_Bool
      active;
-_Bool 
+_Bool
      client_active;
  uint32_t current_serial;
  struct wl_list popup_surfaces;
@@ -3694,7 +3694,7 @@ struct wlr_keyboard_group {
 struct wlr_keyboard_group *wlr_keyboard_group_create(void);
 struct wlr_keyboard_group *wlr_keyboard_group_from_wlr_keyboard(
   struct wlr_keyboard *keyboard);
-_Bool 
+_Bool
     wlr_keyboard_group_add_keyboard(struct wlr_keyboard_group *group,
   struct wlr_keyboard *keyboard);
 void wlr_keyboard_group_remove_keyboard(struct wlr_keyboard_group *group,
@@ -3713,7 +3713,7 @@ struct wlr_keyboard_shortcuts_inhibit_manager_v1 {
 struct wlr_keyboard_shortcuts_inhibitor_v1 {
  struct wlr_surface *surface;
  struct wlr_seat *seat;
-_Bool 
+_Bool
      active;
  struct wl_resource *resource;
  struct wl_listener surface_destroy;
@@ -3772,13 +3772,13 @@ struct wlr_layer_surface_v1 {
  struct wlr_layer_shell_v1 *shell;
  struct wl_list popups;
  char *namespace;
-_Bool 
+_Bool
      configured;
  struct wl_list configure_list;
  struct wlr_layer_surface_v1_state current, pending;
-_Bool 
+_Bool
      initialized;
-_Bool 
+_Bool
      initial_commit;
  struct {
   struct wl_signal destroy;
@@ -3853,7 +3853,7 @@ struct wlr_linux_dmabuf_v1 {
  struct wl_list surfaces;
  int main_device_fd;
  struct wl_listener display_destroy;
-_Bool 
+_Bool
      (*check_dmabuf_callback)(struct wlr_dmabuf_attributes *attribs, void *data);
  void *check_dmabuf_callback_data;
 };
@@ -3862,9 +3862,9 @@ struct wlr_linux_dmabuf_v1 *wlr_linux_dmabuf_v1_create(struct wl_display *displa
 struct wlr_linux_dmabuf_v1 *wlr_linux_dmabuf_v1_create_with_renderer(struct wl_display *display,
  uint32_t version, struct wlr_renderer *renderer);
 void wlr_linux_dmabuf_v1_set_check_dmabuf_callback(struct wlr_linux_dmabuf_v1 *linux_dmabuf,
-_Bool 
+_Bool
      (*callback)(struct wlr_dmabuf_attributes *attribs, void *data), void *data);
-_Bool 
+_Bool
     wlr_linux_dmabuf_v1_set_surface_feedback(
  struct wlr_linux_dmabuf_v1 *linux_dmabuf, struct wlr_surface *surface,
  const struct wlr_linux_dmabuf_feedback_v1 *feedback);
@@ -3876,7 +3876,7 @@ struct wlr_linux_dmabuf_feedback_v1_init_options {
  struct wlr_output *scanout_primary_output;
  const struct wlr_output_layer_feedback_event *output_layer_feedback_event;
 };
-_Bool 
+_Bool
     wlr_linux_dmabuf_feedback_v1_init_with_options(struct wlr_linux_dmabuf_feedback_v1 *feedback,
  const struct wlr_linux_dmabuf_feedback_v1_init_options *options);
 struct wlr_linux_drm_syncobj_surface_v1_state {
@@ -3923,7 +3923,7 @@ struct wlr_output_layer_state {
  struct wlr_fbox src_box;
  struct wlr_box dst_box;
  const pixman_region32_t *damage;
-_Bool 
+_Bool
      accepted;
 };
 struct wlr_output_layer_feedback_event {
@@ -3938,7 +3938,7 @@ struct wlr_output_manager_v1 {
  struct wl_list resources;
  struct wl_list heads;
  uint32_t serial;
-_Bool 
+_Bool
      current_configuration_dirty;
  struct {
   struct wl_signal apply;
@@ -3950,7 +3950,7 @@ _Bool
 };
 struct wlr_output_head_v1_state {
  struct wlr_output *output;
-_Bool 
+_Bool
      enabled;
  struct wlr_output_mode *mode;
  struct {
@@ -3960,7 +3960,7 @@ _Bool
  int32_t x, y;
  enum wl_output_transform transform;
  float scale;
-_Bool 
+_Bool
      adaptive_sync_enabled;
 };
 struct wlr_output_head_v1 {
@@ -3975,9 +3975,9 @@ struct wlr_output_configuration_v1 {
  struct wl_list heads;
  struct wlr_output_manager_v1 *manager;
  uint32_t serial;
-_Bool 
+_Bool
      finalized;
-_Bool 
+_Bool
      finished;
  struct wl_resource *resource;
 };
@@ -4041,7 +4041,7 @@ struct wlr_output_swapchain_manager {
 };
 void wlr_output_swapchain_manager_init(struct wlr_output_swapchain_manager *manager,
  struct wlr_backend *backend);
-_Bool 
+_Bool
     wlr_output_swapchain_manager_prepare(struct wlr_output_swapchain_manager *manager,
  const struct wlr_backend_output_state *states, size_t states_len);
 struct wlr_swapchain *wlr_output_swapchain_manager_get_swapchain(
@@ -4061,7 +4061,7 @@ struct wlr_pointer_constraint_v1_state {
  uint32_t committed;
  pixman_region32_t region;
  struct {
- _Bool 
+ _Bool
       enabled;
   double x, y;
  } cursor_hint;
@@ -4134,7 +4134,7 @@ void wlr_pointer_gestures_v1_send_swipe_end(
  struct wlr_pointer_gestures_v1 *gestures,
  struct wlr_seat *seat,
  uint32_t time_msec,
-_Bool 
+_Bool
      cancelled);
 void wlr_pointer_gestures_v1_send_pinch_begin(
  struct wlr_pointer_gestures_v1 *gestures,
@@ -4153,7 +4153,7 @@ void wlr_pointer_gestures_v1_send_pinch_end(
  struct wlr_pointer_gestures_v1 *gestures,
  struct wlr_seat *seat,
  uint32_t time_msec,
-_Bool 
+_Bool
      cancelled);
 void wlr_pointer_gestures_v1_send_hold_begin(
  struct wlr_pointer_gestures_v1 *gestures,
@@ -4164,7 +4164,7 @@ void wlr_pointer_gestures_v1_send_hold_end(
  struct wlr_pointer_gestures_v1 *gestures,
  struct wlr_seat *seat,
  uint32_t time_msec,
-_Bool 
+_Bool
      cancelled);
 struct wlr_surface;
 struct wlr_output;
@@ -4179,10 +4179,10 @@ struct wlr_presentation {
 struct wlr_presentation_feedback {
  struct wl_list resources;
  struct wlr_output *output;
-_Bool 
+_Bool
      output_committed;
  uint32_t output_commit_seq;
-_Bool 
+_Bool
      zero_copy;
  struct wl_listener output_commit;
  struct wl_listener output_present;
@@ -4306,8 +4306,8 @@ struct wlr_scene_output_layout;
 struct wlr_presentation;
 struct wlr_linux_dmabuf_v1;
 struct wlr_output_state;
-typedef 
-       _Bool 
+typedef
+       _Bool
             (*wlr_scene_buffer_point_accepts_input_func_t)(
  struct wlr_scene_buffer *buffer, double *sx, double *sy);
 typedef void (*wlr_scene_buffer_iterator_func_t)(
@@ -4321,7 +4321,7 @@ struct wlr_scene_node {
  enum wlr_scene_node_type type;
  struct wlr_scene_tree *parent;
  struct wl_list link;
-_Bool 
+_Bool
      enabled;
  int x, y;
  struct {
@@ -4346,11 +4346,11 @@ struct wlr_scene {
  struct wlr_linux_dmabuf_v1 *linux_dmabuf_v1;
  struct wl_listener linux_dmabuf_v1_destroy;
  enum wlr_scene_debug_damage_option debug_damage_option;
-_Bool 
+_Bool
      direct_scanout;
-_Bool 
+_Bool
      calculate_visibility;
-_Bool 
+_Bool
      highlight_transparent_region;
 };
 struct wlr_scene_surface {
@@ -4377,7 +4377,7 @@ struct wlr_scene_outputs_update_event {
 };
 struct wlr_scene_output_sample_event {
  struct wlr_scene_output *output;
-_Bool 
+_Bool
      direct_scanout;
 };
 struct wlr_scene_buffer {
@@ -4401,10 +4401,10 @@ struct wlr_scene_buffer {
  uint64_t active_outputs;
  struct wlr_texture *texture;
  struct wlr_linux_dmabuf_feedback_v1_init_options prev_feedback_options;
-_Bool 
+_Bool
      own_buffer;
  int buffer_width, buffer_height;
-_Bool 
+_Bool
      buffer_is_opaque;
  struct wl_listener buffer_release;
  struct wl_listener renderer_destroy;
@@ -4421,7 +4421,7 @@ struct wlr_scene_output {
  } events;
  pixman_region32_t pending_commit_damage;
  uint8_t index;
-_Bool 
+_Bool
      prev_scanout;
  struct wl_listener output_commit;
  struct wl_listener output_damage;
@@ -4442,8 +4442,8 @@ struct wlr_scene_layer_surface_v1 {
  struct wl_listener layer_surface_unmap;
 };
 void wlr_scene_node_destroy(struct wlr_scene_node *node);
-void wlr_scene_node_set_enabled(struct wlr_scene_node *node, 
-                                                            _Bool 
+void wlr_scene_node_set_enabled(struct wlr_scene_node *node,
+                                                            _Bool
                                                                  enabled);
 void wlr_scene_node_set_position(struct wlr_scene_node *node, int x, int y);
 void wlr_scene_node_place_above(struct wlr_scene_node *node,
@@ -4454,7 +4454,7 @@ void wlr_scene_node_raise_to_top(struct wlr_scene_node *node);
 void wlr_scene_node_lower_to_bottom(struct wlr_scene_node *node);
 void wlr_scene_node_reparent(struct wlr_scene_node *node,
  struct wlr_scene_tree *new_parent);
-_Bool 
+_Bool
     wlr_scene_node_coords(struct wlr_scene_node *node, int *lx, int *ly);
 void wlr_scene_node_for_each_buffer(struct wlr_scene_node *node,
  wlr_scene_buffer_iterator_func_t iterator, void *user_data);
@@ -4505,10 +4505,10 @@ struct wlr_scene_output_state_options {
  struct wlr_color_transform *color_transform;
  struct wlr_swapchain *swapchain;
 };
-_Bool 
+_Bool
     wlr_scene_output_commit(struct wlr_scene_output *scene_output,
  const struct wlr_scene_output_state_options *options);
-_Bool 
+_Bool
     wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
  struct wlr_output_state *state, const struct wlr_scene_output_state_options *options);
 int64_t wlr_scene_timer_get_duration_ns(struct wlr_scene_timer *timer);
@@ -4557,9 +4557,9 @@ struct wlr_screencopy_frame_v1 {
  uint32_t shm_format, dmabuf_format;
  struct wlr_box box;
  int shm_stride;
-_Bool 
+_Bool
      overlay_cursor, cursor_locked;
-_Bool 
+_Bool
      with_damage;
  enum wlr_buffer_cap buffer_cap;
  struct wlr_buffer *buffer;
@@ -4645,7 +4645,7 @@ struct wlr_session_lock_v1 {
   struct wl_signal destroy;
  } events;
  void *data;
-_Bool 
+_Bool
      locked_sent;
 };
 struct wlr_session_lock_surface_v1_state {
@@ -4662,7 +4662,7 @@ struct wlr_session_lock_surface_v1 {
  struct wl_list link;
  struct wlr_output *output;
  struct wlr_surface *surface;
-_Bool 
+_Bool
      configured;
  struct wl_list configure_list;
  struct wlr_session_lock_surface_v1_state current;
@@ -4711,11 +4711,11 @@ struct wlr_subsurface {
  struct wlr_surface *parent;
  struct wlr_subsurface_parent_state current, pending;
  uint32_t cached_seq;
-_Bool 
+_Bool
      has_cache;
-_Bool 
+_Bool
      synchronized;
-_Bool 
+_Bool
      added;
  struct wl_listener surface_client_commit;
  struct wl_listener parent_destroy;
@@ -4783,7 +4783,7 @@ struct wlr_tablet_v2_tablet_tool {
  struct wlr_tablet_tool_v2_grab *grab;
  struct wlr_tablet_tool_v2_grab default_grab;
  uint32_t proximity_serial;
-_Bool 
+_Bool
      is_down;
  uint32_t down_serial;
  size_t num_buttons;
@@ -4908,7 +4908,7 @@ struct wlr_tablet_tool_v2_grab_interface {
 void wlr_tablet_tool_v2_start_grab(struct wlr_tablet_v2_tablet_tool *tool, struct wlr_tablet_tool_v2_grab *grab);
 void wlr_tablet_tool_v2_end_grab(struct wlr_tablet_v2_tablet_tool *tool);
 void wlr_tablet_tool_v2_start_implicit_grab(struct wlr_tablet_v2_tablet_tool *tool);
-_Bool 
+_Bool
     wlr_tablet_tool_v2_has_implicit_grab(
  struct wlr_tablet_v2_tablet_tool *tool);
 uint32_t wlr_send_tablet_v2_tablet_pad_enter(
@@ -4919,12 +4919,12 @@ void wlr_send_tablet_v2_tablet_pad_button(
  struct wlr_tablet_v2_tablet_pad *pad, size_t button,
  uint32_t time, enum zwp_tablet_pad_v2_button_state state);
 void wlr_send_tablet_v2_tablet_pad_strip(struct wlr_tablet_v2_tablet_pad *pad,
- uint32_t strip, double position, 
-                                 _Bool 
+ uint32_t strip, double position,
+                                 _Bool
                                       finger, uint32_t time);
 void wlr_send_tablet_v2_tablet_pad_ring(struct wlr_tablet_v2_tablet_pad *pad,
- uint32_t ring, double position, 
-                                _Bool 
+ uint32_t ring, double position,
+                                _Bool
                                      finger, uint32_t time);
 uint32_t wlr_send_tablet_v2_tablet_pad_leave(struct wlr_tablet_v2_tablet_pad *pad,
  struct wlr_surface *surface);
@@ -4939,13 +4939,13 @@ void wlr_tablet_v2_tablet_pad_notify_button(
  uint32_t time, enum zwp_tablet_pad_v2_button_state state);
 void wlr_tablet_v2_tablet_pad_notify_strip(
  struct wlr_tablet_v2_tablet_pad *pad,
- uint32_t strip, double position, 
-                                 _Bool 
+ uint32_t strip, double position,
+                                 _Bool
                                       finger, uint32_t time);
 void wlr_tablet_v2_tablet_pad_notify_ring(
  struct wlr_tablet_v2_tablet_pad *pad,
- uint32_t ring, double position, 
-                                _Bool 
+ uint32_t ring, double position,
+                                _Bool
                                      finger, uint32_t time);
 uint32_t wlr_tablet_v2_tablet_pad_notify_leave(
  struct wlr_tablet_v2_tablet_pad *pad, struct wlr_surface *surface);
@@ -4960,12 +4960,12 @@ struct wlr_tablet_pad_v2_grab_interface {
  void (*button)(struct wlr_tablet_pad_v2_grab *grab,size_t button,
   uint32_t time, enum zwp_tablet_pad_v2_button_state state);
  void (*strip)(struct wlr_tablet_pad_v2_grab *grab,
-  uint32_t strip, double position, 
-                                  _Bool 
+  uint32_t strip, double position,
+                                  _Bool
                                        finger, uint32_t time);
  void (*ring)(struct wlr_tablet_pad_v2_grab *grab,
-  uint32_t ring, double position, 
-                                 _Bool 
+  uint32_t ring, double position,
+                                 _Bool
                                       finger, uint32_t time);
  uint32_t (*leave)(struct wlr_tablet_pad_v2_grab *grab,
   struct wlr_surface *surface);
@@ -4975,7 +4975,7 @@ struct wlr_tablet_pad_v2_grab_interface {
 };
 void wlr_tablet_v2_end_grab(struct wlr_tablet_v2_tablet_pad *pad);
 void wlr_tablet_v2_start_grab(struct wlr_tablet_v2_tablet_pad *pad, struct wlr_tablet_pad_v2_grab *grab);
-_Bool 
+_Bool
     wlr_surface_accepts_tablet_v2(struct wlr_tablet_v2_tablet *tablet,
  struct wlr_surface *surface);
 struct wlr_tearing_control_v1 {
@@ -5036,9 +5036,9 @@ struct wlr_text_input_v3 {
  struct wlr_text_input_v3_state pending;
  struct wlr_text_input_v3_state current;
  uint32_t current_serial;
-_Bool 
+_Bool
      pending_enabled;
-_Bool 
+_Bool
      current_enabled;
  uint32_t active_features;
  struct wl_list link;
@@ -5112,7 +5112,7 @@ struct wlr_virtual_keyboard_v1 {
  struct wlr_keyboard keyboard;
  struct wl_resource *resource;
  struct wlr_seat *seat;
-_Bool 
+_Bool
      has_keymap;
  struct wl_list link;
 };
@@ -5134,7 +5134,7 @@ struct wlr_virtual_pointer_v1 {
  struct wl_resource *resource;
  struct wlr_pointer_axis_event axis_event[2];
  enum wl_pointer_axis axis;
-_Bool 
+_Bool
      axis_valid[2];
  struct wl_list link;
 };
@@ -5191,7 +5191,7 @@ struct wlr_xcursor_manager {
 struct wlr_xcursor_manager *wlr_xcursor_manager_create(const char *name,
  uint32_t size);
 void wlr_xcursor_manager_destroy(struct wlr_xcursor_manager *manager);
-_Bool 
+_Bool
     wlr_xcursor_manager_load(struct wlr_xcursor_manager *manager,
  float scale);
 struct wlr_xcursor *wlr_xcursor_manager_get_xcursor(
@@ -5271,9 +5271,9 @@ struct wlr_xdg_positioner_rules {
  enum xdg_positioner_anchor anchor;
  enum xdg_positioner_gravity gravity;
  enum xdg_positioner_constraint_adjustment constraint_adjustment;
-_Bool 
+_Bool
      reactive;
-_Bool 
+_Bool
      has_parent_configure_serial;
  uint32_t parent_configure_serial;
  struct {
@@ -5289,7 +5289,7 @@ struct wlr_xdg_positioner {
 };
 struct wlr_xdg_popup_state {
  struct wlr_box geometry;
-_Bool 
+_Bool
      reactive;
 };
 enum wlr_xdg_popup_configure_field {
@@ -5332,7 +5332,7 @@ enum wlr_xdg_surface_role {
  WLR_XDG_SURFACE_ROLE_POPUP,
 };
 struct wlr_xdg_toplevel_state {
-_Bool 
+_Bool
      maximized, fullscreen, resizing, activated, suspended;
  uint32_t tiled;
  int32_t width, height;
@@ -5351,7 +5351,7 @@ enum wlr_xdg_toplevel_configure_field {
 };
 struct wlr_xdg_toplevel_configure {
  uint32_t fields;
-_Bool 
+_Bool
      maximized, fullscreen, resizing, activated, suspended;
  uint32_t tiled;
  int32_t width, height;
@@ -5361,7 +5361,7 @@ _Bool
  uint32_t wm_capabilities;
 };
 struct wlr_xdg_toplevel_requested {
-_Bool 
+_Bool
      maximized, minimized, fullscreen;
  struct wlr_output *fullscreen_output;
  struct wl_listener fullscreen_output_destroy;
@@ -5415,15 +5415,15 @@ struct wlr_xdg_surface {
   struct wlr_xdg_popup *popup;
  };
  struct wl_list popups;
-_Bool 
+_Bool
      configured;
  struct wl_event_source *configure_idle;
  uint32_t scheduled_serial;
  struct wl_list configure_list;
  struct wlr_xdg_surface_state current, pending;
-_Bool 
+_Bool
      initialized;
-_Bool 
+_Bool
      initial_commit;
  struct {
   struct wl_signal destroy;
@@ -5467,16 +5467,16 @@ void wlr_xdg_surface_ping(struct wlr_xdg_surface *surface);
 uint32_t wlr_xdg_toplevel_set_size(struct wlr_xdg_toplevel *toplevel,
   int32_t width, int32_t height);
 uint32_t wlr_xdg_toplevel_set_activated(struct wlr_xdg_toplevel *toplevel,
- _Bool 
+ _Bool
       activated);
 uint32_t wlr_xdg_toplevel_set_maximized(struct wlr_xdg_toplevel *toplevel,
- _Bool 
+ _Bool
       maximized);
 uint32_t wlr_xdg_toplevel_set_fullscreen(struct wlr_xdg_toplevel *toplevel,
- _Bool 
+ _Bool
       fullscreen);
 uint32_t wlr_xdg_toplevel_set_resizing(struct wlr_xdg_toplevel *toplevel,
- _Bool 
+ _Bool
       resizing);
 uint32_t wlr_xdg_toplevel_set_tiled(struct wlr_xdg_toplevel *toplevel,
   uint32_t tiled_edges);
@@ -5485,16 +5485,16 @@ uint32_t wlr_xdg_toplevel_set_bounds(struct wlr_xdg_toplevel *toplevel,
 uint32_t wlr_xdg_toplevel_set_wm_capabilities(struct wlr_xdg_toplevel *toplevel,
   uint32_t caps);
 uint32_t wlr_xdg_toplevel_set_suspended(struct wlr_xdg_toplevel *toplevel,
- _Bool 
+ _Bool
       suspended);
 void wlr_xdg_toplevel_send_close(struct wlr_xdg_toplevel *toplevel);
-_Bool 
+_Bool
     wlr_xdg_toplevel_set_parent(struct wlr_xdg_toplevel *toplevel,
  struct wlr_xdg_toplevel *parent);
 void wlr_xdg_popup_destroy(struct wlr_xdg_popup *popup);
 void wlr_xdg_popup_get_position(struct wlr_xdg_popup *popup,
   double *popup_sx, double *popup_sy);
-_Bool 
+_Bool
     wlr_xdg_positioner_is_complete(struct wlr_xdg_positioner *positioner);
 void wlr_xdg_positioner_rules_get_geometry(
   const struct wlr_xdg_positioner_rules *rules, struct wlr_box *box);
@@ -5586,7 +5586,7 @@ struct wlr_xdg_foreign_exported {
 };
 struct wlr_xdg_foreign_registry *wlr_xdg_foreign_registry_create(
  struct wl_display *display);
-_Bool 
+_Bool
     wlr_xdg_foreign_exported_init(struct wlr_xdg_foreign_exported *surface,
  struct wlr_xdg_foreign_registry *registry);
 struct wlr_xdg_foreign_exported *wlr_xdg_foreign_registry_find_by_handle(
@@ -5711,7 +5711,7 @@ void wlr_region_expand(pixman_region32_t *dst, const pixman_region32_t *src,
  int distance);
 void wlr_region_rotated_bounds(pixman_region32_t *dst, const pixman_region32_t *src,
  float rotation, int ox, int oy);
-_Bool 
+_Bool
     wlr_region_confine(const pixman_region32_t *region, double x1, double y1, double x2,
  double y2, double *x2_out, double *y2_out);
 enum wl_output_transform wlr_output_transform_invert(
@@ -5720,13 +5720,13 @@ enum wl_output_transform wlr_output_transform_compose(
  enum wl_output_transform tr_a, enum wl_output_transform tr_b);
 void wlr_output_transform_coords(enum wl_output_transform tr, int *x, int *y);
 struct wlr_xwayland_server_options {
-_Bool 
+_Bool
      lazy;
-_Bool 
+_Bool
      enable_wm;
-_Bool 
+_Bool
      no_touch_pointer_emulation;
-_Bool 
+_Bool
      force_xrandr_emulation;
  int terminate_delay;
 };
@@ -5735,7 +5735,7 @@ struct wlr_xwayland_server {
  struct wl_client *client;
  struct wl_event_source *pipe_source;
  int wm_fd[2], wl_fd[2];
-_Bool 
+_Bool
      ready;
  time_t server_start;
  int display;
@@ -5778,7 +5778,7 @@ struct wlr_xwayland_surface_v1 {
  struct wl_resource *resource;
  struct wl_list link;
  struct wlr_xwayland_shell_v1 *shell;
-_Bool 
+_Bool
      added;
 };
 struct wlr_xwayland_shell_v1 *wlr_xwayland_shell_v1_create(
@@ -5794,7 +5794,7 @@ struct wlr_data_source;
 struct wlr_drag;
 struct wlr_xwayland {
  struct wlr_xwayland_server *server;
-_Bool 
+_Bool
      own_server;
  struct wlr_xwm *xwm;
  struct wlr_xwayland_shell_v1 *shell_v1;
@@ -5842,7 +5842,7 @@ struct wlr_xwayland_surface {
  struct wl_listener surface_unmap;
  int16_t x, y;
  uint16_t width, height;
-_Bool 
+_Bool
      override_redirect;
  char *title;
  char *class;
@@ -5850,7 +5850,7 @@ _Bool
  char *role;
  char *startup_id;
  pid_t pid;
-_Bool 
+_Bool
      has_utf8_title;
  struct wl_list children;
  struct wlr_xwayland_surface *parent;
@@ -5863,20 +5863,20 @@ _Bool
  xcb_icccm_wm_hints_t *hints;
  xcb_size_hints_t *size_hints;
  xcb_ewmh_wm_strut_partial_t *strut_partial;
-_Bool 
+_Bool
      pinging;
  struct wl_event_source *ping_timer;
-_Bool 
+_Bool
      modal;
-_Bool 
+_Bool
      fullscreen;
-_Bool 
+_Bool
      maximized_vert, maximized_horz;
-_Bool 
+_Bool
      minimized;
-_Bool 
+_Bool
      withdrawn;
-_Bool 
+_Bool
      has_alpha;
  struct {
   struct wl_signal destroy;
@@ -5921,12 +5921,12 @@ struct wlr_xwayland_resize_event {
 };
 struct wlr_xwayland_minimize_event {
  struct wlr_xwayland_surface *surface;
-_Bool 
+_Bool
      minimize;
 };
 struct wlr_xwayland *wlr_xwayland_create(struct wl_display *wl_display,
- struct wlr_compositor *compositor, 
-                                   _Bool 
+ struct wlr_compositor *compositor,
+                                   _Bool
                                         lazy);
 struct wlr_xwayland *wlr_xwayland_create_with_server(struct wl_display *display,
  struct wlr_compositor *compositor, struct wlr_xwayland_server *server);
@@ -5935,7 +5935,7 @@ void wlr_xwayland_set_cursor(struct wlr_xwayland *wlr_xwayland,
  uint8_t *pixels, uint32_t stride, uint32_t width, uint32_t height,
  int32_t hotspot_x, int32_t hotspot_y);
 void wlr_xwayland_surface_activate(struct wlr_xwayland_surface *surface,
-_Bool 
+_Bool
      activated);
 void wlr_xwayland_surface_restack(struct wlr_xwayland_surface *surface,
  struct wlr_xwayland_surface *sibling, enum xcb_stack_mode_t mode);
@@ -5943,23 +5943,23 @@ void wlr_xwayland_surface_configure(struct wlr_xwayland_surface *surface,
  int16_t x, int16_t y, uint16_t width, uint16_t height);
 void wlr_xwayland_surface_close(struct wlr_xwayland_surface *surface);
 void wlr_xwayland_surface_set_withdrawn(struct wlr_xwayland_surface *surface,
-_Bool 
+_Bool
      withdrawn);
 void wlr_xwayland_surface_set_minimized(struct wlr_xwayland_surface *surface,
-_Bool 
+_Bool
      minimized);
 void wlr_xwayland_surface_set_maximized(struct wlr_xwayland_surface *surface,
-_Bool 
+_Bool
      maximized);
 void wlr_xwayland_surface_set_fullscreen(struct wlr_xwayland_surface *surface,
-_Bool 
+_Bool
      fullscreen);
 void wlr_xwayland_set_seat(struct wlr_xwayland *xwayland,
  struct wlr_seat *seat);
 struct wlr_xwayland_surface *wlr_xwayland_surface_try_from_wlr_surface(
  struct wlr_surface *surface);
 void wlr_xwayland_surface_ping(struct wlr_xwayland_surface *surface);
-_Bool 
+_Bool
     wlr_xwayland_or_surface_wants_focus(
  const struct wlr_xwayland_surface *xsurface);
 enum wlr_xwayland_icccm_input_model wlr_xwayland_icccm_input_model(
@@ -5975,4 +5975,3 @@ xcb_connection_t *wlr_xwayland_get_xwm_connection(
 --[[@type wlroots_ffi]]
 local ret = ffi.load("libwlroots-0.18.so")
 return ret
-

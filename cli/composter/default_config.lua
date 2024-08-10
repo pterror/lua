@@ -5,6 +5,12 @@ local terminal = "kitty"
 local screenshot = { "qti", "--path", os.getenv("HOME") .. "/git/qti/app/screenshot-editor/screenshot-editor.qml" }
 
 --[[default values]]
+c.features.xdg_shell = true
+c.features.xwayland = true
+c.features.decoration_control = true
+c.features.layer_shell = true
+c.features.socket_ipc = false
+
 c.variables.default_server_decoration_mode = "none"
 c.variables.cursor_name = nil
 c.variables.cursor_size_px = 24

@@ -8,6 +8,7 @@ else
 	package.path = arg[0]:gsub("lua/.+$", "lua/?.lua", 1) .. ";" .. package.path
 end
 
+local epoll_running = false
 local ipc_clients = nil --[[@type table<luajitsocket,true>?]]
 local value_to_json --[[@type fun(v): string]]
 local ipc_send_event = function(event)
@@ -20,8 +21,15 @@ end
 
 local mod = {}
 
+mod.features = {}
+mod.features.xdg_shell = true
+mod.features.xwayland = true
+mod.features.decoration_control = true
+mod.features.layer_shell = true
+--[[TODO: seems like epoll impl is inefficient?]]
+mod.features.socket_ipc = false
+
 mod.variables = {}
-mod.variables.ipc = true
 mod.variables.default_server_decoration_mode = "none" --[[@type "none"|"client"|"server"]]
 mod.variables.seat_name = "seat0"
 mod.variables.cursor_name = nil --[[@type string?]]
@@ -120,6 +128,9 @@ ffi.cdef [[
 
 		struct wlr_xdg_decoration_manager_v1 *xdg_decoration_manager;
 		struct wl_listener new_toplevel_decoration;
+
+		struct wlr_layer_shell_v1 *wlr_layer_shell;
+		struct wl_listener new_layer_shell_surface;
 	
 		struct wlr_cursor *cursor;
 		struct wlr_xcursor_manager *cursor_manager;
@@ -189,6 +200,12 @@ ffi.cdef [[
 		struct wlr_xdg_toplevel_decoration_v1 *xdg_decoration;
 		struct wl_listener destroy;
 		struct wl_listener request_mode;
+	};
+
+	struct composter_layer_shell_surface {
+		struct wlr_layer_surface_v1 *wlr_surface;
+		struct wl_listener destroy;
+		struct wl_listener new_popup;
 	};
 ]]
 
@@ -272,22 +289,23 @@ end
 --[[@param server composter_server]]
 mod.functions.exit = function(server)
 	mod.hooks.on_exit(server)
-	wl.wl_display_terminate(server[0].wl_display)
+	epoll_running = false
+	wl.wl_display_terminate(server.wl_display)
 end
 --[[@param server composter_server]]
 mod.functions.focus_window_below_mouse = function(server)
-	local toplevel, surface = mod.desktop_toplevel_at(server, server[0].cursor[0].x, server[0].cursor[0].y)
+	local toplevel, surface = mod.desktop_toplevel_at(server, server.cursor[0].x, server.cursor[0].y)
 	mod.focus_toplevel(toplevel, surface)
 end
 --[[@param server composter_server]]
 mod.functions.focus_next_window = function(server)
-	if wl.wl_list_length(server[0].toplevels) < 2 then return end
-	local next_toplevel = wl.wl_container_of(server[0].toplevels.prev, "composter_toplevel", "link")
+	if wl.wl_list_length(server.toplevels) < 2 then return end
+	local next_toplevel = wl.wl_container_of(server.toplevels.prev, "composter_toplevel", "link")
 	mod.focus_toplevel(next_toplevel, next_toplevel[0].xdg_toplevel[0].base[0].surface)
 end
 --[[@param server composter_server]]
 mod.functions.focused_window = function(server)
-	return server[0].focused_toplevel
+	return server.focused_toplevel
 end
 --[[@param window composter_toplevel]]
 mod.functions.close_window = function(window)
@@ -707,7 +725,7 @@ end
 --[[@param mode composter_cursor_mode]]
 --[[@param edges integer]]
 mod.begin_interactive = function(toplevel, mode, edges)
-	local server = toplevel[0].server[0]
+	local server = toplevel[0].server
 	local focused_surface = server[0].seat[0].pointer_state.focused_surface
 	if toplevel[0].xdg_toplevel[0].base[0].surface ~= wlr.wlr_surface_get_root_surface(focused_surface) then
 		return
@@ -796,8 +814,8 @@ end
 --[[@type wl_notify_func_t]]
 mod.xdg_popup_commit = function(listener, data)
 	local popup = wl.wl_container_of(listener, "composter_popup", "commit")
-	local base = popup[0].xdg_popup[0].base[0]
-	if base.initial_commit then
+	local base = popup[0].xdg_popup[0].base
+	if base[0].initial_commit then
 		wlr.wlr_xdg_surface_schedule_configure(base)
 	end
 end
@@ -868,7 +886,32 @@ mod.server_new_xdg_decoration = function(listener, data)
 	decoration[0].destroy.notify = mod.xdg_decoration_destroy
 	wl.wl_signal_add(xdg_decoration[0].events.destroy, decoration[0].destroy)
 	decoration[0].request_mode.notify = mod.xdg_decoration_request_mode
-	wl.wl_signal_add(xdg_decoration[0].events.destroy, decoration[0].destroy)
+	wl.wl_signal_add(xdg_decoration[0].events.request_mode, decoration[0].request_mode)
+end
+
+--[[@type wl_notify_func_t]]
+mod.layer_shell_surface_new_popup = function(listener, data)
+	local surface = wl.wl_container_of(listener, "composter_layer_shell_surface", "destroy")
+	--[[FIXME:]]
+end
+
+--[[@type wl_notify_func_t]]
+mod.layer_shell_surface_destroy = function(listener, data)
+	local surface = wl.wl_container_of(listener, "composter_layer_shell_surface", "destroy")
+	wl.wl_list_remove(surface[0].new_popup.link)
+	wl.wl_list_remove(surface[0].destroy.link)
+	queue_free(surface)
+end
+
+--[[@type wl_notify_func_t]]
+mod.server_new_layer_shell_surface = function(listener, data)
+	local wlr_surface = cast("wlr_layer_surface_v1", data)
+	local surface = new("composter_layer_shell_surface")
+	surface[0].wlr_surface = wlr_surface
+	surface[0].destroy.notify = mod.layer_shell_surface_destroy
+	wl.wl_signal_add(wlr_surface[0].events.destroy, surface[0].destroy)
+	surface[0].new_popup.notify = mod.layer_shell_surface_new_popup
+	wl.wl_signal_add(wlr_surface[0].events.new_popup, surface[0].new_popup)
 end
 
 local log_level_string = os.getenv("WLR_LOG_LEVEL") or os.getenv("COMPOSTER_LOG_LEVEL")
@@ -909,17 +952,29 @@ mod.run = function(init_log)
 	server[0].scene = wlr.wlr_scene_create()
 	server[0].scene_layout = wlr.wlr_scene_attach_output_layout(server[0].scene, server[0].output_layout)
 	wl.wl_list_init(server[0].toplevels)
-	server[0].xdg_shell = wlr.wlr_xdg_shell_create(server[0].wl_display, 3)
-	server[0].new_xdg_toplevel.notify = mod.server_new_xdg_toplevel
-	wl.wl_signal_add(server[0].xdg_shell[0].events.new_toplevel, server[0].new_xdg_toplevel)
-	server[0].new_xdg_popup.notify = mod.server_new_xdg_popup
-	wl.wl_signal_add(server[0].xdg_shell[0].events.new_popup, server[0].new_xdg_popup)
-	server[0].xwayland = wlr.wlr_xwayland_create(server[0].wl_display, compositor, true)
-	server[0].new_xwayland_surface.notify = mod.server_new_xwayland_surface
-	wl.wl_signal_add(server[0].xwayland[0].events.new_surface, server[0].new_xwayland_surface)
-	server[0].xdg_decoration_manager = wlr.wlr_xdg_decoration_manager_v1_create(server[0].wl_display)
-	server[0].new_toplevel_decoration.notify = mod.server_new_xdg_decoration
-	wl.wl_signal_add(server[0].xdg_decoration_manager[0].events.new_toplevel_decoration, server[0].new_toplevel_decoration)
+	if mod.features.xdg_shell then
+		server[0].xdg_shell = wlr.wlr_xdg_shell_create(server[0].wl_display, 3)
+		server[0].new_xdg_toplevel.notify = mod.server_new_xdg_toplevel
+		wl.wl_signal_add(server[0].xdg_shell[0].events.new_toplevel, server[0].new_xdg_toplevel)
+		server[0].new_xdg_popup.notify = mod.server_new_xdg_popup
+		wl.wl_signal_add(server[0].xdg_shell[0].events.new_popup, server[0].new_xdg_popup)
+	end
+	if mod.features.xwayland then
+		server[0].xwayland = wlr.wlr_xwayland_create(server[0].wl_display, compositor, true)
+		server[0].new_xwayland_surface.notify = mod.server_new_xwayland_surface
+		wl.wl_signal_add(server[0].xwayland[0].events.new_surface, server[0].new_xwayland_surface)
+	end
+	if mod.features.decoration_control then
+		server[0].xdg_decoration_manager = wlr.wlr_xdg_decoration_manager_v1_create(server[0].wl_display)
+		server[0].new_toplevel_decoration.notify = mod.server_new_xdg_decoration
+		wl.wl_signal_add(server[0].xdg_decoration_manager[0].events.new_toplevel_decoration,
+			server[0].new_toplevel_decoration)
+	end
+	if mod.features.layer_shell then
+		server[0].wlr_layer_shell = wlr.wlr_layer_shell_v1_create(server[0].wl_display, 4)
+		server[0].new_layer_shell_surface.notify = mod.server_new_layer_shell_surface
+		wl.wl_signal_add(server[0].wlr_layer_shell[0].events.new_surface, server[0].new_layer_shell_surface)
+	end
 	server[0].cursor = wlr.wlr_cursor_create()
 	wlr.wlr_cursor_attach_output_layout(server[0].cursor, server[0].output_layout)
 	server[0].cursor_manager = wlr.wlr_xcursor_manager_create(mod.variables.cursor_name, mod.variables.cursor_size_px)
@@ -960,11 +1015,12 @@ mod.run = function(init_log)
 	else
 		local epoll = require("dep.epoll").new()
 		value_to_json = require("dep.lunajson").value_to_json
-		local epoll_running = true
+		epoll_running = true
 		local wl_fd = wl.wl_event_loop_get_fd(loop)
 		epoll:add(wl_fd, function()
 			wl.wl_display_flush_clients(server[0].wl_display)
-			if wl.wl_event_loop_dispatch(loop, -1) < 0 then epoll_running = false end
+			local ret = wl.wl_event_loop_dispatch(loop, -1)
+			if ret < 0 then epoll_running = false end
 		end)
 		local ipc_path = os.getenv("XDG_RUNTIME_DIR") .. "/composter-events.sock"
 		os.remove(ipc_path)
