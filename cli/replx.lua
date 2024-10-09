@@ -19,9 +19,13 @@ local co
 local is_cli = #arg > 0
 local prompt = is_cli and function () end or function () io.stdout:write("$ "); io.stdout:flush() end
 
+local _
+local ret
 local resume = function (...)
 	local rets = { coroutine.resume(co, ...) }
 	if co and coroutine.status(co) == "dead" then co = nil end
+	local __
+	__, ret = unpack(rets)
 	return unpack(rets)
 end
 
@@ -98,8 +102,9 @@ lazy_load_table = {
 	it = { "lib.it_fn", "it" },
 	arr = { "lib.functional.array", "array" },
 	dig = { "lib.dns.tcp_client", "client", function (client)
-		return function (domain, type)
-			client(resume, "localhost", domain, nil, type and require("lib.dns.format").type[type], nil, epoll)
+		return function (domain, type, opts)
+			opts = opts or {}
+			client(resume, opts.nameserver or "1.1.1.1", domain, nil, type and require("lib.dns.format").type[type] or type, nil, epoll)
 			return coroutine.yield()
 		end
 	end },
@@ -380,7 +385,8 @@ local eval = function (data)
 		if fn then
 			co = coroutine.create(fn)
 			--[[TODO: consider printing multiple returns]]
-			local __, ret = resume()
+			resume()
+			while co do epoll:wait() end
 			_ = ret
 			if ret then smart_print(ret) end
 			prompt()
@@ -389,7 +395,7 @@ local eval = function (data)
 			prompt()
 		end
 	else
-		local __, ret = resume(data:sub(1, -2))
+		resume(data:sub(1, -2))
 		_ = ret
 		if ret then smart_print(ret) end
 		prompt()
