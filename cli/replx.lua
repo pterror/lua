@@ -37,6 +37,27 @@ input = function (prompt)
 	return coroutine.yield()
 end
 
+unpipe = {}
+local pipe_mt = {}
+pipe = function (...)
+	return setmetatable({ values = { ... } }, pipe_mt)
+end
+pipe_mt.__index = pipe_obj
+pipe_mt.__div = function (the_pipe, b)
+	if b == unpipe then
+		return unpack(the_pipe.values)
+	elseif type(b) == "table" then
+		local args = { unpack(b) }
+		local f = table.remove(args, 1)
+		for _, value in ipairs(the_pipe.values) do
+			args[#args+1] = value
+		end
+		return pipe(f(unpack(args)))
+	else
+		return pipe(b(unpack(the_pipe.values)))
+	end
+end
+
 id = function (...) return ... end
 sh_ = io.popen
 sh = function (cmd) return io.popen(cmd):read("*all") end
@@ -105,7 +126,14 @@ lazy_load_table = {
 		return function (domain, type, opts)
 			opts = opts or {}
 			client(resume, opts.nameserver or "1.1.1.1", domain, nil, type and require("lib.dns.format").type[type] or type, nil, epoll)
-			return coroutine.yield()
+			local result = coroutine.yield()
+			if opts.pretty_print then
+				local formatters = require("lib.dns.pretty_print").formatters
+				for i, v in ipairs(result.answers) do
+					result.answers[i] = formatters[v.type](v.data)
+				end
+			end
+			return result
 		end
 	end },
 	ls = { "lib.fs.dir_list", "dir_list", wrap_in_iter, function (f)
@@ -175,10 +203,16 @@ lines = function (path)
 end
 
 read = function (path)
-	local file = assert(io.open(path, "rb"), "fileread: could not open file '" .. path .. "'")
+	local file = assert(io.open(path, "rb"), "file_read: could not open file '" .. path .. "'")
 	local contents = file:read("*all")
 	file:close()
 	return contents
+end
+
+write = function (path, contents)
+	local file = assert(io.open(path, "wb"), "file_write: could not open file '" .. path .. "'")
+	local contents = file:write(contents)
+	file:close()
 end
 
 touch = function (path)
