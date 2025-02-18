@@ -94,17 +94,21 @@ if capitalize then output = output:upper() end
 local pronouns = choose(env("PRONOUNS") or "she her her")
 local they, them, their = unpack(match_all(pronouns, "%S+"))
 output = choose(env("PREFIX") or "") .. output .. choose(env("SUFFIX") or "~")
+local color = choose(env("COLOR") or "005")
+local color_prefix = "\x1b[38;5;" .. color .. "m"
+local color_suffix = "\x1b[0m\n"
+--[[@param s string]]
+local colorize = function(s) return s .. color_prefix end
 local replacements = {
-	CAREGIVER = choose(env("CAREGIVER") or "mommy"),
-	SWEETIE = choose(env("SWEETIE") or get_sweetie()),
-	PET = choose(env("PET") or "slut/toy/pet/pervert/whore"),
-	PART = choose(env("PART") or "milk"),
-	THEY = they,
-	THEM = them,
-	THEIR = their,
+	CAREGIVER = colorize(choose(env("CAREGIVER") or "mommy")),
+	SWEETIE = colorize(choose(env("SWEETIE") or get_sweetie())),
+	PET = colorize(choose(env("PET") or "slut/toy/pet/pervert/whore")),
+	PART = colorize(choose(env("PART") or "milk")),
+	THEY = colorize(they),
+	THEM = colorize(them),
+	THEIR = colorize(their),
 	N = "\n",
 	S = "/",
 }
 output = output:gsub("%%%%([^%%]+)%%%%", replacements)
-local color = choose(env("COLOR") or "005")
-io.stdout:write("\x1b[38;5;", color, "m", output, "\x1b[0m\n")
+io.stdout:write(color_prefix, output, color_suffix)
