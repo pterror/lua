@@ -299,7 +299,7 @@ end
 --[[@field direct_map1_g integer]]
 
 --[[@enum linux_proc_meminfo_name]]
-mod.name_to_key = {
+local name_to_key = {
 	MemTotal = "mem_total",
 	MemFree = "mem_free",
 	MemAvailable = "mem_available",
@@ -351,6 +351,7 @@ mod.name_to_key = {
 	FilePmdMapped = "file_pmd_mapped",
 	CmaTotal = "cma_total",
 	CmaFree = "cma_free",
+	Unaccepted = "unaccepted",
 	HugePages_Total = "huge_pages_total",
 	HugePages_Free = "huge_pages_free",
 	HugePages_Rsvd = "huge_pages_rsvd",
@@ -362,6 +363,10 @@ mod.name_to_key = {
 	DirectMap1G = "direct_map1_g",
 }
 
+mod._get_name_to_key = function ()
+	return name_to_key
+end
+
 --[[@return linux_proc_meminfo? meminfo, string? err]]
 mod.meminfo = function ()
 	local f = io.open("/proc/meminfo")
@@ -371,7 +376,7 @@ mod.meminfo = function ()
 		local line = f:read("*line")
 		if not line then break end
 		local name, n_str = match(line, "(.-): +(%d+)")
-		ret[mod.name_to_key[name]] = tonumber(n_str)
+		ret[name_to_key[name]] = tonumber(n_str)
 	end
 	f:close()
 	return ret

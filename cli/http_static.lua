@@ -24,6 +24,10 @@ local run = function ()
 			res.headers["Content-Encoding"] = "gzip"
 			res.headers["Content-Length"] = ""
 			res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path:sub(1, -3))
+		elseif req.path:find(".br$") then
+			res.headers["Content-Encoding"] = "br"
+			res.headers["Content-Length"] = ""
+			res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path:sub(1, -3))
 		else res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path) end
 		--[[@diagnostic disable-next-line: param-type-mismatch]]
 	end or function (req, res)
@@ -34,6 +38,10 @@ local run = function ()
 		res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path)
 		if req.path:find(".gz$") then
 			res.headers["Content-Encoding"] = "gzip"
+			res.headers["Content-Length"] = ""
+			res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path:sub(1, -3))
+		elseif req.path:find(".br$") then
+			res.headers["Content-Encoding"] = "br"
 			res.headers["Content-Length"] = ""
 			res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path:sub(1, -3))
 		else res.headers["Content-Type"] = res.headers["Content-Type"] or ext_mimetype(root .. req.path) end

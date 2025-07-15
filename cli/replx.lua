@@ -156,18 +156,7 @@ lazy_load_table = {
 	from_json = { "dep.lunajson", "json_to_value", function (from_json)
 		return function (string) return from_json(string, nil, null) end
 	end },
-	lfilesystems = { "lib.linux.proc", "filesystems" },
-	lloadavg = { "lib.linux.proc", "loadavg" },
-	lmeminfo = { "lib.linux.proc", "meminfo" },
-	lmisc = { "lib.linux.proc", "misc" },
-	lmounts = { "lib.linux.proc", "mounts" },
-	lpartitions = { "lib.linux.proc", "partitions" },
-	lnet = { "lib.linux.proc", "net" }, --[[a table containing { dev }]]
-	lstat = { "lib.linux.proc", "stat" },
-	lswaps = { "lib.linux.proc", "swaps" },
-	luptime = { "lib.linux.proc", "uptime" },
-	lversion = { "lib.linux.proc", "version" },
-	lvmstat = { "lib.linux.proc", "vmstat" },
+	l = { "lib.linux.proc" },
 	--[[@diagnostic disable-next-line: param-type-mismatch]]
 	mock = { "dep.mock", function (mock) math.randomseed(require("lib.time").time()); return mock end },
 	sleep_ms = { "dep.timerfd", "set_timeout", function (set_timeout)
