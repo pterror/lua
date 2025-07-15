@@ -8,7 +8,7 @@ mkShell rec {
   buildInputs = [
     libxkbcommon # compositor
     wayland # compositor
-    wlroots # compositor
+    wlroots_0_18 # compositor
     #pixman # wlroots
     #libinput # wlroots
     #libGL # wlroots, gles2 backend

@@ -5973,5 +5973,5 @@ xcb_connection_t *wlr_xwayland_get_xwm_connection(
 --[[@class wlroots_ffi: { [string]: function }]]
 
 --[[@type wlroots_ffi]]
-local ret = ffi.load("libwlroots-0.18.so")
+local ret = ffi.load("wlroots-0.18.so")
 return ret
